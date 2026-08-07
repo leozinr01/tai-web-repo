@@ -30,13 +30,6 @@ npm run typecheck   # apenas checagem de tipos
 npm run test         # testes unitários (Vitest)
 ```
 
-> **Nota sobre este ambiente de geração**: o sandbox usado para criar este
-> projeto não tem acesso à internet/registro npm, então `npm install`,
-> `lint`, `typecheck`, `test` e `build` não puderam ser executados aqui.
-> Rode os comandos acima no seu ambiente local para validar tudo — o código
-> foi escrito e revisado manualmente para ser consistente com TypeScript
-> `strict`, ESLint e a stack declarada abaixo.
-
 ## Usuários de demonstração
 
 O login é **simulado**: qualquer um dos e-mails abaixo com a senha `demo123`
