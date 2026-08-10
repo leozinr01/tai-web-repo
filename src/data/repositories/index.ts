@@ -1,30 +1,27 @@
 /**
  * Ponto unico de resolucao dos repositorios.
  *
- * Hoje todos os adaptadores sao mockados (localStorage). Quando o Supabase
- * for integrado, basta criar os adaptadores equivalentes (ex.:
- * SupabaseAppointmentRepository implements AppointmentRepository) e trocar
- * as instancias abaixo — nenhum componente ou feature precisa mudar, pois
- * todos dependem apenas das interfaces em `data/contracts`.
+ * Todos os dominios (auth, companies, users, sectors, machines, indicators,
+ * workOrders, appointments, reports) ja usam o Supabase real (projeto "TAI").
  */
-import { MockAuthRepository } from "@/data/repositories/mock/auth.repository.mock";
-import { MockCompanyRepository } from "@/data/repositories/mock/company.repository.mock";
-import { MockUserRepository } from "@/data/repositories/mock/user.repository.mock";
-import { MockSectorRepository } from "@/data/repositories/mock/sector.repository.mock";
-import { MockMachineRepository } from "@/data/repositories/mock/machine.repository.mock";
-import { MockIndicatorRepository } from "@/data/repositories/mock/indicator.repository.mock";
-import { MockAppointmentRepository } from "@/data/repositories/mock/appointment.repository.mock";
-import { MockWorkOrderRepository } from "@/data/repositories/mock/work-order.repository.mock";
-import { MockReportRepository } from "@/data/repositories/mock/report.repository.mock";
+import { SupabaseAuthRepository } from "@/data/repositories/supabase/auth.repository.supabase";
+import { SupabaseCompanyRepository } from "@/data/repositories/supabase/company.repository.supabase";
+import { SupabaseUserRepository } from "@/data/repositories/supabase/user.repository.supabase";
+import { SupabaseSectorRepository } from "@/data/repositories/supabase/sector.repository.supabase";
+import { SupabaseMachineRepository } from "@/data/repositories/supabase/machine.repository.supabase";
+import { SupabaseIndicatorRepository } from "@/data/repositories/supabase/indicator.repository.supabase";
+import { SupabaseWorkOrderRepository } from "@/data/repositories/supabase/work-order.repository.supabase";
+import { SupabaseAppointmentRepository } from "@/data/repositories/supabase/appointment.repository.supabase";
+import { SupabaseReportRepository } from "@/data/repositories/supabase/report.repository.supabase";
 
 export const repositories = {
-  auth: new MockAuthRepository(),
-  companies: new MockCompanyRepository(),
-  users: new MockUserRepository(),
-  sectors: new MockSectorRepository(),
-  machines: new MockMachineRepository(),
-  indicators: new MockIndicatorRepository(),
-  appointments: new MockAppointmentRepository(),
-  workOrders: new MockWorkOrderRepository(),
-  reports: new MockReportRepository(),
+  auth: new SupabaseAuthRepository(),
+  companies: new SupabaseCompanyRepository(),
+  users: new SupabaseUserRepository(),
+  sectors: new SupabaseSectorRepository(),
+  machines: new SupabaseMachineRepository(),
+  indicators: new SupabaseIndicatorRepository(),
+  appointments: new SupabaseAppointmentRepository(),
+  workOrders: new SupabaseWorkOrderRepository(),
+  reports: new SupabaseReportRepository(),
 };
