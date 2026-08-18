@@ -7,9 +7,9 @@ export function NotFoundPage() {
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/15 text-brand-light">
         <Compass className="h-8 w-8" />
       </div>
-      <p className="font-display text-6xl font-black text-slate-100">404</p>
+      <p className="font-display text-6xl font-black text-white">404</p>
       <div>
-        <p className="font-display text-lg font-bold uppercase tracking-wide text-slate-200">
+        <p className="font-display text-lg font-bold text-white">
           Pagina nao encontrada
         </p>
         <p className="mt-1 max-w-sm text-sm text-muted">

@@ -34,7 +34,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
   return (
     <aside
       className={cn(
-        "relative flex h-full flex-col border-r border-panel-border bg-navy-900 transition-[width] duration-200",
+        "relative flex h-full flex-col border-r border-white/10 bg-navy-950/95 backdrop-blur-xl transition-[width] duration-200",
         collapsed ? "w-[76px]" : "w-64",
       )}
     >
@@ -46,17 +46,9 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
         <ChevronLeft className={cn("h-3.5 w-3.5 transition-transform", collapsed && "rotate-180")} />
       </button>
 
-      <div className="flex items-center gap-2 px-5 py-6">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/15 text-brand-light">
-          <Building2 className="h-5 w-5" />
-        </div>
-        {!collapsed && (
-          <div className="min-w-0">
-            <p className="font-display truncate text-lg font-bold uppercase tracking-wide text-slate-100">
-              Tai <span className="text-brand-light">Project</span>
-            </p>
-          </div>
-        )}
+      <div className="flex flex-col gap-1 px-5 py-6">
+        <img src="/logo-tai-project.png" alt="Tai Project" className={cn("h-auto object-contain", collapsed ? "w-9" : "w-40")} />
+        {!collapsed && <p className="truncate text-sm font-semibold text-slate-100">Tai Project</p>}
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3">
@@ -69,10 +61,10 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
                 onClick={onNavigate}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-colors",
                     isActive
                       ? "bg-brand text-white shadow-soft"
-                      : "text-slate-300 hover:bg-navy-800 hover:text-white",
+                      : "text-muted hover:bg-white/10 hover:text-white",
                   )
                 }
                 title={collapsed ? item.label : undefined}
@@ -89,10 +81,10 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
                 onClick={onNavigate}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-colors",
                     isActive
                       ? "bg-brand text-white shadow-soft"
-                      : "text-slate-300 hover:bg-navy-800 hover:text-white",
+                      : "text-muted hover:bg-white/10 hover:text-white",
                   )
                 }
                 title={collapsed ? "Painel Master" : undefined}
@@ -105,8 +97,8 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
         </ul>
       </nav>
 
-      <div className="border-t border-panel-border p-3">
-        <div className={cn("flex items-center gap-3 rounded-lg px-2 py-2", !collapsed && "bg-navy-800")}>
+      <div className="border-t border-white/10 p-3">
+        <div className={cn("flex items-center gap-3 rounded-lg px-2 py-2", !collapsed && "bg-white/5")}>
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
             {user?.avatarInitials ?? "--"}
           </div>

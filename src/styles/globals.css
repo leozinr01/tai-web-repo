@@ -36,7 +36,7 @@
     @apply text-[11px] font-semibold uppercase tracking-wider text-muted;
   }
   .panel {
-    @apply bg-panel border border-panel-border rounded-xl shadow-card;
+    @apply bg-panel border border-panel-border rounded-2xl backdrop-blur-xl shadow-card;
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;

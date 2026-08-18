@@ -63,7 +63,7 @@ export function SearchableSelect({
           type="button"
           disabled={disabled}
           className={cn(
-            "flex h-10 w-full items-center gap-2 rounded-lg border border-panel-border bg-navy-800 px-3 text-left text-sm",
+            "flex h-10 w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 text-left text-sm",
             "focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand transition-colors disabled:opacity-50",
             error && "border-danger",
             className,
@@ -97,9 +97,9 @@ export function SearchableSelect({
           align="start"
           sideOffset={6}
           collisionPadding={12}
-          className="z-50 w-[--radix-popover-trigger-width] overflow-hidden rounded-lg border border-panel-border bg-navy-800 shadow-soft"
+          className="z-50 w-[--radix-popover-trigger-width] overflow-hidden rounded-xl border border-white/10 bg-navy-900/95 shadow-2xl backdrop-blur-xl"
         >
-          <div className="flex items-center gap-2 border-b border-panel-border px-3 py-2">
+          <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
             <Search className="h-4 w-4 text-muted" />
             <input
               autoFocus
@@ -123,7 +123,7 @@ export function SearchableSelect({
                   setQuery("");
                 }}
                 className={cn(
-                  "flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-navy-700",
+                  "flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-white/10",
                   opt.value === value && "bg-brand/15 text-brand-light",
                 )}
                 role="option"

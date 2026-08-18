@@ -156,7 +156,7 @@ export function AppointmentsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <Breadcrumb current="Apontamentos" />
-          <h1 className="font-display mt-1 text-3xl font-bold uppercase tracking-wide text-slate-100">
+          <h1 className="font-display mt-1 text-2xl font-bold text-white sm:text-3xl">
             Apontamentos
           </h1>
         </div>

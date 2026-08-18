@@ -7,9 +7,9 @@ export function ForbiddenPage() {
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-danger/15 text-danger">
         <ShieldAlert className="h-8 w-8" />
       </div>
-      <p className="font-display text-6xl font-black text-slate-100">403</p>
+      <p className="font-display text-6xl font-black text-white">403</p>
       <div>
-        <p className="font-display text-lg font-bold uppercase tracking-wide text-slate-200">
+        <p className="font-display text-lg font-bold text-white">
           Acesso negado
         </p>
         <p className="mt-1 max-w-sm text-sm text-muted">

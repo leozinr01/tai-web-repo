@@ -1,11 +1,38 @@
 import type { Machine } from "@/domain/entities/machine";
 import { MachineStatus } from "@/domain/types/enums";
 
-function m(partial: Omit<Machine, "oeeHistory" | "complementaryCount">): Machine {
+function m(
+  partial: Omit<
+    Machine,
+    "oeeHistory" | "complementaryCount" | "customVariables" | "cardSettings" | "lossBreakdown"
+  >,
+): Machine {
   return {
     ...partial,
     complementaryCount: 0,
     oeeHistory: Array.from({ length: 12 }, () => 85 + Math.round(Math.random() * 15)),
+    customVariables: [],
+    cardSettings: {
+      showOeeCircle: true,
+      topVariableKeys: ["horimeter", "vibration", "temperature"],
+      bottomVariableKeys: ["speed", "production"],
+      bottomVariableVisible: [true, true],
+    },
+    lossBreakdown: {
+      availability: [
+        { key: "breakdown", label: "Quebra / Falhas", minutes: 0 },
+        { key: "setup", label: "Setup", minutes: 0 },
+        { key: "idle", label: "Ociosidade", minutes: 0 },
+      ],
+      productivity: [
+        { key: "small_stops", label: "Pequenas Paradas", minutes: 0 },
+        { key: "reduced_speed", label: "Velocidade Reduzida", minutes: 0 },
+      ],
+      quality: [
+        { key: "scrap", label: "Refugo", minutes: 0 },
+        { key: "rework", label: "Retrabalho", minutes: 0 },
+      ],
+    },
   };
 }
 

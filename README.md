@@ -1,15 +1,13 @@
 # Tai Project — Painel Web Administrativo
 
 Painel web administrativo da plataforma industrial **Tai Project**, construído com
-React + Vite + TypeScript (modo `strict`), integrado ao **Supabase** (projeto
-"TAI", banco `nmoyvzglbzamguzapoag`) — o mesmo backend já usado pelo app mobile.
+React + Vite + TypeScript (modo `strict`).
 
 O projeto foi desenhado desde o início com uma camada de repositórios baseada em
-interfaces (`data/contracts`), o que permitiu trocar as implementações mockadas
-por implementações reais em Supabase (`data/repositories/supabase`) sem reescrever
-telas, formulários ou regras de negócio. As implementações mockadas com
-`localStorage` continuam no projeto (`data/repositories/mock`) como referência,
-mas não são mais usadas em runtime.
+interfaces (`data/contracts`), o que permite trocar as implementações sem
+reescrever telas, formulários ou regras de negócio. Hoje toda a aplicação roda
+sobre dados **mockados** (`data/repositories/mock`, persistidos em
+`localStorage`), sem nenhuma integração com backend externo.
 
 ## Como instalar e executar
 
@@ -22,10 +20,6 @@ npm run dev
 
 A aplicação sobe em `http://localhost:5173`.
 
-Copie `.env.example` para `.env.local` e preencha `VITE_SUPABASE_PUBLISHABLE_KEY`
-(a chave anônima/publicável do projeto "TAI") antes de rodar `npm run dev` —
-sem ela, a aplicação não consegue falar com o Supabase.
-
 Outros scripts disponíveis:
 
 ```bash
@@ -36,25 +30,14 @@ npm run typecheck   # apenas checagem de tipos
 npm run test         # testes unitários (Vitest)
 ```
 
-> **Nota sobre este ambiente de geração**: o sandbox usado para criar este
-> projeto não tem acesso à internet/registro npm, então `npm install`,
-> `lint`, `typecheck`, `test` e `build` não puderam ser executados aqui.
-> Rode os comandos acima no seu ambiente local para validar tudo — o código
-> foi escrito e revisado manualmente para ser consistente com TypeScript
-> `strict`, ESLint e a stack declarada abaixo.
-
 ## Autenticação
 
-O login usa **Supabase Auth** real (`signInWithPassword`), com a sessão
-validada contra o servidor (`getUser()`) antes de considerar o usuário
-autenticado — não é mais um login simulado nem persistido em `localStorage`.
-É necessário um usuário real cadastrado no Supabase Auth **e** uma linha
-correspondente na tabela `User` (vinculada por `idRef`); login sem cadastro
-vinculado é rejeitado.
+O login é simulado: valida contra os usuários mockados em
+`src/data/mocks/seed-users.ts` e a senha de demonstração definida em
+`DEMO_PASSWORD` (mesmo arquivo). A sessão é persistida em `localStorage`.
 
 Usuários com `status` mapeado como `inactive` têm o login bloqueado com uma
-mensagem específica. Veja `src/lib/supabase/README.md` para o detalhe do
-mapeamento de papéis (`tipo`) e status vindos do schema legado.
+mensagem específica.
 
 Somente usuários com perfil **Master** enxergam o item **Painel Master** no
 menu e conseguem acessar `/painel-master` — qualquer outro perfil que tente
@@ -80,15 +63,13 @@ src/
     types/          # enums (status de máquina, de O.S., perfis de usuário...)
   data/
     contracts/      # interfaces de repositório (o "contrato" que qualquer
-                     # implementação — mock ou Supabase — deve seguir)
+                     # implementação deve seguir)
     repositories/
-      mock/         # adaptadores mockados legados (localStorage) — não usados em runtime
-      supabase/     # adaptadores reais (implementam os contracts usando @supabase/supabase-js)
-      index.ts      # ponto único de resolução dos repositórios usados pela app (hoje: Supabase)
-    mocks/          # dados simulados (seed) usados pelos adaptadores mock legados
+      mock/         # adaptadores mockados (localStorage) — usados em runtime
+      index.ts      # ponto único de resolução dos repositórios usados pela app
+    mocks/          # dados simulados (seed) usados pelos adaptadores mock
   hooks/            # hooks utilitários (debounce, media query, disclosure, toast)
   lib/               # utilitários puros (cn, csv, storage, labels, simulateNetwork)
-  lib/supabase/      # cliente Supabase, mapeadores de linha do banco e lookups auxiliares
   routes/           # configuração do React Router
   styles/           # CSS global + tokens Tailwind
 ```
@@ -101,41 +82,14 @@ Regras de arquitetura seguidas no código:
 - **Regras de negócio, tipos e validações (`domain/`) não importam nada de
   React** — são módulos puros em TypeScript, prontos para serem extraídos para
   um pacote compartilhado com o futuro app React Native.
-- Nenhuma chave/credencial real está commitada no repositório — `.env.local`
-  (com a URL e a chave publicável/anon do Supabase) está no `.gitignore`;
-  apenas `.env.example`, sem valores sensíveis, é versionado.
 
-## Integração com Supabase
+## Como os mocks funcionam
 
-Todos os domínios (`auth`, `companies`, `users`, `sectors`, `machines`,
-`indicators`, `workOrders`, `appointments`, `reports`) são resolvidos em
-`src/data/repositories/index.ts` para implementações reais em
-`src/data/repositories/supabase/*.repository.supabase.ts`, que usam o cliente
-`@supabase/supabase-js` (`src/lib/supabase/client.ts`) contra o projeto "TAI"
-(banco `nmoyvzglbzamguzapoag`, o mesmo já usado pelo app mobile).
-
-Como toda a interface sempre dependeu apenas das interfaces em
-`data/contracts/`, a troca das implementações mockadas pelas de Supabase não
-exigiu mudar nenhuma tela, hook de query ou formulário.
-
-Pontos importantes:
-
-- As tabelas, colunas e RLS são do **schema legado já existente** — nenhuma
-  tabela, coluna, policy ou função nova foi criada pelos adaptadores.
-- Existem decisões de mapeamento entre o schema legado e o domínio do painel
-  (ex.: papéis de usuário, status de empresa/usuário, status de O.S.) e
-  algumas pendências que dependem de decisão (ex.: criação de usuário via
-  Edge Function, RLS aberta). Tudo documentado em `src/lib/supabase/README.md`.
-- As variáveis de ambiente `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`
-  são obrigatórias para rodar a aplicação (ver `.env.example`).
-
-## Como os mocks (legados) funcionam
-
-As implementações mockadas com `localStorage` continuam no projeto em
-`data/repositories/mock/` como referência histórica, mas **não são usadas em
-runtime** — `data/repositories/index.ts` resolve tudo para as implementações
-Supabase. `data/mocks/seed-*.ts` contém os dados simulados originais usados
-antes da integração real.
+As implementações em `data/repositories/mock/` usam `localStorage` como
+"banco" — na primeira execução, os dados de `data/mocks/seed-*.ts` são
+copiados para `localStorage`; a partir daí, toda leitura/escrita passa a usar
+o que está persistido lá, então edições feitas no painel sobrevivem a
+navegações e recarregamentos (até que o `localStorage` seja limpo).
 
 ## O que pode ser compartilhado com o futuro app React Native
 
@@ -144,9 +98,6 @@ Pensados desde o início para não terem dependência de DOM/navegador:
 - `src/domain/` inteiro (entities, schemas Zod, enums) — validações e regras
   de negócio idênticas em web e mobile.
 - `src/data/contracts/` — as interfaces de repositório.
-- `src/data/repositories/supabase/` — as implementações reais dos
-  repositórios podem ser publicadas como pacote compartilhado e consumidas
-  tanto pelo painel web quanto pelo app React Native.
 - `src/lib/utils.ts`, `src/lib/labels.ts` — funções puras sem dependência de
   React DOM (evitar apenas `lib/csv.ts` e `lib/storage.ts`, que usam APIs de
   navegador; no RN seriam trocados por equivalentes nativos).
@@ -159,9 +110,8 @@ dos contracts, não de HTML).
 
 ## Telas implementadas
 
-1. **Login** (`/login`) — autenticação real via Supabase Auth, com
-   mostrar/ocultar senha, validação Zod, mensagem de credenciais inválidas e
-   estado de carregamento.
+1. **Login** (`/login`) — autenticação simulada, com mostrar/ocultar senha,
+   validação Zod, mensagem de credenciais inválidas e estado de carregamento.
 2. **Dashboard** (`/dashboard`) — indicadores de OEE/Disponibilidade/
    Produtividade/Qualidade com sparkline, filtros por setor/máquina/status/
    vibração alta/temperatura alta, cards de máquina com horímetro, vibração,

@@ -25,4 +25,21 @@ export class MockMachineRepository implements MachineRepository {
   async getById(id: string): Promise<Machine | null> {
     return simulateNetwork(() => mockDb.machines.getAll().find((m) => m.id === id) ?? null);
   }
+
+  async update(
+    id: string,
+    data: Partial<Pick<Machine, "name" | "sectorId" | "customVariables" | "cardSettings">>,
+  ): Promise<Machine> {
+    return simulateNetwork(() => {
+      const items = mockDb.machines.getAll();
+      const index = items.findIndex((m) => m.id === id);
+      const existing = items[index];
+      if (index === -1 || !existing) throw new Error("Maquina nao encontrada.");
+      const updated: Machine = { ...existing, ...data };
+      const next = [...items];
+      next[index] = updated;
+      mockDb.machines.saveAll(next);
+      return updated;
+    });
+  }
 }

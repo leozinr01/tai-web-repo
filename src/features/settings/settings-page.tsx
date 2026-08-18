@@ -113,7 +113,7 @@ export function SettingsPage() {
     <div className="space-y-6">
       <div>
         <Breadcrumb current="Configuracoes" />
-        <h1 className="font-display mt-1 text-3xl font-bold uppercase tracking-wide text-slate-100">
+        <h1 className="font-display mt-1 text-2xl font-bold text-white sm:text-3xl">
           Configuracoes
         </h1>
       </div>

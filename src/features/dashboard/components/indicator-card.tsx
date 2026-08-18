@@ -30,7 +30,7 @@ export function IndicatorCard({
     <Card className="flex items-center justify-between gap-3 p-5">
       <div>
         <p className="label-caps">{label}</p>
-        <p className="font-display mt-1 text-3xl font-bold text-slate-100">{value ?? 0}%</p>
+        <p className="mt-1 text-2xl font-bold text-white">{value ?? 0}%</p>
       </div>
       <div className="flex h-10 w-20 items-center gap-1">
         {history && history.length > 0 ? (

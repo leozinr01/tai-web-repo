@@ -15,7 +15,7 @@ interface DialogProps {
 
 const sizeClasses = {
   sm: "max-w-md",
-  md: "max-w-xl",
+  md: "max-w-2xl",
   lg: "max-w-3xl",
 };
 
@@ -23,33 +23,28 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
-        <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in" />
+        <RadixDialog.Overlay className="fixed inset-0 z-40 bg-navy-950/80 backdrop-blur-md data-[state=open]:animate-in data-[state=open]:fade-in" />
         <RadixDialog.Content
           className={cn(
-            "fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[92vw] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-panel-border bg-panel shadow-soft flex flex-col",
+            "fixed left-1/2 top-1/2 z-50 flex max-h-[86vh] w-[92vw] -translate-x-1/2 -translate-y-1/2 flex-col gap-6 overflow-y-auto rounded-2xl border border-white/10 bg-white/5 p-4 shadow-2xl backdrop-blur-xl",
             sizeClasses[size],
           )}
         >
-          <div className="flex items-start justify-between border-b border-panel-border px-6 py-4">
+          <div className="flex items-center justify-between">
             <div>
-              <RadixDialog.Title className="font-display text-lg font-bold uppercase tracking-wide text-slate-100">
-                {title}
-              </RadixDialog.Title>
+              <RadixDialog.Title className="text-xl font-bold text-white">{title}</RadixDialog.Title>
               {description && (
                 <RadixDialog.Description className="mt-0.5 text-sm text-muted">
                   {description}
                 </RadixDialog.Description>
               )}
             </div>
-            <RadixDialog.Close
-              className="rounded-md p-1 text-muted hover:bg-navy-700 hover:text-slate-100"
-              aria-label="Fechar"
-            >
+            <RadixDialog.Close className="text-muted hover:text-white" aria-label="Fechar">
               <X className="h-5 w-5" />
             </RadixDialog.Close>
           </div>
-          <div className="overflow-y-auto px-6 py-5">{children}</div>
-          {footer && <div className="border-t border-panel-border px-6 py-4">{footer}</div>}
+          {children}
+          {footer}
         </RadixDialog.Content>
       </RadixDialog.Portal>
     </RadixDialog.Root>

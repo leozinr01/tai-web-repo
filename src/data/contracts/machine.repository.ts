@@ -10,4 +10,8 @@ export interface MachineFilters {
 export interface MachineRepository {
   listByCompany(companyId: string, filters?: MachineFilters): Promise<Machine[]>;
   getById(id: string): Promise<Machine | null>;
+  update(
+    id: string,
+    data: Partial<Pick<Machine, "name" | "sectorId" | "customVariables" | "cardSettings">>,
+  ): Promise<Machine>;
 }

@@ -23,6 +23,7 @@ interface AppointmentFormDialogProps {
   machines: Machine[];
   users: User[];
   initial?: Appointment | null;
+  prefill?: { sectorId: string; machineId: string };
 }
 
 const areaOptions = Object.entries(appointmentAreaLabels).map(([value, label]) => ({ value, label }));
@@ -37,6 +38,7 @@ export function AppointmentFormDialog({
   machines,
   users,
   initial,
+  prefill,
 }: AppointmentFormDialogProps) {
   const {
     register,
@@ -77,8 +79,8 @@ export function AppointmentFormDialog({
               description: initial.description,
             }
           : {
-              sectorId: "",
-              machineId: "",
+              sectorId: prefill?.sectorId ?? "",
+              machineId: prefill?.machineId ?? "",
               area: AppointmentArea.OPERACIONAL,
               affectedSegment: "",
               date: format(new Date(), "yyyy-MM-dd"),
@@ -89,7 +91,7 @@ export function AppointmentFormDialog({
             },
       );
     }
-  }, [open, initial, reset]);
+  }, [open, initial, prefill, reset]);
 
   const sectorId = watch("sectorId");
   const machineOptions = useMemo(

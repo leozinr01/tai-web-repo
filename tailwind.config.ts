@@ -7,16 +7,16 @@ const config: Config = {
     extend: {
       colors: {
         navy: {
-          950: "#0a0e1a",
-          900: "#0d1220",
-          850: "#101627",
-          800: "#141b2e",
-          700: "#1b2438",
+          950: "#010b1a",
+          900: "#010b1a",
+          850: "#0c1524",
+          800: "#0f1827",
+          700: "#1a2436",
           600: "#243050",
         },
         panel: {
-          DEFAULT: "#141b2e",
-          border: "#232c44",
+          DEFAULT: "rgba(255,255,255,0.05)",
+          border: "rgba(255,255,255,0.1)",
         },
         brand: {
           DEFAULT: "#3b82f6",
@@ -24,29 +24,26 @@ const config: Config = {
           light: "#60a5fa",
         },
         success: {
-          DEFAULT: "#22c55e",
-          light: "#4ade80",
+          DEFAULT: "#10b981",
+          light: "#34d399",
         },
         warning: {
-          DEFAULT: "#f59e0b",
-          light: "#fbbf24",
+          DEFAULT: "#fb923c",
+          light: "#fdba74",
         },
         danger: {
-          DEFAULT: "#ef4444",
-          light: "#f87171",
+          DEFAULT: "#fb7185",
+          light: "#fda4af",
         },
-        muted: "#8b95ab",
+        muted: "#94a3b8",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        display: ["Rajdhani", "Inter", "system-ui", "sans-serif"],
+        sans: ["Manrope", "system-ui", "sans-serif"],
+        display: ["Space Grotesk", "Manrope", "system-ui", "sans-serif"],
       },
       boxShadow: {
         soft: "0 4px 24px -8px rgba(0,0,0,0.4)",
         card: "0 1px 2px rgba(0,0,0,0.3), 0 8px 20px -12px rgba(0,0,0,0.5)",
-      },
-      borderRadius: {
-        xl: "0.875rem",
       },
     },
   },

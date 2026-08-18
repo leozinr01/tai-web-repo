@@ -8,7 +8,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
         <AlertCircle className="h-6 w-6" />
       </div>
       <div>
-        <p className="font-display text-base font-bold uppercase tracking-wide text-slate-200">
+        <p className="font-display text-base font-bold text-white">
           Nao foi possivel carregar os dados
         </p>
         <p className="mt-1 max-w-sm text-sm text-muted">{message}</p>

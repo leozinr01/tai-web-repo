@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Switch } from "@/components/ui/switch";
 import { IndicatorCard } from "@/features/dashboard/components/indicator-card";
 import { MachineCard } from "@/features/dashboard/components/machine-card";
 import { useAuth } from "@/features/auth/auth-context";
@@ -56,7 +57,7 @@ export function DashboardPage() {
     <div className="space-y-6">
       <div>
         <Breadcrumb current="Dashboard" />
-        <h1 className="font-display mt-1 text-3xl font-bold uppercase tracking-wide text-slate-100">
+        <h1 className="font-display mt-1 text-2xl font-bold text-white sm:text-3xl">
           Dashboard
         </h1>
       </div>
@@ -66,28 +67,28 @@ export function DashboardPage() {
           label="Indicador OEE"
           value={indicatorsQuery.data?.oee}
           history={indicatorsQuery.data?.oeeHistory}
-          color="#3b82f6"
+          color="#21c1b3"
           isLoading={indicatorsQuery.isLoading}
         />
         <IndicatorCard
           label="Disponibilidade"
           value={indicatorsQuery.data?.availability}
           history={indicatorsQuery.data?.availabilityHistory}
-          color="#60a5fa"
+          color="#3b4fe6"
           isLoading={indicatorsQuery.isLoading}
         />
         <IndicatorCard
           label="Produtividade"
           value={indicatorsQuery.data?.productivity}
           history={indicatorsQuery.data?.productivityHistory}
-          color="#22c55e"
+          color="#1bb58f"
           isLoading={indicatorsQuery.isLoading}
         />
         <IndicatorCard
           label="Qualidade"
           value={indicatorsQuery.data?.quality}
           history={indicatorsQuery.data?.qualityHistory}
-          color="#93c5fd"
+          color="#2f6de2"
           isLoading={indicatorsQuery.isLoading}
         />
       </div>
@@ -128,31 +129,19 @@ export function DashboardPage() {
               placeholder="Todos os Status"
             />
           </div>
-          <div className="flex items-end gap-2">
-            <button
-              type="button"
-              onClick={() => setHighVibration((v) => !v)}
-              className={`flex h-10 w-full items-center justify-center gap-2 rounded-lg border px-3 text-xs font-semibold uppercase tracking-wide transition-colors ${
-                highVibration
-                  ? "border-warning bg-warning/15 text-warning-light"
-                  : "border-panel-border bg-navy-800 text-muted hover:text-slate-200"
-              }`}
-            >
-              <Gauge className="h-4 w-4" /> Vibracao alta
-            </button>
+          <div>
+            <label className="label-caps mb-1.5 block">Vibracao alta</label>
+            <div className="flex h-10 items-center gap-2">
+              <Switch checked={highVibration} onCheckedChange={setHighVibration} aria-label="Vibracao alta" />
+              <Gauge className="h-4 w-4 text-muted" />
+            </div>
           </div>
-          <div className="flex items-end gap-2">
-            <button
-              type="button"
-              onClick={() => setHighTemperature((v) => !v)}
-              className={`flex h-10 w-full items-center justify-center gap-2 rounded-lg border px-3 text-xs font-semibold uppercase tracking-wide transition-colors ${
-                highTemperature
-                  ? "border-danger bg-danger/15 text-danger-light"
-                  : "border-panel-border bg-navy-800 text-muted hover:text-slate-200"
-              }`}
-            >
-              <Thermometer className="h-4 w-4" /> Temp. alta
-            </button>
+          <div>
+            <label className="label-caps mb-1.5 block">Temp. alta</label>
+            <div className="flex h-10 items-center gap-2">
+              <Switch checked={highTemperature} onCheckedChange={setHighTemperature} aria-label="Temp. alta" />
+              <Thermometer className="h-4 w-4 text-muted" />
+            </div>
           </div>
         </div>
       </Card>
@@ -185,7 +174,12 @@ export function DashboardPage() {
       {machinesQuery.isSuccess && machinesQuery.data.length > 0 && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {machinesQuery.data.map((machine) => (
-            <MachineCard key={machine.id} machine={machine} sectorName={sectorNameById.get(machine.sectorId)} />
+            <MachineCard
+              key={machine.id}
+              machine={machine}
+              sectorName={sectorNameById.get(machine.sectorId)}
+              sectors={sectorsQuery.data ?? []}
+            />
           ))}
         </div>
       )}
