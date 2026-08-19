@@ -1,6 +1,8 @@
-import { Pencil, Settings2, Sliders, AlertTriangle, PlayCircle, PauseCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Pencil, Settings, Settings2, AlertTriangle, PlayCircle, PauseCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { machineStatusLabels } from "@/lib/labels";
@@ -10,7 +12,7 @@ import { useUpdateMachine } from "@/features/dashboard/queries";
 import { MachineDrilldownDialog } from "@/features/dashboard/components/machine-drilldown-dialog";
 import { MachineCardSettingsDialog } from "@/features/dashboard/components/machine-card-settings-dialog";
 import { MachineEditDialog } from "@/features/dashboard/components/machine-edit-dialog";
-import type { Machine } from "@/domain/entities/machine";
+import type { Machine, MachineVariableKey } from "@/domain/entities/machine";
 import type { Sector } from "@/domain/entities/sector";
 
 const statusTone: Record<MachineStatus, "success" | "warning" | "danger"> = {
@@ -25,6 +27,42 @@ const statusIcon: Record<MachineStatus, typeof PlayCircle> = {
   [MachineStatus.EMERGENCIA]: AlertTriangle,
 };
 
+const OEE_SIZE = 64;
+const OEE_STROKE = 4;
+const OEE_RADIUS = (OEE_SIZE - OEE_STROKE) / 2;
+const OEE_CIRCUMFERENCE = 2 * Math.PI * OEE_RADIUS;
+
+const MAX_SPEED = 100;
+const MAX_PRODUCTION = 5000;
+
+function bottomBarPercent(machine: Machine, key: MachineVariableKey): number {
+  if (key === "speed") return Math.max(0, Math.min((machine.variables.speed / MAX_SPEED) * 100, 100));
+  if (key === "production") return Math.max(0, Math.min((machine.variables.productionAmount / MAX_PRODUCTION) * 100, 100));
+  return 100;
+}
+
+function useAnimatedPercent(target: number, duration = 1000) {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    setValue(0);
+    let raf = 0;
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setValue(target * eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+
+  return value;
+}
+
 export function MachineCard({
   machine,
   sectorName,
@@ -38,6 +76,8 @@ export function MachineCard({
   const settingsDialog = useDisclosure();
   const editDialog = useDisclosure();
   const updateMutation = useUpdateMachine();
+  const animatedOee = useAnimatedPercent(machine.oeePercent);
+  const [complementaresOpen, setComplementaresOpen] = useState(false);
 
   const top = machine.cardSettings.topVariableKeys
     .map((key) => resolveVariableDisplay(machine, key))
@@ -68,7 +108,7 @@ export function MachineCard({
 
   return (
     <>
-      <Card className="p-4">
+      <Card className="cursor-pointer p-4 transition-all duration-300 hover:scale-[1.02] hover:border-white/20 hover:bg-white/10 active:scale-[0.98]">
         <div className="flex items-start justify-between gap-2">
           <button
             type="button"
@@ -107,10 +147,33 @@ export function MachineCard({
             <button
               type="button"
               onClick={drilldown.open}
-              className="flex flex-col items-center justify-center rounded-lg border border-panel-border bg-navy-800 py-4 hover:border-brand"
+              className="flex flex-col items-center justify-center rounded-lg border border-panel-border bg-white/5 py-4 hover:border-brand"
             >
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-brand">
-                <span className="text-sm font-bold text-slate-100">{machine.oeePercent}%</span>
+              <div className="relative flex h-16 w-16 items-center justify-center">
+                <svg viewBox={`0 0 ${OEE_SIZE} ${OEE_SIZE}`} className="absolute inset-0 h-16 w-16 -rotate-90">
+                  <circle
+                    cx={OEE_SIZE / 2}
+                    cy={OEE_SIZE / 2}
+                    r={OEE_RADIUS}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={OEE_STROKE}
+                    className="text-panel-border"
+                  />
+                  <circle
+                    cx={OEE_SIZE / 2}
+                    cy={OEE_SIZE / 2}
+                    r={OEE_RADIUS}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={OEE_STROKE}
+                    strokeLinecap="round"
+                    className="text-brand"
+                    strokeDasharray={OEE_CIRCUMFERENCE}
+                    strokeDashoffset={OEE_CIRCUMFERENCE * (1 - animatedOee / 100)}
+                  />
+                </svg>
+                <span className="text-sm font-bold text-slate-100">{Math.round(animatedOee)}%</span>
               </div>
               <p className="label-caps mt-2">OEE</p>
             </button>
@@ -118,7 +181,7 @@ export function MachineCard({
             <div />
           )}
 
-          <div className="space-y-2 rounded-lg border border-panel-border bg-navy-800 p-3">
+          <div className="space-y-2">
             <div className="mb-1 flex items-center justify-between">
               <p className="label-caps">Variaveis</p>
               <button
@@ -127,7 +190,7 @@ export function MachineCard({
                 className="text-muted hover:text-slate-200"
                 aria-label={`Configurar variaveis de ${machine.name}`}
               >
-                <Sliders className="h-3.5 w-3.5" />
+                <Settings className="h-3.5 w-3.5" />
               </button>
             </div>
             {top.map((v) => (
@@ -136,26 +199,50 @@ export function MachineCard({
                 <span className="font-semibold text-slate-200">{v.value}</span>
               </div>
             ))}
+
+            <button
+              type="button"
+              onClick={() => setComplementaresOpen((prev) => !prev)}
+              className="inline-flex items-center gap-1 rounded-full border border-brand/30 bg-brand/5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-light hover:bg-brand/10"
+            >
+              Complementares ({machine.customVariables.length})
+            </button>
+
+            {complementaresOpen && (
+              <div className="rounded-lg border border-panel-border bg-white/5 p-3">
+                {machine.customVariables.length === 0 ? (
+                  <p className="text-xs text-muted">Sem variaveis complementares.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {machine.customVariables.map((v) => (
+                      <div key={v.id} className="flex items-center justify-between text-xs">
+                        <span className="text-muted">{v.label}</span>
+                        <span className="font-semibold text-slate-200">{v.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
-
-        {machine.customVariables.length > 0 && (
-          <button
-            type="button"
-            onClick={editDialog.open}
-            className="mt-3 text-xs font-semibold uppercase tracking-wide text-brand-light hover:underline"
-          >
-            Complementares ({machine.customVariables.length})
-          </button>
-        )}
 
         {bottom.length > 0 && (
           <div className="mt-3 grid grid-cols-2 gap-3">
             {bottom.map(({ display, visible }) =>
               visible ? (
-                <div key={display.key} className="rounded-lg border border-panel-border bg-navy-800 p-3">
+                <div
+                  key={display.key}
+                  className="relative overflow-hidden rounded-lg border border-panel-border bg-white/5 p-3"
+                >
                   <p className="label-caps">{display.label}</p>
                   <p className="mt-1 text-sm font-bold text-slate-100">{display.value}</p>
+                  <div className="absolute inset-x-0 bottom-0 h-1 bg-white/10">
+                    <div
+                      className={cn(display.key === "production" ? "bg-success" : "bg-brand", "h-1")}
+                      style={{ width: `${bottomBarPercent(machine, display.key)}%` }}
+                    />
+                  </div>
                 </div>
               ) : (
                 <div key={display.key} />

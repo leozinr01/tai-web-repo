@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Filter, Gauge, Thermometer, LayoutGrid } from "lucide-react";
+import { Filter, Gauge, Thermometer, LayoutGrid, Cog } from "lucide-react";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,14 +21,17 @@ export function DashboardPage() {
   const companyId = user?.companyId ?? "";
 
   const [sectorId, setSectorId] = useState<string>("");
+  const [machineId, setMachineId] = useState<string>("");
   const [status, setStatus] = useState<string>("");
   const [highVibration, setHighVibration] = useState(false);
   const [highTemperature, setHighTemperature] = useState(false);
 
   const indicatorsQuery = useDashboardIndicators(companyId);
   const sectorsQuery = useSectors(companyId);
+  const allMachinesQuery = useMachines(companyId, {});
   const machinesQuery = useMachines(companyId, {
     sectorId: sectorId || undefined,
+    machineId: machineId || undefined,
     status: (status as MachineStatus) || undefined,
     highVibration,
     highTemperature,
@@ -38,6 +41,10 @@ export function DashboardPage() {
     () => (sectorsQuery.data ?? []).map((s) => ({ value: s.id, label: s.name })),
     [sectorsQuery.data],
   );
+  const machineOptions = useMemo(
+    () => (allMachinesQuery.data ?? []).map((m) => ({ value: m.id, label: m.name })),
+    [allMachinesQuery.data],
+  );
   const sectorNameById = useMemo(() => {
     const map = new Map<string, string>();
     (sectorsQuery.data ?? []).forEach((s) => map.set(s.id, s.name));
@@ -46,12 +53,13 @@ export function DashboardPage() {
 
   const clearFilters = () => {
     setSectorId("");
+    setMachineId("");
     setStatus("");
     setHighVibration(false);
     setHighTemperature(false);
   };
 
-  const hasFilters = !!sectorId || !!status || highVibration || highTemperature;
+  const hasFilters = !!sectorId || !!machineId || !!status || highVibration || highTemperature;
 
   return (
     <div className="space-y-6">
@@ -118,6 +126,16 @@ export function DashboardPage() {
               onChange={setSectorId}
               placeholder="Todos os Setores"
               icon={<LayoutGrid className="h-4 w-4" />}
+            />
+          </div>
+          <div>
+            <label className="label-caps mb-1.5 block">Maquina</label>
+            <SearchableSelect
+              options={[{ value: "", label: "Todas as Maquinas" }, ...machineOptions]}
+              value={machineId}
+              onChange={setMachineId}
+              placeholder="Todas as Maquinas"
+              icon={<Cog className="h-4 w-4" />}
             />
           </div>
           <div>

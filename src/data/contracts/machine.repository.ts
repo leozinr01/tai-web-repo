@@ -2,6 +2,7 @@ import type { Machine } from "@/domain/entities/machine";
 
 export interface MachineFilters {
   sectorId?: string;
+  machineId?: string;
   status?: Machine["status"];
   highVibration?: boolean;
   highTemperature?: boolean;

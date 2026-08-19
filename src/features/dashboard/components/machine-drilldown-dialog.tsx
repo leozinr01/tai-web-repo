@@ -7,16 +7,15 @@ import {
   Activity,
   RefreshCw,
   Settings,
-  PauseCircle,
   Gauge,
-  XCircle,
-  RotateCcw,
+  Layers,
+  Grid3x3,
+  Ellipsis,
+  Hand,
   Search,
+  Calendar,
 } from "lucide-react";
-import { Dialog } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/auth-context";
 import { useSectors, useMachines } from "@/features/dashboard/queries";
@@ -55,14 +54,18 @@ const metricRingColor: Record<MetricKey, string> = {
   quality: "#2f6de2",
 };
 
+const CATEGORY_COLORS = ["#eab308", "#3b82f6", "#a855f7"];
+
 const categoryIcons: Record<string, typeof Activity> = {
   breakdown: Activity,
   setup: RefreshCw,
   idle: Settings,
-  small_stops: PauseCircle,
+  small_stops: Activity,
   reduced_speed: Gauge,
-  scrap: XCircle,
-  rework: RotateCcw,
+  raw_material_defect: Layers,
+  non_conforming_product: Grid3x3,
+  scrap: Ellipsis,
+  rework: Hand,
 };
 
 function formatHours(minutes: number): string {
@@ -219,90 +222,154 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine, onOpenSett
           </RadixDialog.Portal>
         </RadixDialog.Root>
       ) : (
-        <Dialog
-          open={open}
-          onOpenChange={handleClose}
-          title={nav.level === "metric" ? metricLabels[nav.metric] : nav.category.label}
-          description={machine.name}
-          size="sm"
-        >
-          {nav.level === "metric" && (
-            <div className="space-y-3">
-              {machine.lossBreakdown[nav.metric].map((category) => {
-                const Icon = categoryIcons[category.key] ?? Activity;
-                return (
-                  <button
-                    key={category.key}
-                    type="button"
-                    onClick={() => setNav({ level: "category", metric: nav.metric, category })}
-                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-panel-border bg-navy-800 p-4 text-left hover:border-brand"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-navy-700 text-brand-light">
-                        <Icon className="h-5 w-5" />
+        <RadixDialog.Root open={open} onOpenChange={handleClose}>
+          <RadixDialog.Portal>
+            <RadixDialog.Overlay className="fixed inset-0 z-40 bg-navy-950/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in" />
+            <RadixDialog.Content
+              className={cn(
+                "fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[92vw] -translate-x-1/2 -translate-y-1/2 overflow-y-auto outline-none",
+                nav.level === "category" ? "max-w-4xl" : "max-w-lg",
+              )}
+            >
+              <RadixDialog.Title className="sr-only">
+                {nav.level === "metric" ? metricLabels[nav.metric] : nav.category.label}
+              </RadixDialog.Title>
+              <Card className="w-full p-8 shadow-2xl">
+                <div className="flex flex-col items-center gap-6">
+                  <div className="h-1 w-10 rounded-full bg-white/10" />
+
+                  {nav.level === "metric" && (
+                    <>
+                      <div className="flex flex-col items-center gap-2 text-center">
+                        <h2 className="text-2xl font-black uppercase tracking-widest text-white">
+                          {metricLabels[nav.metric]}
+                        </h2>
+                        <p className="text-sm font-bold text-muted">{machine.name}</p>
                       </div>
-                      <div>
-                        <p className="label-caps">{category.label}</p>
-                        <p className="text-sm font-bold text-slate-100">{formatHours(category.minutes)} hs</p>
+
+                      <div className="flex w-full flex-col gap-4">
+                        {machine.lossBreakdown[nav.metric].map((category, index) => {
+                          const Icon = categoryIcons[category.key] ?? Activity;
+                          const color = CATEGORY_COLORS[index % CATEGORY_COLORS.length];
+                          return (
+                            <button
+                              key={category.key}
+                              type="button"
+                              onClick={() => setNav({ level: "category", metric: nav.metric, category })}
+                              className="group flex w-full items-center justify-between rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-xl shadow-black/5 ring-1 ring-white/10 backdrop-blur-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                              <div className="flex items-center gap-6">
+                                <div className="rounded-2xl border border-white/5 bg-white/5 p-4 shadow-sm">
+                                  <Icon className="h-8 w-8" style={{ color }} />
+                                </div>
+                                <div className="flex flex-col items-start">
+                                  <span className="text-sm font-black uppercase tracking-tight text-white/80">
+                                    {category.label}
+                                  </span>
+                                  <div className="mt-1 flex items-center gap-2">
+                                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+                                    <span className="text-2xl font-black text-white">
+                                      {formatHours(category.minutes)} hs
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <ChevronRight className="h-4 w-4 text-white/20 transition-colors group-hover:text-white/40" />
+                            </button>
+                          );
+                        })}
                       </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted" />
-                  </button>
-                );
-              })}
 
-              <Button variant="secondary" className="w-full" onClick={() => setNav({ level: "root" })}>
-                <ChevronLeft className="h-4 w-4" /> Voltar
-              </Button>
-            </div>
-          )}
+                      <button
+                        type="button"
+                        onClick={() => setNav({ level: "root" })}
+                        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-navy-950/60 py-4 text-sm font-black uppercase text-white transition-all hover:bg-navy-950/80"
+                      >
+                        <ChevronLeft className="h-4 w-4" /> Voltar
+                      </button>
+                    </>
+                  )}
 
-          {nav.level === "category" && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="label-caps mb-1.5 block">Data inicio</label>
-                  <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+                  {nav.level === "category" && (
+                    <>
+                      <div className="flex w-full items-end gap-3">
+                        <div className="group relative flex-1">
+                          <label className="absolute -top-2 left-3 z-10 bg-navy-950 px-1 text-[10px] uppercase tracking-wider text-muted">
+                            Data inicio
+                          </label>
+                          <div className="flex items-center gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-bold text-white transition-all group-focus-within:border-brand group-focus-within:ring-1 group-focus-within:ring-brand">
+                            <Calendar className="h-4 w-4 shrink-0 text-muted" />
+                            <input
+                              type="date"
+                              value={dateFrom}
+                              onChange={(e) => setDateFrom(e.target.value)}
+                              className="w-full bg-transparent text-sm font-bold text-white focus:outline-none [color-scheme:dark]"
+                            />
+                          </div>
+                        </div>
+                        <div className="group relative flex-1">
+                          <label className="absolute -top-2 left-3 z-10 bg-navy-950 px-1 text-[10px] uppercase tracking-wider text-muted">
+                            Data fim
+                          </label>
+                          <div className="flex items-center gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-bold text-white transition-all group-focus-within:border-brand group-focus-within:ring-1 group-focus-within:ring-brand">
+                            <Calendar className="h-4 w-4 shrink-0 text-muted" />
+                            <input
+                              type="date"
+                              value={dateTo}
+                              onChange={(e) => setDateTo(e.target.value)}
+                              className="w-full bg-transparent text-sm font-bold text-white focus:outline-none [color-scheme:dark]"
+                            />
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          aria-label="Filtrar"
+                          className="shrink-0 rounded-xl border border-white/10 bg-white/5 p-3 text-muted transition-colors hover:text-white"
+                        >
+                          <Search className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="w-full rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-xl">
+                        <h3 className="text-2xl font-black uppercase tracking-tight text-white/85 sm:text-3xl">
+                          {nav.category.label}
+                        </h3>
+                        <div className="mt-6 flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                              {(() => {
+                                const Icon = categoryIcons[nav.category.key] ?? Activity;
+                                return <Icon className="h-6 w-6 text-white/70" />;
+                              })()}
+                            </div>
+                            <span className="text-2xl font-black text-white sm:text-4xl">
+                              {formatHours(nav.category.minutes)} hs
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={appointmentDialog.open}
+                            className="rounded-xl bg-brand px-6 py-3 text-sm font-black text-white shadow-lg shadow-brand/25 transition-all hover:bg-brand-hover"
+                          >
+                            Apontamento
+                          </button>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setNav({ level: "metric", metric: nav.metric })}
+                        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-navy-950/60 py-4 text-sm font-black uppercase text-white transition-all hover:bg-navy-950/80"
+                      >
+                        <ChevronLeft className="h-4 w-4" /> Voltar
+                      </button>
+                    </>
+                  )}
                 </div>
-                <div>
-                  <label className="label-caps mb-1.5 block">Data fim</label>
-                  <div className="flex gap-2">
-                    <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="flex-1" />
-                    <Button size="icon" variant="secondary" aria-label="Filtrar">
-                      <Search className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-3 rounded-lg border border-panel-border bg-navy-800 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-navy-700 text-brand-light">
-                    {(() => {
-                      const Icon = categoryIcons[nav.category.key] ?? Activity;
-                      return <Icon className="h-5 w-5" />;
-                    })()}
-                  </div>
-                  <div>
-                    <p className="label-caps">{nav.category.label}</p>
-                    <p className="text-sm font-bold text-slate-100">{formatHours(nav.category.minutes)} hs</p>
-                  </div>
-                </div>
-                <Button size="sm" onClick={appointmentDialog.open}>
-                  Apontamento
-                </Button>
-              </div>
-
-              <Button
-                variant="secondary"
-                className="w-full"
-                onClick={() => setNav({ level: "metric", metric: nav.metric })}
-              >
-                <ChevronLeft className="h-4 w-4" /> Voltar
-              </Button>
-            </div>
-          )}
-        </Dialog>
+              </Card>
+            </RadixDialog.Content>
+          </RadixDialog.Portal>
+        </RadixDialog.Root>
       )}
 
       <AppointmentFormDialog

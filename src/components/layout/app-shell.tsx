@@ -21,13 +21,7 @@ export function AppShell() {
   };
 
   return (
-    <div
-      className="flex h-screen w-screen overflow-hidden bg-navy-950"
-      style={{
-        backgroundImage:
-          "radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.15), rgba(0, 0, 0, 0) 45%), radial-gradient(circle at 85% 0%, rgba(45, 212, 191, 0.12), rgba(0, 0, 0, 0) 40%), linear-gradient(rgb(2, 6, 23) 0%, rgb(1, 11, 26) 100%)",
-      }}
-    >
+    <div className="flex h-screen w-screen overflow-hidden bg-navy-950 bg-tai">
       <div className="hidden md:block">
         <Sidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
       </div>

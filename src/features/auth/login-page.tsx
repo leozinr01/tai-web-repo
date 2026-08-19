@@ -48,13 +48,7 @@ export function LoginPage() {
   };
 
   return (
-    <div
-      className="flex min-h-screen items-center justify-center overflow-hidden bg-navy-950 p-6"
-      style={{
-        backgroundImage:
-          "radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.15), rgba(0, 0, 0, 0) 45%), radial-gradient(circle at 85% 0%, rgba(45, 212, 191, 0.12), rgba(0, 0, 0, 0) 40%), linear-gradient(rgb(2, 6, 23) 0%, rgb(1, 11, 26) 100%)",
-      }}
-    >
+    <div className="flex min-h-screen items-center justify-center overflow-hidden bg-navy-950 bg-tai p-6">
       <div className="relative z-10 w-full max-w-md">
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 !p-8 shadow-2xl shadow-black/40 backdrop-blur-xl">
           <div className="mb-4 flex flex-col items-center text-center">

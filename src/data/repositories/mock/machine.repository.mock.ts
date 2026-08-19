@@ -11,6 +11,7 @@ export class MockMachineRepository implements MachineRepository {
     return simulateNetwork(() => {
       let items = mockDb.machines.getAll().filter((m) => m.companyId === companyId);
       if (filters?.sectorId) items = items.filter((m) => m.sectorId === filters.sectorId);
+      if (filters?.machineId) items = items.filter((m) => m.id === filters.machineId);
       if (filters?.status) items = items.filter((m) => m.status === filters.status);
       if (filters?.highVibration) {
         items = items.filter((m) => m.variables.vibrationMm >= HIGH_VIBRATION_THRESHOLD);

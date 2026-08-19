@@ -32,6 +32,9 @@
 }
 
 @layer components {
+  .bg-tai {
+    background: linear-gradient(135deg, #071a31 0%, #08243b 100%);
+  }
   .label-caps {
     @apply text-[11px] font-semibold uppercase tracking-wider text-muted;
   }
