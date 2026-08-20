@@ -63,7 +63,7 @@ export function SearchableSelect({
           type="button"
           disabled={disabled}
           className={cn(
-            "flex h-10 w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 text-left text-sm",
+            "flex h-10 w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 text-left text-xs font-normal",
             "focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand transition-colors disabled:opacity-50",
             error && "border-danger",
             className,

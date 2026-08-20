@@ -1,7 +1,8 @@
 import { useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
+import { z } from "zod";
+import { format, addMinutes, parse } from "date-fns";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input, FieldError, FieldLabel } from "@/components/ui/input";
@@ -13,6 +14,26 @@ import type { Sector } from "@/domain/entities/sector";
 import type { Machine } from "@/domain/entities/machine";
 import type { User } from "@/domain/entities/user";
 import type { Appointment } from "@/domain/entities/appointment";
+
+const formSchema = appointmentSchema.omit({ durationMinutes: true }).extend({
+  startTime: z.string().min(1, "Informe o horário de início."),
+  endTime: z.string().min(1, "Informe o horário de fim."),
+});
+type FormValues = z.infer<typeof formSchema>;
+
+function timeToMinutes(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function durationBetween(startTime: string, endTime: string): number {
+  const diff = timeToMinutes(endTime) - timeToMinutes(startTime);
+  return diff > 0 ? diff : diff + 24 * 60;
+}
+
+function addMinutesToTime(time: string, minutes: number): string {
+  return format(addMinutes(parse(time, "HH:mm", new Date()), minutes), "HH:mm");
+}
 
 interface AppointmentFormDialogProps {
   open: boolean;
@@ -28,6 +49,10 @@ interface AppointmentFormDialogProps {
 
 const areaOptions = Object.entries(appointmentAreaLabels).map(([value, label]) => ({ value, label }));
 const segmentOptions = affectedSegmentOptions.map((s) => ({ value: s, label: s }));
+
+const fieldLabelCls = "text-[10px] tracking-widest pl-1";
+const selectFieldCls = "h-auto rounded-xl px-4 py-3 text-sm font-bold";
+const inputFieldCls = "h-auto rounded-xl px-4 py-3 text-sm";
 
 export function AppointmentFormDialog({
   open,
@@ -48,8 +73,8 @@ export function AppointmentFormDialog({
     reset,
     setValue,
     formState: { errors },
-  } = useForm<AppointmentFormValues>({
-    resolver: zodResolver(appointmentSchema),
+  } = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       sectorId: "",
       machineId: "",
@@ -57,7 +82,8 @@ export function AppointmentFormDialog({
       affectedSegment: "",
       date: format(new Date(), "yyyy-MM-dd"),
       time: format(new Date(), "HH:mm"),
-      durationMinutes: 15,
+      startTime: format(new Date(), "HH:mm"),
+      endTime: addMinutesToTime(format(new Date(), "HH:mm"), 15),
       authorId: "",
       description: "",
     },
@@ -74,7 +100,8 @@ export function AppointmentFormDialog({
               affectedSegment: initial.affectedSegment,
               date: initial.date,
               time: initial.time,
-              durationMinutes: initial.durationMinutes,
+              startTime: initial.time,
+              endTime: addMinutesToTime(initial.time, initial.durationMinutes),
               authorId: initial.authorId,
               description: initial.description,
             }
@@ -85,13 +112,23 @@ export function AppointmentFormDialog({
               affectedSegment: "",
               date: format(new Date(), "yyyy-MM-dd"),
               time: format(new Date(), "HH:mm"),
-              durationMinutes: 15,
+              startTime: format(new Date(), "HH:mm"),
+              endTime: addMinutesToTime(format(new Date(), "HH:mm"), 15),
               authorId: "",
               description: "",
             },
       );
     }
   }, [open, initial, prefill, reset]);
+
+  const handleFormSubmit = (values: FormValues) => {
+    const { startTime, endTime, ...rest } = values;
+    const payload: AppointmentFormValues = {
+      ...rest,
+      durationMinutes: durationBetween(startTime, endTime),
+    };
+    return onSubmit(payload);
+  };
 
   const sectorId = watch("sectorId");
   const machineOptions = useMemo(
@@ -109,22 +146,37 @@ export function AppointmentFormDialog({
       open={open}
       onOpenChange={onOpenChange}
       title={initial ? "Editar apontamento" : "Novo apontamento"}
-      description="Preencha os campos para registrar a operacao"
+      description="Preencha os campos para registrar a operação"
       size="sm"
+      titleClassName="uppercase tracking-tight"
+      descriptionClassName="text-xs font-medium"
+      closeButtonClassName="rounded-xl border border-white/5 bg-white/5 p-2.5"
       footer={
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+        <div className="flex gap-4 pt-2">
+          <Button
+            variant="outline"
+            className="flex-1 rounded-2xl border-white/10 bg-white/5 py-5 text-sm font-black uppercase active:scale-95"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
             Cancelar
           </Button>
-          <Button form="appointment-form" type="submit" isLoading={isSubmitting}>
-            Salvar apontamento
+          <Button
+            form="appointment-form"
+            type="submit"
+            isLoading={isSubmitting}
+            className="flex-1 rounded-2xl py-5 text-sm font-black uppercase shadow-xl shadow-brand/20 active:scale-95"
+          >
+            Registrar
           </Button>
         </div>
       }
     >
-      <form id="appointment-form" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+      <form id="appointment-form" onSubmit={handleSubmit(handleFormSubmit)} noValidate className="space-y-4">
         <div>
-          <FieldLabel required>Qual setor?</FieldLabel>
+          <FieldLabel required className={fieldLabelCls}>
+            Qual setor?
+          </FieldLabel>
           <Controller
             control={control}
             name="sectorId"
@@ -138,6 +190,7 @@ export function AppointmentFormDialog({
                 }}
                 placeholder="Selecione..."
                 error={errors.sectorId?.message}
+                className={selectFieldCls}
               />
             )}
           />
@@ -145,7 +198,9 @@ export function AppointmentFormDialog({
         </div>
 
         <div>
-          <FieldLabel required>Qual maquina?</FieldLabel>
+          <FieldLabel required className={fieldLabelCls}>
+            Qual máquina?
+          </FieldLabel>
           <Controller
             control={control}
             name="machineId"
@@ -157,6 +212,7 @@ export function AppointmentFormDialog({
                 placeholder="Selecione..."
                 disabled={!sectorId}
                 error={errors.machineId?.message}
+                className={selectFieldCls}
               />
             )}
           />
@@ -165,7 +221,9 @@ export function AppointmentFormDialog({
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <FieldLabel required>Area do apontamento</FieldLabel>
+            <FieldLabel required className={fieldLabelCls}>
+              Área do apontamento
+            </FieldLabel>
             <Controller
               control={control}
               name="area"
@@ -176,13 +234,16 @@ export function AppointmentFormDialog({
                   onChange={field.onChange}
                   placeholder="Selecione..."
                   error={errors.area?.message}
+                  className={selectFieldCls}
                 />
               )}
             />
             <FieldError message={errors.area?.message} />
           </div>
           <div>
-            <FieldLabel required>Segmento afetado</FieldLabel>
+            <FieldLabel required className={fieldLabelCls}>
+              Seguimento afetado
+            </FieldLabel>
             <Controller
               control={control}
               name="affectedSegment"
@@ -193,6 +254,7 @@ export function AppointmentFormDialog({
                   onChange={field.onChange}
                   placeholder="Selecione..."
                   error={errors.affectedSegment?.message}
+                  className={selectFieldCls}
                 />
               )}
             />
@@ -200,31 +262,27 @@ export function AppointmentFormDialog({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <FieldLabel required>Data de lancamento</FieldLabel>
-            <Input type="date" error={errors.date?.message} {...register("date")} />
+            <FieldLabel required className={fieldLabelCls}>
+              Data de lançamento
+            </FieldLabel>
+            <Input type="date" error={errors.date?.message} className={inputFieldCls} {...register("date")} />
             <FieldError message={errors.date?.message} />
           </div>
           <div>
-            <FieldLabel required>Hora do lancamento</FieldLabel>
-            <Input type="time" error={errors.time?.message} {...register("time")} />
+            <FieldLabel required className={fieldLabelCls}>
+              Hora do lançamento
+            </FieldLabel>
+            <Input type="time" error={errors.time?.message} className={inputFieldCls} {...register("time")} />
             <FieldError message={errors.time?.message} />
-          </div>
-          <div>
-            <FieldLabel required>Duracao (min)</FieldLabel>
-            <Input
-              type="number"
-              min={1}
-              error={errors.durationMinutes?.message}
-              {...register("durationMinutes")}
-            />
-            <FieldError message={errors.durationMinutes?.message} />
           </div>
         </div>
 
         <div>
-          <FieldLabel required>Qual seu nome?</FieldLabel>
+          <FieldLabel required className={fieldLabelCls}>
+            Qual seu nome?
+          </FieldLabel>
           <Controller
             control={control}
             name="authorId"
@@ -235,6 +293,7 @@ export function AppointmentFormDialog({
                 onChange={field.onChange}
                 placeholder="Selecione..."
                 error={errors.authorId?.message}
+                className={selectFieldCls}
               />
             )}
           />
@@ -242,14 +301,38 @@ export function AppointmentFormDialog({
         </div>
 
         <div>
-          <FieldLabel required>Apontamento</FieldLabel>
+          <FieldLabel required className={fieldLabelCls}>
+            Apontamento
+          </FieldLabel>
           <textarea
             rows={4}
-            placeholder="Descreva aqui os detalhes tecnicos..."
-            className="w-full rounded-lg border border-panel-border bg-navy-800 px-3 py-2 text-sm text-slate-100 placeholder:text-muted focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+            placeholder="Descreva aqui os detalhes técnicos..."
+            className="h-24 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-muted focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
             {...register("description")}
           />
           <FieldError message={errors.description?.message} />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <FieldLabel required className={fieldLabelCls}>
+              Início
+            </FieldLabel>
+            <Input
+              type="time"
+              error={errors.startTime?.message}
+              className={inputFieldCls}
+              {...register("startTime")}
+            />
+            <FieldError message={errors.startTime?.message} />
+          </div>
+          <div>
+            <FieldLabel required className={fieldLabelCls}>
+              Fim
+            </FieldLabel>
+            <Input type="time" error={errors.endTime?.message} className={inputFieldCls} {...register("endTime")} />
+            <FieldError message={errors.endTime?.message} />
+          </div>
         </div>
       </form>
     </Dialog>

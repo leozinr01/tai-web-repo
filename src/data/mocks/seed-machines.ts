@@ -27,10 +27,10 @@ function m(
       productivity: [
         { key: "small_stops", label: "Pequenas Falhas", minutes: 0 },
         { key: "reduced_speed", label: "Queda de Velocidade", minutes: 0 },
-        { key: "raw_material_defect", label: "Defeito Materia Prima", minutes: 0 },
+        { key: "raw_material_defect", label: "Defeito Matéria Prima", minutes: 0 },
       ],
       quality: [
-        { key: "non_conforming_product", label: "Produto Nao Conforme", minutes: 0 },
+        { key: "non_conforming_product", label: "Produto Não Conforme", minutes: 0 },
         { key: "scrap", label: "Refugo", minutes: 0 },
         { key: "rework", label: "Retrabalho", minutes: 0 },
       ],

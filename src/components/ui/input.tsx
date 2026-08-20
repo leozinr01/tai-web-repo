@@ -46,13 +46,15 @@ export function FieldLabel({
   children,
   htmlFor,
   required,
+  className,
 }: {
   children: React.ReactNode;
   htmlFor?: string;
   required?: boolean;
+  className?: string;
 }) {
   return (
-    <label htmlFor={htmlFor} className="label-caps mb-1.5 block">
+    <label htmlFor={htmlFor} className={cn("label-caps mb-1.5 block", className)}>
       {children}
       {required && <span className="text-danger"> *</span>}
     </label>

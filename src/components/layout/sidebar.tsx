@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   ClipboardList,
-  Wrench,
+  PenTool,
   BarChart3,
   Settings,
   Building2,
@@ -17,9 +17,9 @@ import { userRoleLabels } from "@/lib/labels";
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/apontamentos", label: "Apontamentos", icon: ClipboardList },
-  { to: "/ordens-de-servico", label: "Ordem de Servico", icon: Wrench },
-  { to: "/relatorios", label: "Relatorios", icon: BarChart3 },
-  { to: "/configuracoes", label: "Configuracoes", icon: Settings },
+  { to: "/ordens-de-servico", label: "Ordem de Serviço", icon: PenTool },
+  { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
+  { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 interface SidebarProps {
@@ -34,7 +34,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
   return (
     <aside
       className={cn(
-        "relative flex h-full flex-col border-r border-white/10 bg-navy-950/95 backdrop-blur-xl transition-[width] duration-200",
+        "relative flex h-full flex-col border-r border-white/10 bg-navy-950/95 backdrop-blur-xl transition-[width] duration-200 will-change-transform",
         collapsed ? "w-[76px]" : "w-64",
       )}
     >
@@ -46,13 +46,15 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
         <ChevronLeft className={cn("h-3.5 w-3.5 transition-transform", collapsed && "rotate-180")} />
       </button>
 
-      <div className="flex flex-col gap-1 px-5 py-6">
+      <div className="flex flex-col gap-3 px-5 py-6">
         <img src="/logo-tai-project.png" alt="Tai Project" className={cn("h-auto object-contain", collapsed ? "w-9" : "w-40")} />
-        {!collapsed && <p className="truncate text-sm font-semibold text-slate-100">Tai Project</p>}
+        {!collapsed && (
+          <p className="font-display truncate text-lg font-bold tracking-tight text-white">Tai Project</p>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3">
-        {!collapsed && <p className="label-caps px-2 pb-2">Menu principal</p>}
+        {!collapsed && <p className="label-caps px-4 pb-2">Menu principal</p>}
         <ul className="space-y-1">
           {navItems.map((item) => (
             <li key={item.to}>

@@ -7,7 +7,7 @@ export function MobileDrawer({ open, onOpenChange }: { open: boolean; onOpenChan
       <RadixDialog.Portal>
         <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/60" />
         <RadixDialog.Content className="fixed inset-y-0 left-0 z-50 h-full w-72 outline-none">
-          <RadixDialog.Title className="sr-only">Menu de navegacao</RadixDialog.Title>
+          <RadixDialog.Title className="sr-only">Menu de navegação</RadixDialog.Title>
           <Sidebar collapsed={false} onToggleCollapsed={() => {}} onNavigate={() => onOpenChange(false)} />
         </RadixDialog.Content>
       </RadixDialog.Portal>

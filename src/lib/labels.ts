@@ -3,13 +3,13 @@ import { AppointmentArea, MachineStatus, UserRole, WorkOrderStatus } from "@/dom
 export const machineStatusLabels: Record<MachineStatus, string> = {
   [MachineStatus.PRODUZINDO]: "Produzindo",
   [MachineStatus.PARADO]: "Parado",
-  [MachineStatus.EMERGENCIA]: "Emergencia",
+  [MachineStatus.EMERGENCIA]: "Emergência",
 };
 
 export const workOrderStatusLabels: Record<WorkOrderStatus, string> = {
-  [WorkOrderStatus.LANCADA]: "Lancada",
+  [WorkOrderStatus.LANCADA]: "Lançada",
   [WorkOrderStatus.EM_ANDAMENTO]: "Em andamento",
-  [WorkOrderStatus.CONCLUIDA]: "Concluida",
+  [WorkOrderStatus.CONCLUIDA]: "Concluída",
   [WorkOrderStatus.ATRASADA]: "Atrasada",
   [WorkOrderStatus.CANCELADA]: "Cancelada",
 };
@@ -22,17 +22,17 @@ export const userRoleLabels: Record<UserRole, string> = {
 };
 
 export const appointmentAreaLabels: Record<AppointmentArea, string> = {
-  [AppointmentArea.MECANICA]: "Mecanica",
-  [AppointmentArea.ELETRICA]: "Eletrica",
+  [AppointmentArea.MECANICA]: "Mecânica",
+  [AppointmentArea.ELETRICA]: "Elétrica",
   [AppointmentArea.OPERACIONAL]: "Operacional",
   [AppointmentArea.QUALIDADE]: "Qualidade",
   [AppointmentArea.OUTRO]: "Outro",
 };
 
 export const affectedSegmentOptions = [
-  "Producao",
-  "Manutencao",
+  "Produção",
+  "Manutenção",
   "Qualidade",
-  "Logistica",
-  "Seguranca",
+  "Logística",
+  "Segurança",
 ];

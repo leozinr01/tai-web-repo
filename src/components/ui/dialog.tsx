@@ -11,6 +11,9 @@ interface DialogProps {
   children: ReactNode;
   footer?: ReactNode;
   size?: "sm" | "md" | "lg";
+  titleClassName?: string;
+  descriptionClassName?: string;
+  closeButtonClassName?: string;
 }
 
 const sizeClasses = {
@@ -19,7 +22,18 @@ const sizeClasses = {
   lg: "max-w-3xl",
 };
 
-export function Dialog({ open, onOpenChange, title, description, children, footer, size = "md" }: DialogProps) {
+export function Dialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  children,
+  footer,
+  size = "md",
+  titleClassName,
+  descriptionClassName,
+  closeButtonClassName,
+}: DialogProps) {
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
@@ -32,14 +46,19 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
         >
           <div className="flex items-center justify-between">
             <div>
-              <RadixDialog.Title className="text-xl font-bold text-white">{title}</RadixDialog.Title>
+              <RadixDialog.Title className={cn("text-xl font-bold text-white", titleClassName)}>
+                {title}
+              </RadixDialog.Title>
               {description && (
-                <RadixDialog.Description className="mt-0.5 text-sm text-muted">
+                <RadixDialog.Description className={cn("mt-0.5 text-sm text-muted", descriptionClassName)}>
                   {description}
                 </RadixDialog.Description>
               )}
             </div>
-            <RadixDialog.Close className="text-muted hover:text-white" aria-label="Fechar">
+            <RadixDialog.Close
+              className={cn("text-muted hover:text-white", closeButtonClassName)}
+              aria-label="Fechar"
+            >
               <X className="h-5 w-5" />
             </RadixDialog.Close>
           </div>

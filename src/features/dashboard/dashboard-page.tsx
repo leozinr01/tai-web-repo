@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Filter, Gauge, Thermometer, LayoutGrid, Cog } from "lucide-react";
+import { Filter, Gauge, Thermometer } from "lucide-react";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -125,7 +125,6 @@ export function DashboardPage() {
               value={sectorId}
               onChange={setSectorId}
               placeholder="Todos os Setores"
-              icon={<LayoutGrid className="h-4 w-4" />}
             />
           </div>
           <div>
@@ -135,7 +134,6 @@ export function DashboardPage() {
               value={machineId}
               onChange={setMachineId}
               placeholder="Todas as Maquinas"
-              icon={<Cog className="h-4 w-4" />}
             />
           </div>
           <div>

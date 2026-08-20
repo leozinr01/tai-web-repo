@@ -147,7 +147,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine, onOpenSett
       appointmentDialog.close();
     } catch (err) {
       toast({
-        title: "Nao foi possivel salvar o apontamento.",
+        title: "Não foi possível salvar o apontamento.",
         description: err instanceof Error ? err.message : undefined,
         variant: "error",
       });
@@ -157,7 +157,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine, onOpenSett
   return (
     <>
       {nav.level === "root" ? (
-        <RadixDialog.Root open={open} onOpenChange={handleClose}>
+        <RadixDialog.Root open={open && !appointmentDialog.isOpen} onOpenChange={handleClose}>
           <RadixDialog.Portal>
             <RadixDialog.Overlay className="fixed inset-0 z-40 bg-navy-950/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in" />
             <RadixDialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[92vw] max-w-4xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto outline-none">
@@ -176,7 +176,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine, onOpenSett
                       <button
                         type="button"
                         onClick={onOpenSettings}
-                        aria-label={`Configurar variaveis de ${machine.name}`}
+                        aria-label={`Configurar variáveis de ${machine.name}`}
                         className="self-center rounded-2xl border border-white/10 bg-navy-950/70 p-3 text-[#21c1b3] transition-colors hover:bg-navy-950/90 sm:self-auto"
                       >
                         <Settings className="h-8 w-8" />
@@ -222,7 +222,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine, onOpenSett
           </RadixDialog.Portal>
         </RadixDialog.Root>
       ) : (
-        <RadixDialog.Root open={open} onOpenChange={handleClose}>
+        <RadixDialog.Root open={open && !appointmentDialog.isOpen} onOpenChange={handleClose}>
           <RadixDialog.Portal>
             <RadixDialog.Overlay className="fixed inset-0 z-40 bg-navy-950/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in" />
             <RadixDialog.Content

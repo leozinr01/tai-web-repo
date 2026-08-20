@@ -11,11 +11,11 @@ const HIGH_TEMPERATURE = 40;
 
 export function builtinVariableOptions(): { value: MachineVariableKey; label: string }[] {
   return [
-    { value: "horimeter", label: "Horimetro" },
-    { value: "vibration", label: "Vibracao" },
+    { value: "horimeter", label: "Horímetro" },
+    { value: "vibration", label: "Vibração" },
     { value: "temperature", label: "Temperatura" },
     { value: "speed", label: "Velocidade Atual" },
-    { value: "production", label: "Producao Atual" },
+    { value: "production", label: "Produção Atual" },
   ];
 }
 
@@ -29,9 +29,9 @@ export function variableOptionsForMachine(machine: Machine): { value: MachineVar
 export function resolveVariableDisplay(machine: Machine, key: MachineVariableKey): VariableDisplay | null {
   switch (key) {
     case "horimeter":
-      return { key, label: "Horimetro", value: `${machine.variables.horimeterHours} hs` };
+      return { key, label: "Horímetro", value: `${machine.variables.horimeterHours} hs` };
     case "vibration":
-      return { key, label: "Vibracao", value: `${machine.variables.vibrationMm.toFixed(2)} mm/s` };
+      return { key, label: "Vibração", value: `${machine.variables.vibrationMm.toFixed(2)} mm/s` };
     case "temperature":
       return { key, label: "Temperatura", value: `${machine.variables.temperatureC.toFixed(2)} C` };
     case "speed":
@@ -39,7 +39,7 @@ export function resolveVariableDisplay(machine: Machine, key: MachineVariableKey
     case "production":
       return {
         key,
-        label: "Producao Atual",
+        label: "Produção Atual",
         value: `${machine.variables.productionAmount} ${machine.variables.productionUnit}`,
       };
     default: {

@@ -1,5 +1,20 @@
 import { useEffect, useState } from "react";
-import { Pencil, Settings, Settings2, AlertTriangle, PlayCircle, PauseCircle } from "lucide-react";
+import {
+  Pencil,
+  Settings,
+  Zap,
+  AlertTriangle,
+  PlayCircle,
+  PauseCircle,
+  Clock,
+  Radio,
+  Thermometer,
+  Gauge,
+  Package,
+  Tag,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -25,6 +40,14 @@ const statusIcon: Record<MachineStatus, typeof PlayCircle> = {
   [MachineStatus.PRODUZINDO]: PlayCircle,
   [MachineStatus.PARADO]: PauseCircle,
   [MachineStatus.EMERGENCIA]: AlertTriangle,
+};
+
+const variableIcon: Partial<Record<MachineVariableKey, LucideIcon>> = {
+  horimeter: Clock,
+  vibration: Radio,
+  temperature: Thermometer,
+  speed: Gauge,
+  production: Package,
 };
 
 const OEE_SIZE = 64;
@@ -78,6 +101,7 @@ export function MachineCard({
   const updateMutation = useUpdateMachine();
   const animatedOee = useAnimatedPercent(machine.oeePercent);
   const [complementaresOpen, setComplementaresOpen] = useState(false);
+  const oeeHistoryData = machine.oeeHistory.map((value) => ({ value }));
 
   const top = machine.cardSettings.topVariableKeys
     .map((key) => resolveVariableDisplay(machine, key))
@@ -117,9 +141,9 @@ export function MachineCard({
             aria-label={`Ver detalhes de ${machine.name}`}
           >
             <p className="truncate text-lg font-bold text-white hover:text-brand-light">{machine.name}</p>
-            <p className="flex items-center gap-1 text-xs text-muted">
-              <Settings2 className="h-3 w-3" />
-              {sectorName ?? "-"}
+            <p className="flex items-center gap-1 text-[11px] text-muted">
+              <Zap className="h-3 w-3 shrink-0 text-brand-light" />
+              <span className="truncate">{sectorName ?? "-"}</span>
             </p>
           </button>
           <div className="flex items-center gap-2">
@@ -178,27 +202,65 @@ export function MachineCard({
               <p className="label-caps mt-2">OEE</p>
             </button>
           ) : (
-            <div />
+            <button
+              type="button"
+              onClick={drilldown.open}
+              className="flex h-full flex-col justify-between rounded-lg border border-panel-border bg-white/5 p-3 text-left hover:border-brand"
+            >
+              <div className="min-w-0">
+                <p className="label-caps truncate">{top[0]?.label ?? "-"}</p>
+                <p className="mt-1 truncate text-lg font-bold text-white">{top[0]?.value ?? "-"}</p>
+              </div>
+              <div className="mt-2 h-12 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={oeeHistoryData}>
+                    <defs>
+                      <linearGradient id={`oee-trend-${machine.id}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8} />
+                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.05} />
+                      </linearGradient>
+                    </defs>
+                    <Tooltip cursor={false} content={() => null} />
+                    <Area
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#60a5fa"
+                      strokeWidth={2}
+                      fill={`url(#oee-trend-${machine.id})`}
+                      isAnimationActive
+                      animationDuration={900}
+                      activeDot={{ r: 4, fill: "#60a5fa", stroke: "#0a1a2f", strokeWidth: 2 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </button>
           )}
 
           <div className="space-y-2">
             <div className="mb-1 flex items-center justify-between">
-              <p className="label-caps">Variaveis</p>
+              <p className="label-caps">Variáveis</p>
               <button
                 type="button"
                 onClick={settingsDialog.open}
                 className="text-muted hover:text-slate-200"
-                aria-label={`Configurar variaveis de ${machine.name}`}
+                aria-label={`Configurar variáveis de ${machine.name}`}
               >
                 <Settings className="h-3.5 w-3.5" />
               </button>
             </div>
-            {top.map((v) => (
-              <div key={v.key} className="flex items-center justify-between text-xs">
-                <span className="text-muted">{v.label}</span>
-                <span className="font-semibold text-slate-200">{v.value}</span>
-              </div>
-            ))}
+            {top.map((v) => {
+              const Icon = variableIcon[v.key] ?? Tag;
+              return (
+                <div key={v.key} className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-1 text-muted">
+                    <Icon className="h-3 w-3 shrink-0 text-brand-light" />
+                    {v.label}
+                  </span>
+                  <span className="font-semibold text-slate-200">{v.value}</span>
+                </div>
+              );
+            })}
 
             <button
               type="button"

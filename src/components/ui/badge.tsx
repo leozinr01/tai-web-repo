@@ -11,6 +11,14 @@ const textClasses: Record<BadgeTone, string> = {
   neutral: "text-slate-300",
 };
 
+const containerClasses: Record<BadgeTone, string> = {
+  success: "border-success/40 bg-success/20 shadow-[0_0_10px_-2px_rgba(16,185,129,0.6)]",
+  warning: "border-warning/40 bg-warning/20 shadow-[0_0_10px_-2px_rgba(251,146,60,0.6)]",
+  danger: "border-danger/40 bg-danger/20 shadow-[0_0_10px_-2px_rgba(251,113,133,0.6)]",
+  brand: "border-brand/40 bg-brand/20 shadow-[0_0_10px_-2px_rgba(59,130,246,0.6)]",
+  neutral: "border-white/5 bg-white/5",
+};
+
 const dotClasses: Record<BadgeTone, string> = {
   success: "bg-success-light",
   warning: "bg-warning-light",
@@ -35,7 +43,8 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-white/5 bg-white/5 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide",
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide",
+        containerClasses[tone],
         textClasses[tone],
         className,
       )}

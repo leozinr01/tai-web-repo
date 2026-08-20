@@ -7,6 +7,7 @@ export function useDashboardIndicators(companyId: string) {
   return useQuery({
     queryKey: ["dashboard-indicators", companyId],
     queryFn: () => repositories.indicators.getDashboardIndicators(companyId),
+    refetchOnMount: "always",
   });
 }
 
@@ -14,6 +15,7 @@ export function useMachines(companyId: string, filters: MachineFilters) {
   return useQuery({
     queryKey: ["machines", companyId, filters],
     queryFn: () => repositories.machines.listByCompany(companyId, filters),
+    refetchOnMount: "always",
   });
 }
 
