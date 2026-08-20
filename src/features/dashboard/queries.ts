@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { repositories } from "@/data/repositories";
 import type { MachineFilters } from "@/data/contracts/machine.repository";
-import type { Machine } from "@/domain/entities/machine";
+import type { Machine, MachineCardSettings } from "@/domain/entities/machine";
 
 export function useDashboardIndicators(companyId: string) {
   return useQuery({
@@ -36,6 +36,15 @@ export function useUpdateMachine() {
       id: string;
       data: Partial<Pick<Machine, "name" | "sectorId" | "customVariables" | "cardSettings">>;
     }) => repositories.machines.update(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["machines"] }),
+  });
+}
+
+export function useUpdateAllMachinesCardSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ companyId, cardSettings }: { companyId: string; cardSettings: MachineCardSettings }) =>
+      repositories.machines.updateCardSettingsForAll(companyId, cardSettings),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["machines"] }),
   });
 }

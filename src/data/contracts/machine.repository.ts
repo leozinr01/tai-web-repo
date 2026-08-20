@@ -1,4 +1,4 @@
-import type { Machine } from "@/domain/entities/machine";
+import type { Machine, MachineCardSettings } from "@/domain/entities/machine";
 
 export interface MachineFilters {
   sectorId?: string;
@@ -15,4 +15,5 @@ export interface MachineRepository {
     id: string,
     data: Partial<Pick<Machine, "name" | "sectorId" | "customVariables" | "cardSettings">>,
   ): Promise<Machine>;
+  updateCardSettingsForAll(companyId: string, cardSettings: MachineCardSettings): Promise<Machine[]>;
 }

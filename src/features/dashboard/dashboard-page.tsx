@@ -9,9 +9,18 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Switch } from "@/components/ui/switch";
 import { IndicatorCard } from "@/features/dashboard/components/indicator-card";
 import { MachineCard } from "@/features/dashboard/components/machine-card";
+import { DefaultCardSettingsDialog } from "@/features/dashboard/components/default-card-settings-dialog";
 import { useAuth } from "@/features/auth/auth-context";
-import { useDashboardIndicators, useMachines, useSectors } from "@/features/dashboard/queries";
+import {
+  useDashboardIndicators,
+  useMachines,
+  useSectors,
+  useUpdateAllMachinesCardSettings,
+} from "@/features/dashboard/queries";
+import { useDisclosure } from "@/hooks/use-disclosure";
+import { toast } from "@/hooks/use-toast";
 import { MachineStatus } from "@/domain/types/enums";
+import type { MachineCardSettings } from "@/domain/entities/machine";
 import { machineStatusLabels } from "@/lib/labels";
 
 const statusOptions = Object.entries(machineStatusLabels).map(([value, label]) => ({ value, label }));
@@ -25,6 +34,8 @@ export function DashboardPage() {
   const [status, setStatus] = useState<string>("");
   const [highVibration, setHighVibration] = useState(false);
   const [highTemperature, setHighTemperature] = useState(false);
+  const defaultSettingsDialog = useDisclosure();
+  const updateAllCardSettingsMutation = useUpdateAllMachinesCardSettings();
 
   const indicatorsQuery = useDashboardIndicators(companyId);
   const sectorsQuery = useSectors(companyId);
@@ -60,6 +71,20 @@ export function DashboardPage() {
   };
 
   const hasFilters = !!sectorId || !!machineId || !!status || highVibration || highTemperature;
+
+  const handleSaveDefaultCardSettings = async (cardSettings: MachineCardSettings) => {
+    try {
+      await updateAllCardSettingsMutation.mutateAsync({ companyId, cardSettings });
+      toast({ title: "Variáveis padrão aplicadas a todos os cards.", variant: "success" });
+      defaultSettingsDialog.close();
+    } catch (err) {
+      toast({
+        title: "Não foi possível atualizar os cards.",
+        description: err instanceof Error ? err.message : undefined,
+        variant: "error",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -107,14 +132,22 @@ export function DashboardPage() {
             <Filter className="h-4 w-4 text-brand-light" />
             Filtros de operacao
           </p>
-          {hasFilters && (
+          <div className="flex items-center gap-3">
             <button
-              onClick={clearFilters}
+              onClick={defaultSettingsDialog.open}
               className="text-xs font-semibold uppercase tracking-wide text-brand-light hover:underline"
             >
-              Limpar todos
+              Cards (todos)
             </button>
-          )}
+            {hasFilters && (
+              <button
+                onClick={clearFilters}
+                className="text-xs font-semibold uppercase tracking-wide text-brand-light hover:underline"
+              >
+                Limpar todos
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -199,6 +232,13 @@ export function DashboardPage() {
           ))}
         </div>
       )}
+
+      <DefaultCardSettingsDialog
+        open={defaultSettingsDialog.isOpen}
+        onOpenChange={defaultSettingsDialog.close}
+        onSubmit={handleSaveDefaultCardSettings}
+        isSubmitting={updateAllCardSettingsMutation.isPending}
+      />
     </div>
   );
 }

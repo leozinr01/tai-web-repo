@@ -1,5 +1,5 @@
 import type { MachineFilters, MachineRepository } from "@/data/contracts/machine.repository";
-import type { Machine } from "@/domain/entities/machine";
+import type { Machine, MachineCardSettings } from "@/domain/entities/machine";
 import { mockDb } from "@/data/repositories/mock/mock-db";
 import { simulateNetwork } from "@/lib/utils";
 
@@ -41,6 +41,15 @@ export class MockMachineRepository implements MachineRepository {
       next[index] = updated;
       mockDb.machines.saveAll(next);
       return updated;
+    });
+  }
+
+  async updateCardSettingsForAll(companyId: string, cardSettings: MachineCardSettings): Promise<Machine[]> {
+    return simulateNetwork(() => {
+      const items = mockDb.machines.getAll();
+      const next = items.map((m) => (m.companyId === companyId ? { ...m, cardSettings } : m));
+      mockDb.machines.saveAll(next);
+      return next.filter((m) => m.companyId === companyId);
     });
   }
 }
