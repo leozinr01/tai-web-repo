@@ -29,6 +29,10 @@
   :focus-visible {
     @apply outline-none ring-2 ring-brand ring-offset-2 ring-offset-navy-950;
   }
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    opacity: 0;
+  }
 }
 
 @layer components {

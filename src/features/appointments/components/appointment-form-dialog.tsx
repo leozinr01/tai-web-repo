@@ -1,12 +1,17 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format, addMinutes, parse } from "date-fns";
+import { Clock, Info, UserPlus } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input, FieldError, FieldLabel } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useCreateUser } from "@/features/settings/queries";
+import { QuickCreateUserDialog } from "@/features/appointments/components/quick-create-user-dialog";
+import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import { appointmentSchema, type AppointmentFormValues } from "@/domain/schemas/appointment.schema";
 import { AppointmentArea } from "@/domain/types/enums";
 import { appointmentAreaLabels, affectedSegmentOptions } from "@/lib/labels";
@@ -40,6 +45,7 @@ interface AppointmentFormDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: AppointmentFormValues) => Promise<void>;
   isSubmitting: boolean;
+  companyId: string;
   sectors: Sector[];
   machines: Machine[];
   users: User[];
@@ -59,12 +65,17 @@ export function AppointmentFormDialog({
   onOpenChange,
   onSubmit,
   isSubmitting,
+  companyId,
   sectors,
   machines,
   users,
   initial,
   prefill,
 }: AppointmentFormDialogProps) {
+  const [extraUsers, setExtraUsers] = useState<User[]>([]);
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const createUserMutation = useCreateUser();
+
   const {
     register,
     handleSubmit,
@@ -139,7 +150,12 @@ export function AppointmentFormDialog({
     [machines, sectorId],
   );
   const sectorOptions = useMemo(() => sectors.map((s) => ({ value: s.id, label: s.name })), [sectors]);
-  const userOptions = useMemo(() => users.map((u) => ({ value: u.id, label: u.name })), [users]);
+  const allUsers = useMemo(() => {
+    const merged = [...users];
+    for (const u of extraUsers) if (!merged.some((m) => m.id === u.id)) merged.push(u);
+    return merged;
+  }, [users, extraUsers]);
+  const userOptions = useMemo(() => allUsers.map((u) => ({ value: u.id, label: u.name })), [allUsers]);
 
   return (
     <Dialog
@@ -221,8 +237,11 @@ export function AppointmentFormDialog({
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <FieldLabel required className={fieldLabelCls}>
+            <FieldLabel required className={cn(fieldLabelCls, "flex items-center gap-1")}>
               Área do apontamento
+              <span title="Classifica a natureza técnica do apontamento.">
+                <Info className="h-3 w-3 text-muted" />
+              </span>
             </FieldLabel>
             <Controller
               control={control}
@@ -241,8 +260,11 @@ export function AppointmentFormDialog({
             <FieldError message={errors.area?.message} />
           </div>
           <div>
-            <FieldLabel required className={fieldLabelCls}>
+            <FieldLabel required className={cn(fieldLabelCls, "flex items-center gap-1")}>
               Seguimento afetado
+              <span title="Área do processo impactada pela ocorrência.">
+                <Info className="h-3 w-3 text-muted" />
+              </span>
             </FieldLabel>
             <Controller
               control={control}
@@ -283,21 +305,34 @@ export function AppointmentFormDialog({
           <FieldLabel required className={fieldLabelCls}>
             Qual seu nome?
           </FieldLabel>
-          <Controller
-            control={control}
-            name="authorId"
-            render={({ field }) => (
-              <SearchableSelect
-                options={userOptions}
-                value={field.value}
-                onChange={field.onChange}
-                placeholder="Selecione..."
-                error={errors.authorId?.message}
-                className={selectFieldCls}
+          <div className="flex items-start gap-2">
+            <div className="flex-1">
+              <Controller
+                control={control}
+                name="authorId"
+                render={({ field }) => (
+                  <SearchableSelect
+                    options={userOptions}
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Selecione..."
+                    error={errors.authorId?.message}
+                    className={selectFieldCls}
+                  />
+                )}
               />
-            )}
-          />
-          <FieldError message={errors.authorId?.message} />
+              <FieldError message={errors.authorId?.message} />
+            </div>
+            <button
+              type="button"
+              onClick={() => setQuickCreateOpen(true)}
+              className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-xl bg-brand text-white transition-colors hover:bg-brand-hover"
+              aria-label="Cadastrar novo usuário"
+              title="Cadastrar novo usuário"
+            >
+              <UserPlus className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         <div>
@@ -316,10 +351,11 @@ export function AppointmentFormDialog({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <FieldLabel required className={fieldLabelCls}>
-              Início
+              Início (HH:MM)
             </FieldLabel>
             <Input
               type="time"
+              rightIcon={<Clock className="h-4 w-4" />}
               error={errors.startTime?.message}
               className={inputFieldCls}
               {...register("startTime")}
@@ -328,13 +364,33 @@ export function AppointmentFormDialog({
           </div>
           <div>
             <FieldLabel required className={fieldLabelCls}>
-              Fim
+              Fim (HH:MM)
             </FieldLabel>
-            <Input type="time" error={errors.endTime?.message} className={inputFieldCls} {...register("endTime")} />
+            <Input
+              type="time"
+              rightIcon={<Clock className="h-4 w-4" />}
+              error={errors.endTime?.message}
+              className={inputFieldCls}
+              {...register("endTime")}
+            />
             <FieldError message={errors.endTime?.message} />
           </div>
         </div>
       </form>
+
+      <QuickCreateUserDialog
+        open={quickCreateOpen}
+        onOpenChange={setQuickCreateOpen}
+        companyId={companyId}
+        isSubmitting={createUserMutation.isPending}
+        onSubmit={(data) => createUserMutation.mutateAsync(data)}
+        onCreated={(user) => {
+          setExtraUsers((prev) => [...prev, user]);
+          setValue("authorId", user.id);
+          setQuickCreateOpen(false);
+          toast({ title: "Usuário cadastrado com sucesso.", variant: "success" });
+        }}
+      />
     </Dialog>
   );
 }

@@ -377,6 +377,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine, onOpenSett
         onOpenChange={appointmentDialog.close}
         onSubmit={handleCreateAppointment}
         isSubmitting={createAppointmentMutation.isPending}
+        companyId={companyId}
         sectors={sectorsQuery.data ?? []}
         machines={machinesQuery.data ?? []}
         users={usersQuery.data ?? []}

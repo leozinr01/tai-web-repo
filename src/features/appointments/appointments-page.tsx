@@ -1,30 +1,28 @@
-import { useMemo, useState } from "react";
-import { Plus, MoreVertical, Clock, Pencil, Eye, Trash2, ClipboardList } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Plus, Clock, MoreVertical, ClipboardList, Filter, Calendar, Factory, Zap, User as UserIcon } from "lucide-react";
 import { format, parseISO } from "date-fns";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Card } from "@/components/ui/card";
-import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { FilterField } from "@/components/ui/filter-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
-import { Pagination } from "@/components/ui/pagination";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { useDisclosure } from "@/hooks/use-disclosure";
-import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/features/auth/auth-context";
 import { useSectors, useMachines } from "@/features/dashboard/queries";
-import { useAppointments, useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from "@/features/appointments/queries";
+import { useAppointments, useCreateAppointment, useUpdateAppointment } from "@/features/appointments/queries";
 import { AppointmentFormDialog } from "@/features/appointments/components/appointment-form-dialog";
+import { AppointmentDetailsDialog } from "@/features/appointments/components/appointment-details-dialog";
+import { AppointmentQuickEditDialog } from "@/features/appointments/components/appointment-quick-edit-dialog";
+import { toast } from "@/hooks/use-toast";
 import type { AppointmentFormValues } from "@/domain/schemas/appointment.schema";
 import type { Appointment } from "@/domain/entities/appointment";
 import { repositories } from "@/data/repositories";
 import { useQuery } from "@tanstack/react-query";
 
-const PAGE_SIZE = 8;
+const ALL_ITEMS_PAGE_SIZE = 100000;
 
 export function AppointmentsPage() {
   const { user } = useAuth();
@@ -32,16 +30,15 @@ export function AppointmentsPage() {
 
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const dateFromRef = useRef<HTMLInputElement>(null);
+  const dateToRef = useRef<HTMLInputElement>(null);
   const [sectorId, setSectorId] = useState("");
   const [machineId, setMachineId] = useState("");
   const [authorId, setAuthorId] = useState("");
-  const [page, setPage] = useState(1);
 
-  const formDialog = useDisclosure();
-  const [editing, setEditing] = useState<Appointment | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
   const [viewing, setViewing] = useState<Appointment | null>(null);
-  const deleteDialog = useDisclosure();
-  const [toDelete, setToDelete] = useState<Appointment | null>(null);
+  const [editing, setEditing] = useState<Appointment | null>(null);
 
   const sectorsQuery = useSectors(companyId);
   const machinesQuery = useMachines(companyId, {});
@@ -56,14 +53,13 @@ export function AppointmentsPage() {
     sectorId: sectorId || undefined,
     machineId: machineId || undefined,
     authorId: authorId || undefined,
-    page,
-    pageSize: PAGE_SIZE,
+    page: 1,
+    pageSize: ALL_ITEMS_PAGE_SIZE,
   };
   const appointmentsQuery = useAppointments(companyId, filters);
 
   const createMutation = useCreateAppointment();
   const updateMutation = useUpdateAppointment();
-  const deleteMutation = useDeleteAppointment();
 
   const sectorOptions = useMemo(
     () => (sectorsQuery.data ?? []).map((s) => ({ value: s.id, label: s.name })),
@@ -94,33 +90,13 @@ export function AppointmentsPage() {
     setSectorId("");
     setMachineId("");
     setAuthorId("");
-    setPage(1);
-  };
-  const hasFilters = !!dateFrom || !!dateTo || !!sectorId || !!machineId || !!authorId;
-
-  const openCreate = () => {
-    setEditing(null);
-    formDialog.open();
-  };
-  const openEdit = (appt: Appointment) => {
-    setEditing(appt);
-    formDialog.open();
-  };
-  const openDelete = (appt: Appointment) => {
-    setToDelete(appt);
-    deleteDialog.open();
   };
 
-  const handleSubmit = async (values: AppointmentFormValues) => {
+  const handleCreate = async (values: AppointmentFormValues) => {
     try {
-      if (editing) {
-        await updateMutation.mutateAsync({ id: editing.id, data: values });
-        toast({ title: "Apontamento atualizado com sucesso.", variant: "success" });
-      } else {
-        await createMutation.mutateAsync(values);
-        toast({ title: "Apontamento criado com sucesso.", variant: "success" });
-      }
-      formDialog.close();
+      await createMutation.mutateAsync(values);
+      toast({ title: "Apontamento criado com sucesso.", variant: "success" });
+      setFormOpen(false);
     } catch (err) {
       toast({
         title: "Nao foi possivel salvar o apontamento.",
@@ -130,15 +106,15 @@ export function AppointmentsPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!toDelete) return;
+  const handleQuickEdit = async (data: { durationMinutes: number; description: string }) => {
+    if (!editing) return;
     try {
-      await deleteMutation.mutateAsync(toDelete.id);
-      toast({ title: "Apontamento excluido.", variant: "success" });
-      deleteDialog.close();
+      await updateMutation.mutateAsync({ id: editing.id, data });
+      toast({ title: "Apontamento atualizado com sucesso.", variant: "success" });
+      setEditing(null);
     } catch (err) {
       toast({
-        title: "Nao foi possivel excluir o apontamento.",
+        title: "Nao foi possivel salvar o apontamento.",
         description: err instanceof Error ? err.message : undefined,
         variant: "error",
       });
@@ -153,64 +129,78 @@ export function AppointmentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <Breadcrumb current="Apontamentos" />
-          <h1 className="font-display mt-1 text-2xl font-bold text-white sm:text-3xl">
-            Apontamentos
-          </h1>
-        </div>
+      <div>
+        <Breadcrumb current="Apontamentos" />
+        <h1 className="font-display mt-1 text-2xl font-bold text-white sm:text-3xl">Apontamentos</h1>
       </div>
 
       <Card className="p-4">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-200">
-            Filtrar apontamentos
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
+          <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white">
+            <Filter className="h-4 w-4 text-brand-light" /> Filtrar apontamentos
           </p>
-          {hasFilters && (
-            <button onClick={clearFilters} className="text-xs font-semibold uppercase tracking-wide text-brand-light hover:underline">
-              Limpar filtros
-            </button>
-          )}
+          <button
+            onClick={clearFilters}
+            className="text-[10px] font-bold uppercase tracking-widest text-muted transition-colors hover:text-white"
+          >
+            Limpar filtros
+          </button>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
-          <div>
-            <label className="label-caps mb-1.5 block">Data inicio</label>
-            <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} />
-          </div>
-          <div>
-            <label className="label-caps mb-1.5 block">Data fim</label>
-            <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} />
-          </div>
-          <div>
-            <label className="label-caps mb-1.5 block">Setor</label>
+          <FilterField label="Data início">
+            <Input
+              ref={dateFromRef}
+              type="date"
+              leftIcon={<Calendar className="h-4 w-4" />}
+              onIconClick={() => dateFromRef.current?.showPicker?.()}
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
+            />
+          </FilterField>
+          <FilterField label="Data fim">
+            <Input
+              ref={dateToRef}
+              type="date"
+              leftIcon={<Calendar className="h-4 w-4" />}
+              onIconClick={() => dateToRef.current?.showPicker?.()}
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
+            />
+          </FilterField>
+          <FilterField label="Setor">
             <SearchableSelect
+              icon={<Factory className="h-4 w-4" />}
               options={[{ value: "", label: "Todos os Setores" }, ...sectorOptions]}
               value={sectorId}
-              onChange={(v) => { setSectorId(v); setPage(1); }}
+              onChange={setSectorId}
               placeholder="Todos os Setores"
+              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
             />
-          </div>
-          <div>
-            <label className="label-caps mb-1.5 block">Maquina</label>
+          </FilterField>
+          <FilterField label="Máquina">
             <SearchableSelect
-              options={[{ value: "", label: "Todas as Maquinas" }, ...machineOptions]}
+              icon={<Zap className="h-4 w-4" />}
+              options={[{ value: "", label: "Todas as Máquinas" }, ...machineOptions]}
               value={machineId}
-              onChange={(v) => { setMachineId(v); setPage(1); }}
-              placeholder="Todas as Maquinas"
+              onChange={setMachineId}
+              placeholder="Todas as Máquinas"
+              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
             />
-          </div>
-          <div>
-            <label className="label-caps mb-1.5 block">Lancador</label>
+          </FilterField>
+          <FilterField label="Lançador">
             <SearchableSelect
-              options={[{ value: "", label: "Todos os Lancadores" }, ...userOptions]}
+              icon={<UserIcon className="h-4 w-4" />}
+              options={[{ value: "", label: "Todos os Lançadores" }, ...userOptions]}
               value={authorId}
-              onChange={(v) => { setAuthorId(v); setPage(1); }}
-              placeholder="Todos os Lancadores"
+              onChange={setAuthorId}
+              placeholder="Todos os Lançadores"
+              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
             />
-          </div>
+          </FilterField>
           <div className="flex items-end">
-            <Button className="w-full" onClick={openCreate}>
+            <Button onClick={() => setFormOpen(true)} className="h-11 w-full">
               <Plus className="h-4 w-4" /> Novo
             </Button>
           </div>
@@ -239,7 +229,7 @@ export function AppointmentsPage() {
             title="Nenhum apontamento encontrado"
             description="Ajuste os filtros ou registre um novo apontamento."
             action={
-              <Button onClick={openCreate} size="sm">
+              <Button onClick={() => setFormOpen(true)} size="sm">
                 <Plus className="h-4 w-4" /> Novo apontamento
               </Button>
             }
@@ -247,131 +237,91 @@ export function AppointmentsPage() {
         )}
 
         {appointmentsQuery.isSuccess && appointmentsQuery.data.items.length > 0 && (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-sm">
-                <thead>
-                  <tr className="border-b border-panel-border text-left text-xs uppercase tracking-wide text-muted">
-                    <th className="px-4 py-3 font-semibold">Lancamento</th>
-                    <th className="px-4 py-3 font-semibold">Lancador</th>
-                    <th className="px-4 py-3 font-semibold">Maquina / Setor</th>
-                    <th className="px-4 py-3 font-semibold">Apontamento</th>
-                    <th className="px-4 py-3 font-semibold">Duracao</th>
-                    <th className="px-4 py-3" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {appointmentsQuery.data.items.map((appt) => (
-                    <tr key={appt.id} className="border-b border-panel-border last:border-0 hover:bg-navy-800/50">
-                      <td className="px-4 py-3">
-                        <p className="font-semibold text-slate-200">{format(parseISO(appt.date), "dd/MM/yyyy")}</p>
-                        <p className="text-xs text-muted">{appt.time}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-brand/20 text-[11px] font-bold text-brand-light">
-                            {appt.authorName.slice(0, 2).toUpperCase()}
-                          </div>
-                          <span className="text-slate-200">{appt.authorName}</span>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead>
+                <tr className="border-b border-panel-border text-left text-xs uppercase tracking-wide text-muted">
+                  <th className="px-4 py-3 font-semibold">Lançamento</th>
+                  <th className="px-4 py-3 font-semibold">Lançador</th>
+                  <th className="px-4 py-3 font-semibold">Máquina / Setor</th>
+                  <th className="px-4 py-3 font-semibold">Apontamento</th>
+                  <th className="px-4 py-3 font-semibold">Duração</th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody>
+                {appointmentsQuery.data.items.map((appt) => (
+                  <tr key={appt.id} className="group border-b border-panel-border last:border-0 hover:bg-navy-800/50">
+                    <td className="px-4 py-3">
+                      <p className="text-xs font-bold text-white">{format(parseISO(appt.date), "dd/MM/yyyy")}</p>
+                      <p className="text-[10px] text-muted">{appt.time}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/20 text-xs font-bold text-brand">
+                          {appt.authorName.slice(0, 2).toUpperCase()}
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="font-semibold text-slate-200">{machineById.get(appt.machineId) ?? "-"}</p>
-                        <p className="text-xs text-muted">{sectorById.get(appt.sectorId) ?? "-"}</p>
-                      </td>
-                      <td className="max-w-[240px] truncate px-4 py-3 text-slate-300">{appt.description}</td>
-                      <td className="px-4 py-3">
-                        <span className="flex items-center gap-1 text-brand-light">
-                          <Clock className="h-3.5 w-3.5" />
-                          {formatDuration(appt.durationMinutes)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <DropdownMenu.Root>
-                          <DropdownMenu.Trigger asChild>
-                            <button className="rounded-md p-1.5 text-muted hover:bg-navy-700 hover:text-slate-200" aria-label="Mais acoes">
-                              <MoreVertical className="h-4 w-4" />
-                            </button>
-                          </DropdownMenu.Trigger>
-                          <DropdownMenu.Portal>
-                            <DropdownMenu.Content
-                              align="end"
-                              className="z-50 w-44 overflow-hidden rounded-lg border border-panel-border bg-navy-800 py-1 shadow-soft"
-                            >
-                              <DropdownMenu.Item
-                                onSelect={() => setViewing(appt)}
-                                className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm text-slate-200 outline-none hover:bg-navy-700"
-                              >
-                                <Eye className="h-4 w-4" /> Visualizar
-                              </DropdownMenu.Item>
-                              <DropdownMenu.Item
-                                onSelect={() => openEdit(appt)}
-                                className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm text-slate-200 outline-none hover:bg-navy-700"
-                              >
-                                <Pencil className="h-4 w-4" /> Editar
-                              </DropdownMenu.Item>
-                              <DropdownMenu.Item
-                                onSelect={() => openDelete(appt)}
-                                className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm text-danger-light outline-none hover:bg-danger/10"
-                              >
-                                <Trash2 className="h-4 w-4" /> Excluir
-                              </DropdownMenu.Item>
-                            </DropdownMenu.Content>
-                          </DropdownMenu.Portal>
-                        </DropdownMenu.Root>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <Pagination
-              page={appointmentsQuery.data.page}
-              pageSize={appointmentsQuery.data.pageSize}
-              total={appointmentsQuery.data.total}
-              onPageChange={setPage}
-            />
-          </>
+                        <span className="text-xs font-bold text-white">{appt.authorName}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-xs font-bold text-white">{machineById.get(appt.machineId) ?? "-"}</p>
+                      <p className="text-[10px] text-muted">{sectorById.get(appt.sectorId) ?? "-"}</p>
+                    </td>
+                    <td className="max-w-[240px] truncate px-4 py-3 text-xs text-muted transition-colors group-hover:text-white">
+                      {appt.description}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="flex items-center gap-1 text-xs font-bold text-white">
+                        <Clock className="h-3.5 w-3.5 text-brand" />
+                        {formatDuration(appt.durationMinutes)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => setViewing(appt)}
+                        className="rounded-md p-1.5 text-muted hover:bg-navy-700 hover:text-slate-200"
+                        aria-label="Ver detalhes do apontamento"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Card>
 
       <AppointmentFormDialog
-        open={formDialog.isOpen}
-        onOpenChange={formDialog.close}
-        onSubmit={handleSubmit}
-        isSubmitting={createMutation.isPending || updateMutation.isPending}
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        onSubmit={handleCreate}
+        isSubmitting={createMutation.isPending}
+        companyId={companyId}
         sectors={sectorsQuery.data ?? []}
         machines={machinesQuery.data ?? []}
         users={usersQuery.data ?? []}
-        initial={editing}
+        initial={null}
       />
 
-      <Dialog
-        open={!!viewing}
-        onOpenChange={(o) => !o && setViewing(null)}
-        title="Detalhes do apontamento"
-        size="sm"
-      >
-        {viewing && (
-          <dl className="space-y-3 text-sm">
-            <div className="flex justify-between"><dt className="text-muted">Maquina</dt><dd className="text-slate-200">{machineById.get(viewing.machineId)}</dd></div>
-            <div className="flex justify-between"><dt className="text-muted">Setor</dt><dd className="text-slate-200">{sectorById.get(viewing.sectorId)}</dd></div>
-            <div className="flex justify-between"><dt className="text-muted">Data</dt><dd className="text-slate-200">{format(parseISO(viewing.date), "dd/MM/yyyy")} as {viewing.time}</dd></div>
-            <div className="flex justify-between"><dt className="text-muted">Duracao</dt><dd className="text-slate-200">{formatDuration(viewing.durationMinutes)}</dd></div>
-            <div className="flex justify-between"><dt className="text-muted">Lancador</dt><dd className="text-slate-200">{viewing.authorName}</dd></div>
-            <div><dt className="text-muted">Descricao</dt><dd className="mt-1 text-slate-200">{viewing.description}</dd></div>
-          </dl>
-        )}
-      </Dialog>
+      <AppointmentDetailsDialog
+        appointment={viewing}
+        onOpenChange={(open) => !open && setViewing(null)}
+        onEdit={() => {
+          setEditing(viewing);
+          setViewing(null);
+        }}
+        machineName={viewing ? machineById.get(viewing.machineId) : undefined}
+        sectorName={viewing ? sectorById.get(viewing.sectorId) : undefined}
+      />
 
-      <ConfirmDialog
-        open={deleteDialog.isOpen}
-        onOpenChange={deleteDialog.close}
-        title="Excluir apontamento"
-        description={`Tem certeza que deseja excluir o apontamento "${toDelete?.description}"? Esta acao nao pode ser desfeita.`}
-        onConfirm={handleDelete}
-        isLoading={deleteMutation.isPending}
-        confirmLabel="Excluir"
+      <AppointmentQuickEditDialog
+        appointment={editing}
+        onOpenChange={(open) => !open && setEditing(null)}
+        onSubmit={handleQuickEdit}
+        isSubmitting={updateMutation.isPending}
       />
     </div>
   );
