@@ -1,4 +1,4 @@
-import type { WorkOrderStatus } from "@/domain/types/enums";
+import type { WorkOrderPeriodicity, WorkOrderStatus } from "@/domain/types/enums";
 
 export interface WorkOrder {
   id: string;
@@ -9,7 +9,8 @@ export interface WorkOrder {
   executorId: string;
   executorName: string;
   description: string;
-  date: string; // yyyy-MM-dd
+  date: string; // yyyy-MM-dd, proxima execucao
+  periodicity: WorkOrderPeriodicity;
   status: WorkOrderStatus;
   createdAt: string;
   updatedAt: string;

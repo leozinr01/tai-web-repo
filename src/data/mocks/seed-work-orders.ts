@@ -1,5 +1,5 @@
 import type { WorkOrder } from "@/domain/entities/work-order";
-import { WorkOrderStatus } from "@/domain/types/enums";
+import { WorkOrderPeriodicity, WorkOrderStatus } from "@/domain/types/enums";
 
 export const seedWorkOrders: WorkOrder[] = [
   {
@@ -12,6 +12,7 @@ export const seedWorkOrders: WorkOrder[] = [
     executorName: "Rodrigo Carvalho",
     description: "Troca do PU da usina 1 - Tubo poliamida vazando",
     date: "2026-04-14",
+    periodicity: WorkOrderPeriodicity.MENSAL,
     status: WorkOrderStatus.CONCLUIDA,
     createdAt: "2026-04-14T16:54:29.000Z",
     updatedAt: "2026-04-14T18:10:00.000Z",
@@ -26,6 +27,7 @@ export const seedWorkOrders: WorkOrder[] = [
     executorName: "Wesley Oliveira",
     description: "Teste",
     date: "2026-04-14",
+    periodicity: WorkOrderPeriodicity.SEMANAL,
     status: WorkOrderStatus.CONCLUIDA,
     createdAt: "2026-04-14T16:24:58.000Z",
     updatedAt: "2026-04-14T17:00:00.000Z",
@@ -40,6 +42,7 @@ export const seedWorkOrders: WorkOrder[] = [
     executorName: "Administrador Master",
     description: "TESTE APAGAR",
     date: "2026-04-14",
+    periodicity: WorkOrderPeriodicity.SEMANAL,
     status: WorkOrderStatus.LANCADA,
     createdAt: "2026-04-14T16:19:41.000Z",
     updatedAt: "2026-04-14T16:19:41.000Z",
@@ -54,6 +57,7 @@ export const seedWorkOrders: WorkOrder[] = [
     executorName: "Rafael",
     description: "Troca de cabecote do compressor",
     date: "2026-02-23",
+    periodicity: WorkOrderPeriodicity.TRIMESTRAL,
     status: WorkOrderStatus.ATRASADA,
     createdAt: "2025-01-16T16:03:59.000Z",
     updatedAt: "2025-01-16T16:03:59.000Z",
@@ -68,6 +72,7 @@ export const seedWorkOrders: WorkOrder[] = [
     executorName: "Ulisses Guimaraes",
     description: "TESTE DE OS",
     date: "2026-02-22",
+    periodicity: WorkOrderPeriodicity.MENSAL,
     status: WorkOrderStatus.ATRASADA,
     createdAt: "2025-01-16T16:03:58.000Z",
     updatedAt: "2025-01-16T16:03:58.000Z",
@@ -82,6 +87,7 @@ export const seedWorkOrders: WorkOrder[] = [
     executorName: "Jose Alves",
     description: "Retirada de cabecote",
     date: "2026-02-20",
+    periodicity: WorkOrderPeriodicity.SEMESTRAL,
     status: WorkOrderStatus.CONCLUIDA,
     createdAt: "2025-01-16T16:03:57.000Z",
     updatedAt: "2025-01-16T16:03:57.000Z",
@@ -96,7 +102,8 @@ export const seedWorkOrders: WorkOrder[] = [
     executorName: "Walace Borges",
     description: "Ajuste de correia da embaladora",
     date: "2026-06-01",
-    status: WorkOrderStatus.EM_ANDAMENTO,
+    periodicity: WorkOrderPeriodicity.SEMANAL,
+    status: WorkOrderStatus.REALIZADA,
     createdAt: "2026-06-01T09:01:00.000Z",
     updatedAt: "2026-06-01T09:01:00.000Z",
   },
@@ -110,7 +117,8 @@ export const seedWorkOrders: WorkOrder[] = [
     executorName: "Wesley Oliveira",
     description: "Manutencao preventiva mensal",
     date: "2026-06-02",
-    status: WorkOrderStatus.CANCELADA,
+    periodicity: WorkOrderPeriodicity.MENSAL,
+    status: WorkOrderStatus.LANCADA,
     createdAt: "2026-06-02T10:15:00.000Z",
     updatedAt: "2026-06-02T10:15:00.000Z",
   },

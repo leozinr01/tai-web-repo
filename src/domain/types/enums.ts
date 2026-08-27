@@ -26,12 +26,21 @@ export type MachineStatus = (typeof MachineStatus)[keyof typeof MachineStatus];
 
 export const WorkOrderStatus = {
   LANCADA: "issued",
-  EM_ANDAMENTO: "in_progress",
+  REALIZADA: "done",
   CONCLUIDA: "completed",
   ATRASADA: "delayed",
-  CANCELADA: "cancelled",
 } as const;
 export type WorkOrderStatus = (typeof WorkOrderStatus)[keyof typeof WorkOrderStatus];
+
+export const WorkOrderPeriodicity = {
+  DIARIA: "daily",
+  SEMANAL: "weekly",
+  MENSAL: "monthly",
+  TRIMESTRAL: "quarterly",
+  SEMESTRAL: "semiannual",
+  ANUAL: "annual",
+} as const;
+export type WorkOrderPeriodicity = (typeof WorkOrderPeriodicity)[keyof typeof WorkOrderPeriodicity];
 
 export const CompanyStatus = {
   ACTIVE: "active",

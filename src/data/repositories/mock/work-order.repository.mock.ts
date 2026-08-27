@@ -58,7 +58,7 @@ export class MockWorkOrderRepository implements WorkOrderRepository {
       if (idx === -1) throw new Error("Ordem de servico nao encontrada.");
       const current = items[idx];
       if (!current) throw new Error("Ordem de servico nao encontrada.");
-      let executorName = current.executorName;
+      let executorName = data.executorName ?? current.executorName;
       if (data.executorId && data.executorId !== current.executorId) {
         const executor = mockDb.users.getAll().find((u) => u.id === data.executorId);
         executorName = executor?.name ?? executorName;

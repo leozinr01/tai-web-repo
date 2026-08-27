@@ -1,4 +1,4 @@
-import { AppointmentArea, MachineStatus, UserRole, WorkOrderStatus } from "@/domain/types/enums";
+import { AppointmentArea, MachineStatus, UserRole, WorkOrderPeriodicity, WorkOrderStatus } from "@/domain/types/enums";
 
 export const machineStatusLabels: Record<MachineStatus, string> = {
   [MachineStatus.PRODUZINDO]: "Produzindo",
@@ -7,11 +7,19 @@ export const machineStatusLabels: Record<MachineStatus, string> = {
 };
 
 export const workOrderStatusLabels: Record<WorkOrderStatus, string> = {
-  [WorkOrderStatus.LANCADA]: "Lançada",
-  [WorkOrderStatus.EM_ANDAMENTO]: "Em andamento",
-  [WorkOrderStatus.CONCLUIDA]: "Concluída",
-  [WorkOrderStatus.ATRASADA]: "Atrasada",
-  [WorkOrderStatus.CANCELADA]: "Cancelada",
+  [WorkOrderStatus.LANCADA]: "Lançado",
+  [WorkOrderStatus.REALIZADA]: "Realizado",
+  [WorkOrderStatus.CONCLUIDA]: "Concluído",
+  [WorkOrderStatus.ATRASADA]: "Atrasado",
+};
+
+export const workOrderPeriodicityLabels: Record<WorkOrderPeriodicity, string> = {
+  [WorkOrderPeriodicity.DIARIA]: "Diária",
+  [WorkOrderPeriodicity.SEMANAL]: "Semanal",
+  [WorkOrderPeriodicity.MENSAL]: "Mensal",
+  [WorkOrderPeriodicity.TRIMESTRAL]: "Trimestral",
+  [WorkOrderPeriodicity.SEMESTRAL]: "Semestral",
+  [WorkOrderPeriodicity.ANUAL]: "Anual",
 };
 
 export const userRoleLabels: Record<UserRole, string> = {
