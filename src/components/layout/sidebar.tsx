@@ -35,19 +35,19 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
     <aside
       className={cn(
         "relative flex h-full flex-col border-r border-white/10 bg-navy-950/95 backdrop-blur-xl transition-[width] duration-200 will-change-transform",
-        collapsed ? "w-[76px]" : "w-64",
+        collapsed ? "w-[100px]" : "w-64",
       )}
     >
       <button
         onClick={onToggleCollapsed}
-        className="absolute -right-3 top-6 hidden h-6 w-6 items-center justify-center rounded-full border border-panel-border bg-brand text-white shadow-soft md:flex"
+        className="absolute -right-4 top-24 z-50 hidden h-8 w-8 cursor-pointer items-center justify-center rounded-full border-2 border-navy-950 bg-brand text-white shadow-[0_0_15px_rgba(59,130,246,0.4)] transition-all hover:scale-110 active:scale-95 md:flex"
         aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
       >
-        <ChevronLeft className={cn("h-3.5 w-3.5 transition-transform", collapsed && "rotate-180")} />
+        <ChevronLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
       </button>
 
       <div className="flex flex-col gap-3 px-5 py-6">
-        <img src="/logo-tai-project.png" alt="Tai Project" className={cn("h-auto object-contain", collapsed ? "w-9" : "w-40")} />
+        <img src="/logo-tai-project.png" alt="Tai Project" className={cn("w-auto object-contain", collapsed ? "h-8" : "h-12")} />
         {!collapsed && (
           <p className="font-display truncate text-lg font-bold tracking-tight text-white">Tai Project</p>
         )}
@@ -64,6 +64,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
                 className={({ isActive }) =>
                   cn(
                     "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-colors",
+                    collapsed && "justify-center",
                     isActive
                       ? "bg-brand text-white shadow-soft"
                       : "text-muted hover:bg-white/10 hover:text-white",
@@ -84,6 +85,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
                 className={({ isActive }) =>
                   cn(
                     "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-colors",
+                    collapsed && "justify-center",
                     isActive
                       ? "bg-brand text-white shadow-soft"
                       : "text-muted hover:bg-white/10 hover:text-white",

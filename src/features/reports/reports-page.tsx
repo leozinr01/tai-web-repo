@@ -1,16 +1,16 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download, BarChart3 } from "lucide-react";
+import { Download, BarChart3, Filter, Calendar } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { FilterField } from "@/components/ui/filter-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/features/auth/auth-context";
 import { useSectors, useMachines } from "@/features/dashboard/queries";
 import { repositories } from "@/data/repositories";
@@ -26,6 +26,8 @@ export function ReportsPage() {
   const [to, setTo] = useState("");
   const [sectorId, setSectorId] = useState("");
   const [machineId, setMachineId] = useState("");
+  const fromRef = useRef<HTMLInputElement>(null);
+  const toRef = useRef<HTMLInputElement>(null);
 
   const sectorsQuery = useSectors(companyId);
   const machinesQuery = useMachines(companyId, {});
@@ -45,93 +47,109 @@ export function ReportsPage() {
     setSectorId("");
     setMachineId("");
   };
-  const hasFilters = !!from || !!to || !!sectorId || !!machineId;
 
   const handleExport = () => {
     const rows = reportsQuery.data ?? [];
     if (rows.length === 0) {
-      toast({ title: "Nao ha dados para exportar.", variant: "warning" });
+      toast({ title: "Não há dados para exportar.", variant: "warning" });
       return;
     }
     const csv = toCsv<ReportRow>(rows, [
       { key: "datetime", label: "Data/Hora" },
       { key: "sectorName", label: "Setor" },
-      { key: "machineName", label: "Maquina" },
+      { key: "machineName", label: "Máquina" },
       { key: "oee", label: "OEE (%)" },
       { key: "availability", label: "Disponibilidade (%)" },
       { key: "productivity", label: "Produtividade (%)" },
       { key: "quality", label: "Qualidade (%)" },
-      { key: "horimeterHours", label: "Horimetro (h)" },
-      { key: "vibrationMax", label: "Vibracao max (mm/s)" },
-      { key: "temperatureMax", label: "Temperatura max (C)" },
-      { key: "production", label: "Producao" },
+      { key: "horimeterHours", label: "Horímetro (h)" },
+      { key: "vibrationMax", label: "Vibração máx (mm/s)" },
+      { key: "temperatureMax", label: "Temperatura máx (C)" },
+      { key: "production", label: "Produção" },
       { key: "productionUnit", label: "Unidade" },
     ]);
     downloadCsv(`relatorio-tai-project-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, csv);
-    toast({ title: "Relatorio exportado com sucesso.", variant: "success" });
+    toast({ title: "Relatório exportado com sucesso.", variant: "success" });
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <Breadcrumb current="Relatorios" />
+          <Breadcrumb current="Relatórios" />
           <h1 className="font-display mt-1 text-2xl font-bold text-white sm:text-3xl">
-            Relatorios
+            Relatórios
           </h1>
         </div>
-        <Button onClick={handleExport} variant="secondary">
+        <Button onClick={handleExport} className="gap-2 rounded-xl border-0 bg-white/5 text-sm font-bold text-white shadow-none hover:bg-white/10">
           <Download className="h-4 w-4" /> Exportar
         </Button>
       </div>
 
-      <Card className="p-4">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-200">Filtrar relatorios</p>
-          {hasFilters && (
-            <button onClick={clearFilters} className="text-xs font-semibold uppercase tracking-wide text-brand-light hover:underline">
-              Limpar todos
-            </button>
-          )}
+      <Card>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 p-4">
+          <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white">
+            <Filter className="h-4 w-4 text-brand-light" /> Filtrar relatórios
+          </p>
+          <button
+            onClick={clearFilters}
+            className="text-[10px] font-bold uppercase tracking-widest text-muted transition-colors hover:text-white"
+          >
+            Limpar todos
+          </button>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label className="label-caps mb-1.5 block">De</label>
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-          </div>
-          <div>
-            <label className="label-caps mb-1.5 block">Ate</label>
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-          </div>
-          <div>
-            <label className="label-caps mb-1.5 block">Setor</label>
+        <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <FilterField label="De">
+            <Input
+              ref={fromRef}
+              type="date"
+              leftIcon={<Calendar className="h-4 w-4" />}
+              onIconClick={() => fromRef.current?.showPicker?.()}
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
+            />
+          </FilterField>
+          <FilterField label="Até">
+            <Input
+              ref={toRef}
+              type="date"
+              leftIcon={<Calendar className="h-4 w-4" />}
+              onIconClick={() => toRef.current?.showPicker?.()}
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
+            />
+          </FilterField>
+          <FilterField label="Setor">
             <SearchableSelect
               options={[{ value: "", label: "Todos" }, ...sectorOptions]}
               value={sectorId}
               onChange={setSectorId}
               placeholder="Todos"
+              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
             />
-          </div>
-          <div>
-            <label className="label-caps mb-1.5 block">Maquina</label>
+          </FilterField>
+          <FilterField label="Máquina">
             <SearchableSelect
               options={[{ value: "", label: "Todas" }, ...machineOptions]}
               value={machineId}
               onChange={setMachineId}
               placeholder="Todas"
+              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
             />
-          </div>
+          </FilterField>
         </div>
       </Card>
 
-      <Card className="overflow-hidden">
-        <div className="border-b border-panel-border px-4 py-3">
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-200">Registros</p>
-          <p className="label-caps">Tabela de relatorios</p>
+      <Card className="flex flex-col gap-4 p-4">
+        <div>
+          <p className="text-lg font-bold text-white">Registros</p>
+          <p className="text-[10px] uppercase tracking-widest text-muted">Tabela de relatórios</p>
         </div>
 
         {reportsQuery.isLoading && (
-          <div className="space-y-3 p-4">
+          <div className="space-y-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-12 w-full" />
             ))}
@@ -149,48 +167,70 @@ export function ReportsPage() {
           <EmptyState
             icon={<BarChart3 className="h-10 w-10" />}
             title="Nenhum registro encontrado"
-            description="Ajuste os filtros de periodo, setor ou maquina."
+            description="Ajuste os filtros de período, setor ou máquina."
           />
         )}
 
         {reportsQuery.isSuccess && reportsQuery.data.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-sm">
-              <thead>
-                <tr className="border-b border-panel-border text-left text-xs uppercase tracking-wide text-muted">
-                  <th className="px-4 py-3 font-semibold">Data/Hora</th>
-                  <th className="px-4 py-3 font-semibold">Setor/Maquina</th>
-                  <th className="px-4 py-3 font-semibold">OEE / D/P/Q</th>
-                  <th className="px-4 py-3 font-semibold">Horimetro</th>
-                  <th className="px-4 py-3 font-semibold">Vibr. max</th>
-                  <th className="px-4 py-3 font-semibold">Temp. max</th>
-                  <th className="px-4 py-3 font-semibold">Prod. atual</th>
-                  <th className="px-4 py-3 font-semibold">Variaveis</th>
+          <div className="max-h-[62vh] overflow-auto rounded-xl border border-panel-border">
+            <table className="w-full min-w-[1000px] text-sm">
+              <thead className="sticky top-0 z-10 bg-[#041022]/95 backdrop-blur-xl">
+                <tr className="border-b border-panel-border text-[10px] font-bold uppercase tracking-widest text-muted">
+                  <th className="px-3 py-3 text-left align-middle">Data/Hora</th>
+                  <th className="px-3 py-3 text-left align-middle">Setor/Máquina</th>
+                  <th className="px-3 py-3 text-center align-middle">OEE / D/P/Q</th>
+                  <th className="px-3 py-3 text-center align-middle">Horímetro</th>
+                  <th className="px-3 py-3 text-center align-middle">Vibr. máx</th>
+                  <th className="px-3 py-3 text-center align-middle">Temp. máx</th>
+                  <th className="px-3 py-3 text-center align-middle">Prod. atual</th>
+                  <th className="px-3 py-3 text-left align-middle">Variáveis adicionais</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-white/5">
                 {reportsQuery.data.map((row) => (
-                  <tr key={row.id} className="border-b border-panel-border last:border-0 hover:bg-navy-800/50">
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-slate-200">{format(parseISO(row.datetime), "dd/MM/yyyy")}</p>
-                      <p className="text-xs text-muted">{format(parseISO(row.datetime), "HH:mm")}</p>
+                  <tr key={row.id} className="group transition-colors hover:bg-white/5">
+                    <td className="px-3 py-3">
+                      <p className="text-xs font-bold text-white">{format(parseISO(row.datetime), "dd/MM/yyyy")}</p>
+                      <p className="text-[10px] text-muted">{format(parseISO(row.datetime), "HH:mm")}</p>
                     </td>
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-brand-light">{row.sectorName}</p>
-                      <p className="text-xs text-muted">{row.machineName}</p>
+                    <td className="px-3 py-3">
+                      <p className="truncate text-xs font-bold text-brand">{row.sectorName}</p>
+                      <p className="truncate text-[10px] font-medium text-white">{row.machineName}</p>
                     </td>
-                    <td className="px-4 py-3">
-                      <p className="font-bold text-brand-light">{row.oee}%</p>
-                      <p className="text-xs text-muted">{row.availability}% / {row.productivity}% / {row.quality}%</p>
+                    <td className="px-3 py-3 text-center align-middle">
+                      <p className="text-xs font-bold text-brand">{row.oee}%</p>
+                      <p className="text-[9px] font-bold text-muted">{row.availability}% / {row.productivity}% / {row.quality}%</p>
                     </td>
-                    <td className="px-4 py-3 text-slate-300">{row.horimeterHours}h</td>
-                    <td className="px-4 py-3 text-warning-light">{row.vibrationMax.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-danger-light">{row.temperatureMax.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-slate-300">
+                    <td className="px-3 py-3 text-center align-middle text-xs font-bold text-white">{row.horimeterHours}h</td>
+                    <td className="px-3 py-3 text-center align-middle text-xs font-bold text-warning">{row.vibrationMax.toFixed(2)}</td>
+                    <td className="px-3 py-3 text-center align-middle text-xs font-bold text-danger">{row.temperatureMax.toFixed(2)}</td>
+                    <td className="px-3 py-3 text-center align-middle text-xs font-bold text-success-light">
                       {row.production} {row.productionUnit}
                     </td>
-                    <td className="px-4 py-3">
-                      <Badge tone="brand">{row.additionalVariablesCount} variaveis</Badge>
+                    <td className="px-3 py-3 align-top">
+                      <details className="group rounded-lg bg-white/5 px-2 py-1.5">
+                        <summary className="cursor-pointer list-none text-[10px] font-bold uppercase tracking-widest text-brand [&::-webkit-details-marker]:hidden">
+                          {row.additionalVariablesCount} variáveis
+                        </summary>
+                        <div className="mt-2 grid gap-1">
+                          <div className="flex items-center justify-between gap-3 rounded-md bg-white/5 px-2 py-1">
+                            <span className="text-[10px] text-muted">Horímetro (h)</span>
+                            <span className="text-[10px] font-semibold text-white">{row.horimeterHours}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-3 rounded-md bg-white/5 px-2 py-1">
+                            <span className="text-[10px] text-muted">Vibração (mm/s)</span>
+                            <span className="text-[10px] font-semibold text-white">{row.vibrationMax.toFixed(2)}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-3 rounded-md bg-white/5 px-2 py-1">
+                            <span className="text-[10px] text-muted">Temperatura (°C)</span>
+                            <span className="text-[10px] font-semibold text-white">{row.temperatureMax.toFixed(2)}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-3 rounded-md bg-white/5 px-2 py-1">
+                            <span className="text-[10px] text-muted">Produção</span>
+                            <span className="text-[10px] font-semibold text-white">{row.production} {row.productionUnit}</span>
+                          </div>
+                        </div>
+                      </details>
                     </td>
                   </tr>
                 ))}

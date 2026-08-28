@@ -17,7 +17,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             type="button"
             tabIndex={-1}
             onClick={onIconClick}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-brand-light"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-brand transition-colors hover:text-brand-light"
             aria-label="Abrir calendário"
           >
             {leftIcon}
