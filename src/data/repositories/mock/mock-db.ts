@@ -46,6 +46,9 @@ export const mockDb = {
     getAll(): Sector[] {
       return ensure(STORAGE_KEYS.SECTORS, seedSectors);
     },
+    saveAll(items: Sector[]): void {
+      storage.set(STORAGE_KEYS.SECTORS, items);
+    },
   },
   machines: {
     getAll(): Machine[] {

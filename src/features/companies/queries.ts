@@ -47,3 +47,71 @@ export function useDeleteCompany() {
     onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
   });
 }
+
+async function syncCompanyCounts(companyId: string) {
+  const [sectors, machines] = await Promise.all([
+    repositories.sectors.listByCompany(companyId),
+    repositories.machines.listByCompany(companyId),
+  ]);
+  await repositories.companies.update(companyId, {
+    sectorsCount: sectors.length,
+    machinesCount: machines.length,
+  });
+}
+
+export function useCreateSector() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { companyId: string; name: string }) => repositories.sectors.create(data),
+    onSuccess: async (_result, variables) => {
+      await syncCompanyCounts(variables.companyId);
+      qc.invalidateQueries({ queryKey: ["sectors"] });
+      qc.invalidateQueries({ queryKey: [KEY] });
+    },
+  });
+}
+
+export function useUpdateSector() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) => repositories.sectors.update(id, { name }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["sectors"] }),
+  });
+}
+
+export function useDeleteSector() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id }: { id: string; companyId: string }) => repositories.sectors.remove(id),
+    onSuccess: async (_result, variables) => {
+      await syncCompanyCounts(variables.companyId);
+      qc.invalidateQueries({ queryKey: ["sectors"] });
+      qc.invalidateQueries({ queryKey: [KEY] });
+    },
+  });
+}
+
+export function useCreateMachine() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { companyId: string; sectorId: string; name: string }) =>
+      repositories.machines.create(data),
+    onSuccess: async (_result, variables) => {
+      await syncCompanyCounts(variables.companyId);
+      qc.invalidateQueries({ queryKey: ["machines"] });
+      qc.invalidateQueries({ queryKey: [KEY] });
+    },
+  });
+}
+
+export function useDeleteMachine() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id }: { id: string; companyId: string }) => repositories.machines.remove(id),
+    onSuccess: async (_result, variables) => {
+      await syncCompanyCounts(variables.companyId);
+      qc.invalidateQueries({ queryKey: ["machines"] });
+      qc.invalidateQueries({ queryKey: [KEY] });
+    },
+  });
+}

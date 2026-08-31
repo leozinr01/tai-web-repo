@@ -1,11 +1,21 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Pencil } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FieldError, FieldLabel, Input } from "@/components/ui/input";
 import { companySchema, type CompanyFormValues } from "@/domain/schemas/company.schema";
 import type { Company } from "@/domain/entities/company";
+
+const emptyValues: CompanyFormValues = {
+  name: "",
+  email: "",
+  phone: "",
+  state: "",
+  city: "",
+  initialPassword: "",
+};
 
 export function CompanyFormDialog({
   open,
@@ -27,12 +37,12 @@ export function CompanyFormDialog({
     formState: { errors },
   } = useForm<CompanyFormValues>({
     resolver: zodResolver(companySchema),
-    defaultValues: { name: "", email: "" },
+    defaultValues: emptyValues,
   });
 
   useEffect(() => {
     if (open) {
-      reset(initial ? { name: initial.name, email: initial.email } : { name: "", email: "" });
+      reset(initial ? { ...emptyValues, name: initial.name, email: initial.email } : emptyValues);
     }
   }, [open, initial, reset]);
 
@@ -40,30 +50,59 @@ export function CompanyFormDialog({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
-      title={initial ? "Editar empresa" : "Nova empresa"}
+      title={initial ? "Editar empresa" : "Cadastrar nova empresa"}
+      titleClassName="uppercase tracking-tight"
+      icon={initial ? <Pencil className="h-5 w-5" /> : undefined}
       size="sm"
       footer={
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-            Cancelar
-          </Button>
-          <Button form="company-form" type="submit" isLoading={isSubmitting}>
-            Salvar
-          </Button>
-        </div>
+        <Button
+          form="company-form"
+          type="submit"
+          isLoading={isSubmitting}
+          className="h-auto w-full py-4 text-xs font-black uppercase tracking-wide"
+        >
+          {initial ? "Salvar alterações" : "Cadastrar empresa"}
+        </Button>
       }
     >
       <form id="company-form" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
         <div>
-          <FieldLabel required>Nome da empresa</FieldLabel>
-          <Input error={errors.name?.message} {...register("name")} />
+          <FieldLabel>Nome da empresa</FieldLabel>
+          <Input placeholder="Ex: TAI Logistics" error={errors.name?.message} {...register("name")} />
           <FieldError message={errors.name?.message} />
         </div>
-        <div>
-          <FieldLabel required>E-mail</FieldLabel>
-          <Input type="email" error={errors.email?.message} {...register("email")} />
-          <FieldError message={errors.email?.message} />
-        </div>
+
+        {initial ? (
+          <p className="text-[10px] italic text-muted">
+            Nota: Alterar o e-mail do administrador deve ser feito via painel de usuários.
+          </p>
+        ) : (
+          <>
+            <div>
+              <FieldLabel>E-mail do administrador</FieldLabel>
+              <Input type="email" placeholder="admin@empresa.com" error={errors.email?.message} {...register("email")} />
+              <FieldError message={errors.email?.message} />
+            </div>
+            <div>
+              <FieldLabel>Telefone</FieldLabel>
+              <Input placeholder="(11) 99999-9999" {...register("phone")} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <FieldLabel>Estado</FieldLabel>
+                <Input placeholder="SP" {...register("state")} />
+              </div>
+              <div>
+                <FieldLabel>Cidade</FieldLabel>
+                <Input placeholder="São Paulo" {...register("city")} />
+              </div>
+            </div>
+            <div>
+              <FieldLabel>Senha inicial</FieldLabel>
+              <Input type="password" placeholder="••••••••" {...register("initialPassword")} />
+            </div>
+          </>
+        )}
       </form>
     </Dialog>
   );

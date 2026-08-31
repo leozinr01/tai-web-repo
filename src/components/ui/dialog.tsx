@@ -8,9 +8,10 @@ interface DialogProps {
   onOpenChange: (open: boolean) => void;
   title: string;
   description?: string;
+  icon?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   titleClassName?: string;
   descriptionClassName?: string;
   closeButtonClassName?: string;
@@ -20,6 +21,7 @@ const sizeClasses = {
   sm: "max-w-md",
   md: "max-w-2xl",
   lg: "max-w-3xl",
+  xl: "max-w-4xl",
 };
 
 export function Dialog({
@@ -27,6 +29,7 @@ export function Dialog({
   onOpenChange,
   title,
   description,
+  icon,
   children,
   footer,
   size = "md",
@@ -45,15 +48,18 @@ export function Dialog({
           )}
         >
           <div className="flex items-center justify-between">
-            <div>
-              <RadixDialog.Title className={cn("text-xl font-bold text-white", titleClassName)}>
-                {title}
-              </RadixDialog.Title>
-              {description && (
-                <RadixDialog.Description className={cn("mt-0.5 text-sm text-muted", descriptionClassName)}>
-                  {description}
-                </RadixDialog.Description>
-              )}
+            <div className="flex items-center gap-3">
+              {icon && <div className="rounded-2xl bg-brand/10 p-3 text-brand-light">{icon}</div>}
+              <div>
+                <RadixDialog.Title className={cn("text-xl font-bold text-white", titleClassName)}>
+                  {title}
+                </RadixDialog.Title>
+                {description && (
+                  <RadixDialog.Description className={cn("mt-0.5 text-sm text-muted", descriptionClassName)}>
+                    {description}
+                  </RadixDialog.Description>
+                )}
+              </div>
             </div>
             <RadixDialog.Close
               className={cn("text-muted hover:text-white", closeButtonClassName)}
