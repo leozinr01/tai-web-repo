@@ -6,7 +6,7 @@ export const seedCompanies: Company[] = [
     id: "company_tai",
     name: "Tai Project",
     email: "app@taiproject.com.br",
-    logoUrl: "",
+    logoUrl: "/logo-tai-project.png",
     status: CompanyStatus.ACTIVE,
     sectorsCount: 8,
     machinesCount: 35,

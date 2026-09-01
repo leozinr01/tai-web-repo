@@ -43,9 +43,7 @@ export function SectorFormDialog({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
-      title={initial ? "Editar setor" : "Cadastrar novo setor"}
-      titleClassName="uppercase tracking-tight"
-      description="Vincule a infraestrutura à empresa selecionada"
+      title={initial ? "Editar setor" : "Novo setor"}
       size="sm"
       footer={
         <Button
@@ -54,7 +52,7 @@ export function SectorFormDialog({
           isLoading={isSubmitting}
           className="h-auto w-full py-4 text-xs font-black uppercase tracking-wide"
         >
-          {initial ? "Salvar setor" : "Cadastrar setor"}
+          {initial ? "Atualizar setor" : "Cadastrar setor"}
         </Button>
       }
     >

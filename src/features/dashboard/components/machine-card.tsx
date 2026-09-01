@@ -26,8 +26,8 @@ import { resolveVariableDisplay } from "@/features/dashboard/machine-variables";
 import { useUpdateMachine } from "@/features/dashboard/queries";
 import { MachineDrilldownDialog } from "@/features/dashboard/components/machine-drilldown-dialog";
 import { MachineCardSettingsDialog } from "@/features/dashboard/components/machine-card-settings-dialog";
-import { MachineEditDialog } from "@/features/dashboard/components/machine-edit-dialog";
-import type { Machine, MachineVariableKey } from "@/domain/entities/machine";
+import { MachineFormDialog } from "@/features/companies/components/machine-form-dialog";
+import type { Machine, MachineCustomVariable, MachineVariableKey } from "@/domain/entities/machine";
 import type { Sector } from "@/domain/entities/sector";
 
 const statusTone: Record<MachineStatus, "success" | "warning" | "danger"> = {
@@ -120,7 +120,7 @@ export function MachineCard({
     }
   };
 
-  const handleSaveEdit = async (data: { name: string; sectorId: string; customVariables: Machine["customVariables"] }) => {
+  const handleSaveEdit = async (data: { name: string; sectorId: string; customVariables: MachineCustomVariable[] }) => {
     try {
       await updateMutation.mutateAsync({ id: machine.id, data });
       toast({ title: "Maquina atualizada com sucesso.", variant: "success" });
@@ -279,7 +279,10 @@ export function MachineCard({
                     {machine.customVariables.map((v) => (
                       <div key={v.id} className="flex items-center justify-between text-xs">
                         <span className="text-muted">{v.label}</span>
-                        <span className="font-semibold text-slate-200">{v.value}</span>
+                        <span className="font-semibold text-slate-200">
+                          {v.value}
+                          {v.unit ? ` ${v.unit}` : ""}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -330,10 +333,10 @@ export function MachineCard({
         onSubmit={handleSaveSettings}
         isSubmitting={updateMutation.isPending}
       />
-      <MachineEditDialog
+      <MachineFormDialog
         open={editDialog.isOpen}
         onOpenChange={editDialog.close}
-        machine={machine}
+        initial={machine}
         sectors={sectors}
         onSubmit={handleSaveEdit}
         isSubmitting={updateMutation.isPending}

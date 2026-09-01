@@ -22,7 +22,7 @@ export function builtinVariableOptions(): { value: MachineVariableKey; label: st
 export function variableOptionsForMachine(machine: Machine): { value: MachineVariableKey; label: string }[] {
   return [
     ...builtinVariableOptions(),
-    ...machine.customVariables.map((v) => ({ value: v.id, label: v.label })),
+    ...machine.customVariables.filter((v) => v.visible).map((v) => ({ value: v.id, label: v.label })),
   ];
 }
 
@@ -44,7 +44,9 @@ export function resolveVariableDisplay(machine: Machine, key: MachineVariableKey
       };
     default: {
       const custom = machine.customVariables.find((v) => v.id === key);
-      return custom ? { key, label: custom.label, value: custom.value } : null;
+      return custom
+        ? { key, label: custom.label, value: custom.unit ? `${custom.value} ${custom.unit}` : custom.value }
+        : null;
     }
   }
 }

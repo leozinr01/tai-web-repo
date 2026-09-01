@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Upload, UserPlus, Power, Pencil } from "lucide-react";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Card } from "@/components/ui/card";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { FieldError, FieldLabel, Input } from "@/components/ui/input";
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/features/auth/auth-context";
@@ -18,7 +19,12 @@ import {
   useSetUserStatus,
 } from "@/features/settings/queries";
 import { UserFormDialog } from "@/features/settings/components/user-form-dialog";
-import { MAX_LOGO_SIZE_BYTES, ACCEPTED_LOGO_TYPES, type UserAccessFormValues } from "@/domain/schemas/settings.schema";
+import {
+  MAX_LOGO_SIZE_BYTES,
+  ACCEPTED_LOGO_TYPES,
+  companyProfileSchema,
+  type UserAccessFormValues,
+} from "@/domain/schemas/settings.schema";
 import { UserStatus } from "@/domain/types/enums";
 import { userRoleLabels } from "@/lib/labels";
 import type { User } from "@/domain/entities/user";
@@ -37,6 +43,12 @@ export function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
+  const [manualLogoUrl, setManualLogoUrl] = useState("");
+  const [manualLogoError, setManualLogoError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setManualLogoUrl(companyQuery.data?.logoUrl ?? "");
+  }, [companyQuery.data?.logoUrl]);
 
   const userDialog = useDisclosure();
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -69,6 +81,22 @@ export function SettingsPage() {
       }
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleSaveManualLogoUrl = async () => {
+    const result = companyProfileSchema.shape.logoUrl.safeParse(manualLogoUrl);
+    if (!result.success) {
+      setManualLogoError(result.error.issues[0]?.message ?? "URL invalida.");
+      return;
+    }
+    setManualLogoError(null);
+    setLogoPreview(null);
+    try {
+      await updateLogoMutation.mutateAsync({ id: companyId, logoUrl: manualLogoUrl });
+      toast({ title: "Logotipo atualizado com sucesso.", variant: "success" });
+    } catch (err) {
+      toast({ title: "Nao foi possivel atualizar o logotipo.", description: err instanceof Error ? err.message : undefined, variant: "error" });
+    }
   };
 
   const openCreateUser = () => {
@@ -124,35 +152,55 @@ export function SettingsPage() {
           {companyQuery.isLoading ? (
             <Skeleton className="h-56 w-full" />
           ) : (
-            <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-panel-border bg-navy-800 p-8 text-center">
-              {displayedLogo ? (
-                <img src={displayedLogo} alt="Logotipo da empresa" className="h-20 max-w-[240px] object-contain" />
-              ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-navy-700 text-muted">
-                  <Upload className="h-8 w-8" />
+            <>
+              <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-panel-border bg-white/5 p-8 text-center">
+                {displayedLogo ? (
+                  <img src={displayedLogo} alt="Logotipo da empresa" className="h-24 max-w-[300px] object-contain" />
+                ) : (
+                  <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-navy-700 text-muted">
+                    <Upload className="h-8 w-8" />
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-semibold text-slate-200">Logo da empresa</p>
+                  <p className="text-xs text-muted">PNG, JPG ou SVG (Max. 2MB)</p>
                 </div>
-              )}
-              <div>
-                <p className="text-sm font-semibold text-slate-200">Logo da empresa</p>
-                <p className="text-xs text-muted">PNG, JPG ou SVG (Max. 2MB)</p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ACCEPTED_LOGO_TYPES.join(",")}
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  isLoading={updateLogoMutation.isPending}
+                  className="border-brand/30 bg-brand/10 text-brand-light hover:bg-brand/20"
+                >
+                  <Upload className="h-4 w-4" /> Fazer upload
+                </Button>
+                {logoError && <p className="text-xs text-danger">{logoError}</p>}
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={ACCEPTED_LOGO_TYPES.join(",")}
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                isLoading={updateLogoMutation.isPending}
-              >
-                <Upload className="h-4 w-4" /> Fazer upload
-              </Button>
-              {logoError && <p className="text-xs text-danger">{logoError}</p>}
-            </div>
+
+              <div className="mt-4">
+                <FieldLabel>URL do logo (manual)</FieldLabel>
+                <div className="flex gap-2">
+                  <Input
+                    value={manualLogoUrl}
+                    onChange={(e) => setManualLogoUrl(e.target.value)}
+                    placeholder="https://..."
+                    error={manualLogoError ?? undefined}
+                    className="flex-1"
+                  />
+                  <Button size="sm" onClick={handleSaveManualLogoUrl} isLoading={updateLogoMutation.isPending}>
+                    Salvar
+                  </Button>
+                </div>
+                <FieldError message={manualLogoError ?? undefined} />
+              </div>
+            </>
           )}
         </Card>
 

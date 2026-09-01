@@ -10,10 +10,15 @@ export interface MachineVariables {
   productionUnit: string;
 }
 
+export type MachineVariableType = "int" | "float" | "bool";
+
 export interface MachineCustomVariable {
   id: string;
   label: string;
+  type: MachineVariableType;
+  unit?: string;
   value: string;
+  visible: boolean;
 }
 
 /** Chaves das variaveis que podem aparecer nos cards do dashboard (builtin ou id de variavel customizada). */

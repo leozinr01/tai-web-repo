@@ -79,11 +79,12 @@ export function CompaniesPage() {
         </h1>
       </div>
 
-      <Card className="p-4">
-        <p className="mb-5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white">
-          <Filter className="h-4 w-4 text-brand-light" /> Filtrar empresas
-        </p>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+      <Card className="overflow-hidden">
+        <div className="flex items-center gap-2 border-b border-white/5 p-4">
+          <Filter className="h-4 w-4 text-brand-light" />
+          <p className="text-[10px] font-bold uppercase tracking-widest text-white">Filtrar empresas</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-4">
           <div className="lg:col-span-3">
             <FilterField label="Busca">
               <Input
@@ -197,10 +198,11 @@ export function CompaniesPage() {
             </table>
           </div>
         )}
-        <div className="border-t border-white/5 py-4 text-center text-[10px] font-bold uppercase tracking-widest text-muted">
-          Criado por <span className="text-brand-light">Tai Project</span>
-        </div>
       </Card>
+
+      <p className="text-center text-[10px] font-bold uppercase tracking-widest text-muted">
+        Criado por <span className="text-brand-light">Tai Project</span>
+      </p>
 
       <CompanyFormDialog
         open={formDialog.isOpen}
