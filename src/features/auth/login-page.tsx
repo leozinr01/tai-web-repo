@@ -39,18 +39,18 @@ export function LoginPage() {
         <div className="absolute left-[10%] top-[20%] h-96 w-96 rounded-full bg-brand/10 blur-[120px]" />
         <div className="absolute bottom-[20%] right-[10%] h-96 w-96 rounded-full bg-teal-400/10 blur-[120px]" />
       </div>
-      <div className="relative z-10 w-full max-w-md">
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 !p-8 shadow-2xl shadow-black/40 backdrop-blur-xl">
-          <div className="mb-4 flex flex-col items-center text-center">
-            <img src="/logo-smartai.png" alt="SmartTai" className="h-32 w-auto object-contain drop-shadow-2xl" />
+      <div className="relative z-10 w-full max-w-lg">
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 !p-10 shadow-2xl shadow-black/40 backdrop-blur-xl">
+          <div className="mb-6 flex flex-col items-center text-center">
+            <img src="/logo-smartai.png" alt="SmartTai" className="h-36 w-auto object-contain drop-shadow-2xl" />
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
             <div>
               <label htmlFor="email" className="label-caps mb-1.5 block">
                 E-mail
               </label>
-              <div className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 transition-all focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
+              <div className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-4 transition-all focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
                 <User className="h-4 w-4 shrink-0 text-muted transition-colors group-focus-within:text-brand-light" />
                 <input
                   id="email"
@@ -68,7 +68,7 @@ export function LoginPage() {
               <label htmlFor="password" className="label-caps mb-1.5 block">
                 Senha
               </label>
-              <div className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 transition-all focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
+              <div className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-4 transition-all focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
                 <PenTool className="h-4 w-4 shrink-0 text-muted transition-colors group-focus-within:text-brand-light" />
                 <input
                   id="password"
