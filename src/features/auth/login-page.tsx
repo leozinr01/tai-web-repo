@@ -6,13 +6,6 @@ import { User, PenTool, Loader2 } from "lucide-react";
 import { loginSchema, type LoginFormValues } from "@/domain/schemas/auth.schema";
 import { useAuth } from "@/features/auth/auth-context";
 import { FieldError } from "@/components/ui/input";
-import { DEMO_PASSWORD } from "@/data/mocks/seed-users";
-
-const demoAccounts = [
-  { label: "Master", email: "app@taiproject.com.br" },
-  { label: "Operador", email: "operador@teste.com.br" },
-  { label: "Visitante", email: "visitante@smarttai.com.br" },
-];
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -23,7 +16,6 @@ export function LoginPage() {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -39,11 +31,6 @@ export function LoginPage() {
     } catch (err) {
       setServerError(err instanceof Error ? err.message : "Nao foi possivel entrar.");
     }
-  };
-
-  const fillDemo = (email: string) => {
-    setValue("email", email);
-    setValue("password", DEMO_PASSWORD);
   };
 
   return (
@@ -112,23 +99,6 @@ export function LoginPage() {
               </span>
             </button>
           </form>
-
-          <div className="mt-6 border-t border-white/10 pt-5">
-            <p className="label-caps mb-2">Contas de demonstracao</p>
-            <div className="flex flex-wrap gap-2">
-              {demoAccounts.map((acc) => (
-                <button
-                  key={acc.email}
-                  type="button"
-                  onClick={() => fillDemo(acc.email)}
-                  className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-semibold text-slate-300 hover:border-brand hover:text-brand-light"
-                >
-                  {acc.label}
-                </button>
-              ))}
-            </div>
-            <p className="mt-2 text-[11px] text-muted">Senha para todas as contas: {DEMO_PASSWORD}</p>
-          </div>
         </div>
         <p className="mt-8 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-muted/40">
           Powered by Tai Industrial Platform v3.0
