@@ -30,6 +30,10 @@ export class MockAuthRepository implements AuthRepository {
     storage.remove(STORAGE_KEYS.SESSION);
   }
 
+  async changePassword(_newPassword: string): Promise<void> {
+    await simulateNetwork(() => undefined, { minMs: 400, maxMs: 700 });
+  }
+
   async getSession(): Promise<AuthSession | null> {
     const session = storage.get<AuthSession | null>(STORAGE_KEYS.SESSION, null);
     if (!session) return null;

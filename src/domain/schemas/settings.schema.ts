@@ -22,3 +22,8 @@ export const userAccessSchema = z.object({
   }),
 });
 export type UserAccessFormValues = z.infer<typeof userAccessSchema>;
+
+export const userAccessCreateSchema = userAccessSchema.extend({
+  password: z.string().min(6, "A senha deve ter ao menos 6 caracteres."),
+});
+export type UserAccessCreateFormValues = z.infer<typeof userAccessCreateSchema>;

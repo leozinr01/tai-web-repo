@@ -1,14 +1,17 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FieldError, FieldLabel, Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { userAccessSchema, type UserAccessFormValues } from "@/domain/schemas/settings.schema";
+import {
+  userAccessSchema,
+  userAccessCreateSchema,
+  type UserAccessFormValues,
+} from "@/domain/schemas/settings.schema";
 import { UserRole } from "@/domain/types/enums";
 import { userRoleLabels } from "@/lib/labels";
-import type { User } from "@/domain/entities/user";
 
 const roleOptions = Object.entries(userRoleLabels).map(([value, label]) => ({ value, label }));
 
@@ -17,13 +20,11 @@ export function UserFormDialog({
   onOpenChange,
   onSubmit,
   isSubmitting,
-  initial,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: UserAccessFormValues) => Promise<void>;
   isSubmitting: boolean;
-  initial?: User | null;
 }) {
   const {
     register,
@@ -36,42 +37,66 @@ export function UserFormDialog({
     defaultValues: { name: "", email: "", role: UserRole.OPERATOR },
   });
 
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | undefined>();
+
   useEffect(() => {
     if (open) {
-      reset(initial ? { name: initial.name, email: initial.email, role: initial.role } : { name: "", email: "", role: UserRole.OPERATOR });
+      reset({ name: "", email: "", role: UserRole.OPERATOR });
+      setPassword("");
+      setPasswordError(undefined);
     }
-  }, [open, initial, reset]);
+  }, [open, reset]);
+
+  const submit = handleSubmit((values) => {
+    const result = userAccessCreateSchema.shape.password.safeParse(password);
+    if (!result.success) {
+      setPasswordError(result.error.issues[0]?.message);
+      return;
+    }
+    setPasswordError(undefined);
+    return onSubmit(values);
+  });
 
   return (
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
-      title={initial ? "Editar acesso" : "Novo acesso"}
+      title="Cadastrar Novo Acesso na Empresa"
+      description="Defina nome, login e o nível de acesso do novo usuário da empresa"
+      titleClassName="uppercase tracking-tight"
       size="sm"
       footer={
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-            Cancelar
-          </Button>
-          <Button form="user-access-form" type="submit" isLoading={isSubmitting}>
-            Salvar
-          </Button>
-        </div>
+        <Button form="user-access-form" type="submit" isLoading={isSubmitting} className="w-full rounded-2xl py-5 text-sm font-black shadow-xl shadow-brand/20">
+          Cadastrar Usuário
+        </Button>
       }
     >
-      <form id="user-access-form" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+      <form id="user-access-form" onSubmit={submit} noValidate className="space-y-4">
         <div>
-          <FieldLabel required>Nome</FieldLabel>
-          <Input error={errors.name?.message} {...register("name")} />
+          <FieldLabel required>Nome do Usuário</FieldLabel>
+          <Input placeholder="Nome Completo" error={errors.name?.message} {...register("name")} />
           <FieldError message={errors.name?.message} />
         </div>
         <div>
           <FieldLabel required>E-mail</FieldLabel>
-          <Input type="email" error={errors.email?.message} {...register("email")} />
+          <Input type="email" placeholder="usuario@empresa.com" error={errors.email?.message} {...register("email")} />
           <FieldError message={errors.email?.message} />
         </div>
         <div>
-          <FieldLabel required>Perfil</FieldLabel>
+          <FieldLabel required>Senha Inicial</FieldLabel>
+          <Input
+            type="password"
+            placeholder="********"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            error={passwordError}
+          />
+          <FieldError message={passwordError} />
+        </div>
+        <div>
+          <FieldLabel required>Tipo de Usuário (Nível)</FieldLabel>
           <Controller
             control={control}
             name="role"
@@ -86,6 +111,7 @@ export function UserFormDialog({
             )}
           />
           <FieldError message={errors.role?.message} />
+          <p className="mt-1.5 text-[10px] text-muted">Somente Master/Admin podem editar cards do dashboard.</p>
         </div>
       </form>
     </Dialog>

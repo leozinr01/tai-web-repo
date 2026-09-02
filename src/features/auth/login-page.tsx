@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Eye, EyeOff, User, PenTool, Loader2 } from "lucide-react";
+import { User, PenTool, Loader2 } from "lucide-react";
 import { loginSchema, type LoginFormValues } from "@/domain/schemas/auth.schema";
 import { useAuth } from "@/features/auth/auth-context";
 import { FieldError } from "@/components/ui/input";
@@ -18,7 +18,6 @@ export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -48,7 +47,11 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center overflow-hidden bg-navy-950 bg-tai p-6">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-navy-950 bg-tai p-6">
+      <div className="absolute inset-0 z-0">
+        <div className="absolute left-[10%] top-[20%] h-96 w-96 rounded-full bg-brand/10 blur-[120px]" />
+        <div className="absolute bottom-[20%] right-[10%] h-96 w-96 rounded-full bg-teal-400/10 blur-[120px]" />
+      </div>
       <div className="relative z-10 w-full max-w-md">
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 !p-8 shadow-2xl shadow-black/40 backdrop-blur-xl">
           <div className="mb-4 flex flex-col items-center text-center">
@@ -82,20 +85,12 @@ export function LoginPage() {
                 <PenTool className="h-4 w-4 shrink-0 text-muted transition-colors group-focus-within:text-brand-light" />
                 <input
                   id="password"
-                  type={showPassword ? "text" : "password"}
+                  type="password"
                   placeholder="********"
                   autoComplete="current-password"
                   className="w-full bg-transparent text-sm text-white focus:outline-none"
                   {...register("password")}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="shrink-0 text-muted hover:text-slate-200"
-                  aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
               </div>
               <FieldError message={errors.password?.message} />
             </div>
@@ -135,7 +130,7 @@ export function LoginPage() {
             <p className="mt-2 text-[11px] text-muted">Senha para todas as contas: {DEMO_PASSWORD}</p>
           </div>
         </div>
-        <p className="mt-6 text-center text-[11px] uppercase tracking-widest text-muted">
+        <p className="mt-8 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-muted/40">
           Powered by Tai Industrial Platform v3.0
         </p>
       </div>

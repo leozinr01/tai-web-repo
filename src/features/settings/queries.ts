@@ -33,18 +33,16 @@ export function useCreateUser() {
   });
 }
 
-export function useUpdateUser() {
+export function useRemoveUser() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<User> }) => repositories.users.update(id, data),
-    onSuccess: (user: User) => qc.invalidateQueries({ queryKey: ["users", user.companyId] }),
+    mutationFn: ({ id }: { id: string; companyId: string }) => repositories.users.remove(id),
+    onSuccess: (_data, variables) => qc.invalidateQueries({ queryKey: ["users", variables.companyId] }),
   });
 }
 
-export function useSetUserStatus() {
-  const qc = useQueryClient();
+export function useChangePassword() {
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: User["status"] }) => repositories.users.setStatus(id, status),
-    onSuccess: (user: User) => qc.invalidateQueries({ queryKey: ["users", user.companyId] }),
+    mutationFn: (password: string) => repositories.auth.changePassword(password),
   });
 }

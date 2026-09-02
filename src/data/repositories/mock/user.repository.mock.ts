@@ -51,4 +51,11 @@ export class MockUserRepository implements UserRepository {
   async setStatus(id: string, status: User["status"]): Promise<User> {
     return this.update(id, { status });
   }
+
+  async remove(id: string): Promise<void> {
+    return simulateNetwork(() => {
+      const items = mockDb.users.getAll();
+      mockDb.users.saveAll(items.filter((u) => u.id !== id));
+    });
+  }
 }

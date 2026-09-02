@@ -10,10 +10,7 @@ export function uid(prefix = "id"): string {
 }
 
 export function initials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  const first = parts[0]?.[0] ?? "";
-  const second = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? "" : "";
-  return (first + second).toUpperCase();
+  return name.trim().slice(0, 2).toUpperCase();
 }
 
 export function sleep(ms: number): Promise<void> {

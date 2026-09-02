@@ -8,12 +8,12 @@ describe("cn", () => {
 });
 
 describe("initials", () => {
-  it("gera iniciais a partir do nome completo", () => {
-    expect(initials("Rafael Meni")).toBe("RM");
+  it("gera iniciais a partir das duas primeiras letras do nome", () => {
+    expect(initials("Rafael Meni")).toBe("RA");
   });
 
   it("gera iniciais para nome unico", () => {
-    expect(initials("Administrador")).toBe("A");
+    expect(initials("Administrador")).toBe("AD");
   });
 });
 
