@@ -20,6 +20,8 @@ interface SearchableSelectProps {
   allowClear?: boolean;
   emptyMessage?: string;
   className?: string;
+  /** Quando false, oculta o campo de busca e mostra apenas a lista de opções. */
+  searchable?: boolean;
 }
 
 /**
@@ -39,6 +41,7 @@ export function SearchableSelect({
   allowClear,
   emptyMessage = "Nenhum resultado encontrado.",
   className,
+  searchable = true,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -99,16 +102,18 @@ export function SearchableSelect({
           collisionPadding={12}
           className="z-50 w-[--radix-popover-trigger-width] overflow-hidden rounded-xl border border-white/10 bg-navy-900/95 shadow-2xl backdrop-blur-xl"
         >
-          <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
-            <Search className="h-4 w-4 text-muted" />
-            <input
-              autoFocus
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar..."
-              className="h-6 w-full bg-transparent text-sm text-slate-100 placeholder:text-muted focus:outline-none"
-            />
-          </div>
+          {searchable && (
+            <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
+              <Search className="h-4 w-4 text-muted" />
+              <input
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar..."
+                className="h-6 w-full bg-transparent text-sm text-slate-100 placeholder:text-muted focus:outline-none"
+              />
+            </div>
+          )}
           <div className="max-h-64 overflow-y-auto py-1">
             {filtered.length === 0 && (
               <p className="px-3 py-3 text-sm text-muted">{emptyMessage}</p>

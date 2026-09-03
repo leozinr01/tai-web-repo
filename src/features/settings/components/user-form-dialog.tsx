@@ -65,26 +65,40 @@ export function UserFormDialog({
       title="Cadastrar Novo Acesso na Empresa"
       description="Defina nome, login e o nível de acesso do novo usuário da empresa"
       titleClassName="uppercase tracking-tight"
+      descriptionClassName="text-xs font-medium"
+      closeButtonClassName="rounded-xl border border-white/5 bg-white/5 p-2.5"
+      contentClassName="max-w-lg !p-8"
       size="sm"
       footer={
-        <Button form="user-access-form" type="submit" isLoading={isSubmitting} className="w-full rounded-2xl py-5 text-sm font-black shadow-xl shadow-brand/20">
+        <Button form="user-access-form" type="submit" isLoading={isSubmitting} className="w-full rounded-2xl py-5 text-sm font-black uppercase shadow-xl shadow-brand/20">
           Cadastrar Usuário
         </Button>
       }
     >
-      <form id="user-access-form" onSubmit={submit} noValidate className="space-y-4">
+      <form id="user-access-form" onSubmit={submit} noValidate className="space-y-6">
         <div>
-          <FieldLabel required>Nome do Usuário</FieldLabel>
-          <Input placeholder="Nome Completo" error={errors.name?.message} {...register("name")} />
+          <FieldLabel>Nome do Usuário</FieldLabel>
+          <Input
+            placeholder="Nome Completo"
+            error={errors.name?.message}
+            className="h-auto px-4 py-3"
+            {...register("name")}
+          />
           <FieldError message={errors.name?.message} />
         </div>
         <div>
-          <FieldLabel required>E-mail</FieldLabel>
-          <Input type="email" placeholder="usuario@empresa.com" error={errors.email?.message} {...register("email")} />
+          <FieldLabel>E-mail</FieldLabel>
+          <Input
+            type="email"
+            placeholder="usuario@empresa.com"
+            error={errors.email?.message}
+            className="h-auto px-4 py-3"
+            {...register("email")}
+          />
           <FieldError message={errors.email?.message} />
         </div>
         <div>
-          <FieldLabel required>Senha Inicial</FieldLabel>
+          <FieldLabel>Senha Inicial</FieldLabel>
           <Input
             type="password"
             placeholder="********"
@@ -92,11 +106,12 @@ export function UserFormDialog({
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             error={passwordError}
+            className="h-auto px-4 py-3"
           />
           <FieldError message={passwordError} />
         </div>
         <div>
-          <FieldLabel required>Tipo de Usuário (Nível)</FieldLabel>
+          <FieldLabel>Tipo de Usuário (Nível)</FieldLabel>
           <Controller
             control={control}
             name="role"
@@ -105,8 +120,9 @@ export function UserFormDialog({
                 options={roleOptions}
                 value={field.value}
                 onChange={field.onChange}
-                placeholder="Selecione..."
+                searchable={false}
                 error={errors.role?.message}
+                className="h-auto rounded-xl px-4 py-3 text-sm font-bold"
               />
             )}
           />

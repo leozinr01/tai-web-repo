@@ -64,7 +64,7 @@ function bottomBarPercent(machine: Machine, key: MachineVariableKey): number {
   return 100;
 }
 
-function useAnimatedPercent(target: number, duration = 1000) {
+function useAnimatedNumber(target: number, duration = 1000) {
   const [value, setValue] = useState(0);
 
   useEffect(() => {
@@ -86,6 +86,62 @@ function useAnimatedPercent(target: number, duration = 1000) {
   return value;
 }
 
+const NUMERIC_VALUE_PATTERN = /^(-?\d+(?:\.\d+)?)(.*)$/;
+
+function useAnimationProgress(duration: number, resetKey: string) {
+  const [t, setT] = useState(0);
+
+  useEffect(() => {
+    setT(0);
+    let raf = 0;
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const raw = Math.min((now - start) / duration, 1);
+      setT(1 - Math.pow(1 - raw, 3));
+      if (raw < 1) raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetKey, duration]);
+
+  return t;
+}
+
+function AnimatedBottomStat({
+  label,
+  value,
+  percent,
+  barClassName,
+}: {
+  label: string;
+  value: string;
+  percent: number;
+  barClassName: string;
+}) {
+  const match = value.match(NUMERIC_VALUE_PATTERN);
+  const numStr = match?.[1] ?? "0";
+  const suffix = match?.[2] ?? "";
+  const decimals = numStr.includes(".") ? numStr.split(".")[1].length : 0;
+  const targetNum = parseFloat(numStr);
+
+  const progress = useAnimationProgress(1200, `${targetNum}|${percent}`);
+  const animatedValue = match ? `${(targetNum * progress).toFixed(decimals)}${suffix}` : value;
+  const animatedPercent = percent * progress;
+
+  return (
+    <div className="relative overflow-hidden rounded-lg border border-panel-border bg-white/5 p-3">
+      <p className="label-caps">{label}</p>
+      <p className="mt-1 text-sm font-bold text-slate-100">{animatedValue}</p>
+      <div className="absolute inset-x-0 bottom-0 h-1 bg-white/10">
+        <div className={cn(barClassName, "h-1")} style={{ width: `${animatedPercent}%` }} />
+      </div>
+    </div>
+  );
+}
+
 export function MachineCard({
   machine,
   sectorName,
@@ -99,7 +155,7 @@ export function MachineCard({
   const settingsDialog = useDisclosure();
   const editDialog = useDisclosure();
   const updateMutation = useUpdateMachine();
-  const animatedOee = useAnimatedPercent(machine.oeePercent);
+  const animatedOee = useAnimatedNumber(machine.oeePercent);
   const [complementaresOpen, setComplementaresOpen] = useState(false);
   const oeeHistoryData = machine.oeeHistory.map((value) => ({ value }));
 
@@ -296,19 +352,13 @@ export function MachineCard({
           <div className="mt-3 grid grid-cols-2 gap-3">
             {bottom.map(({ display, visible }) =>
               visible ? (
-                <div
+                <AnimatedBottomStat
                   key={display.key}
-                  className="relative overflow-hidden rounded-lg border border-panel-border bg-white/5 p-3"
-                >
-                  <p className="label-caps">{display.label}</p>
-                  <p className="mt-1 text-sm font-bold text-slate-100">{display.value}</p>
-                  <div className="absolute inset-x-0 bottom-0 h-1 bg-white/10">
-                    <div
-                      className={cn(display.key === "production" ? "bg-success" : "bg-brand", "h-1")}
-                      style={{ width: `${bottomBarPercent(machine, display.key)}%` }}
-                    />
-                  </div>
-                </div>
+                  label={display.label}
+                  value={display.value}
+                  percent={bottomBarPercent(machine, display.key)}
+                  barClassName={display.key === "production" ? "bg-success" : "bg-brand"}
+                />
               ) : (
                 <div key={display.key} />
               ),
