@@ -104,7 +104,6 @@ function useAnimationProgress(duration: number, resetKey: string) {
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetKey, duration]);
 
   return t;
@@ -124,7 +123,7 @@ function AnimatedBottomStat({
   const match = value.match(NUMERIC_VALUE_PATTERN);
   const numStr = match?.[1] ?? "0";
   const suffix = match?.[2] ?? "";
-  const decimals = numStr.includes(".") ? numStr.split(".")[1].length : 0;
+  const decimals = numStr.split(".")[1]?.length ?? 0;
   const targetNum = parseFloat(numStr);
 
   const progress = useAnimationProgress(1200, `${targetNum}|${percent}`);
