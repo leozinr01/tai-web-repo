@@ -39,7 +39,7 @@ export function AppShell() {
           <img src="/logo-tai-project.png" alt="Tai Project" className="h-6 w-auto object-contain" />
         </header>
 
-        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-3 pb-6 pt-4 sm:p-5 md:p-8">
+        <main className="scroll-darken min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-3 pb-6 pt-4 sm:p-5 md:p-8">
           <div className="mx-auto w-full max-w-[1600px]">
             <Outlet />
           </div>
