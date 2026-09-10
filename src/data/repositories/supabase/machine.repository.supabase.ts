@@ -200,10 +200,10 @@ function toLossBreakdown(row: MaquinaRow): MachineLossBreakdown {
     productivity: [
       { key: "small_stops", label: "Pequenas Falhas", minutes: hhmmToMinutes(row.OEE_produt_peq_falhas) },
       { key: "reduced_speed", label: "Queda de Velocidade", minutes: hhmmToMinutes(row.OEE_produt_qued_veloc) },
-      { key: "raw_material_defect", label: "Defeito Materia Prima", minutes: hhmmToMinutes(row.OEE_produt_def_mat_prima) },
+      { key: "raw_material_defect", label: "Defeito Matéria Prima", minutes: hhmmToMinutes(row.OEE_produt_def_mat_prima) },
     ],
     quality: [
-      { key: "non_conforming_product", label: "Produto Nao Conforme", minutes: hhmmToMinutes(row.OEE_qualidad_prod_nao_conform) },
+      { key: "non_conforming_product", label: "Produto não Conforme", minutes: hhmmToMinutes(row.OEE_qualidad_prod_nao_conform) },
       { key: "scrap", label: "Refugo", minutes: hhmmToMinutes(row.OEE_qualidad_refugo) },
       { key: "rework", label: "Retrabalho", minutes: hhmmToMinutes(row.OEE_qualidad_retrabalho) },
     ],
