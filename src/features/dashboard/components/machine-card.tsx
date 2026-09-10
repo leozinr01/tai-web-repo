@@ -187,7 +187,7 @@ export function MachineCard({
 
   return (
     <>
-      <Card className="cursor-pointer p-4 transition-all duration-300 hover:scale-[1.02] hover:border-white/20 hover:bg-white/10 active:scale-[0.98]">
+      <Card className="cursor-pointer p-5 transition-all duration-300 hover:scale-[1.02] hover:border-white/20 hover:bg-white/10 active:scale-[0.98]">
         <div className="flex items-start justify-between gap-2">
           <button
             type="button"
@@ -195,7 +195,7 @@ export function MachineCard({
             className="min-w-0 text-left"
             aria-label={`Ver detalhes de ${machine.name}`}
           >
-            <p className="truncate text-lg font-bold text-white hover:text-brand-light">{machine.name}</p>
+            <p className="truncate text-xl font-bold text-white hover:text-brand-light">{machine.name}</p>
             <p className="flex items-center gap-1 text-[11px] text-muted">
               <Zap className="h-3 w-3 shrink-0 text-brand-light" />
               <span className="truncate">{sectorName ?? "-"}</span>

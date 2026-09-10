@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp } from "lucide-react";
-import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
+import { AreaChart, Area, ResponsiveContainer, Tooltip, YAxis } from "recharts";
 import type { IndicatorPoint } from "@/domain/entities/indicator";
 
 export function IndicatorCard({
@@ -29,7 +29,7 @@ export function IndicatorCard({
   return (
     <Card className="flex flex-col gap-4 p-4">
       <div className="flex items-center justify-between">
-        <p className="label-caps">{label}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{label}</p>
         <div className="rounded-lg bg-white/5 p-1.5">
           <TrendingUp className="h-3.5 w-3.5" style={{ color }} />
         </div>
@@ -37,7 +37,7 @@ export function IndicatorCard({
       <div className="flex items-end justify-between">
         <span className="text-2xl font-bold text-white">{value ?? 0}%</span>
         <div className="h-10 w-20">
-          {history && history.length > 0 ? (
+          {history && history.length > 1 ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={history}>
                 <defs>
@@ -46,6 +46,7 @@ export function IndicatorCard({
                     <stop offset="100%" stopColor={color} stopOpacity={0} />
                   </linearGradient>
                 </defs>
+                <YAxis hide domain={["dataMin - 3", "dataMax + 3"]} />
                 <Tooltip cursor={false} content={() => null} />
                 <Area
                   type="monotone"
@@ -53,15 +54,13 @@ export function IndicatorCard({
                   stroke={color}
                   strokeWidth={2}
                   fill={`url(#grad-${label})`}
-                  isAnimationActive
-                  animationDuration={900}
-                  activeDot={{ r: 3, fill: color, stroke: "#0a1a2f", strokeWidth: 2 }}
+                  isAnimationActive={false}
+                  dot={false}
+                  activeDot={false}
                 />
               </AreaChart>
             </ResponsiveContainer>
-          ) : (
-            <TrendingUp className="h-5 w-5 text-muted" />
-          )}
+          ) : null}
         </div>
       </div>
     </Card>

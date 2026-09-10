@@ -126,31 +126,30 @@ export function DashboardPage() {
         />
       </div>
 
-      <Card className="p-4">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-200">
+      <Card className="overflow-hidden p-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 p-4">
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-200">
             <Filter className="h-4 w-4 text-brand-light" />
             Filtros de operacao
           </p>
           <div className="flex items-center gap-3">
             <button
               onClick={defaultSettingsDialog.open}
-              className="text-xs font-semibold uppercase tracking-wide text-brand-light hover:underline"
+              className="text-[10px] font-semibold uppercase tracking-wide text-brand hover:underline"
             >
               Cards (todos)
             </button>
-            {hasFilters && (
-              <button
-                onClick={clearFilters}
-                className="text-xs font-semibold uppercase tracking-wide text-brand-light hover:underline"
-              >
-                Limpar todos
-              </button>
-            )}
+            <button
+              onClick={clearFilters}
+              disabled={!hasFilters}
+              className="text-[10px] font-semibold uppercase tracking-wide text-slate-300 hover:text-white hover:underline disabled:cursor-default disabled:text-muted disabled:hover:no-underline"
+            >
+              Limpar todos
+            </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-5">
           <div>
             <label className="label-caps mb-1.5 block">Setor</label>
             <SearchableSelect
@@ -158,15 +157,17 @@ export function DashboardPage() {
               value={sectorId}
               onChange={setSectorId}
               placeholder="Todos os Setores"
+              className="font-bold"
             />
           </div>
           <div>
-            <label className="label-caps mb-1.5 block">Maquina</label>
+            <label className="label-caps mb-1.5 block">Máquina</label>
             <SearchableSelect
-              options={[{ value: "", label: "Todas as Maquinas" }, ...machineOptions]}
+              options={[{ value: "", label: "Todas as Máquinas" }, ...machineOptions]}
               value={machineId}
               onChange={setMachineId}
-              placeholder="Todas as Maquinas"
+              placeholder="Todas as Máquinas"
+              className="font-bold"
             />
           </div>
           <div>
@@ -176,6 +177,7 @@ export function DashboardPage() {
               value={status}
               onChange={setStatus}
               placeholder="Todos os Status"
+              className="font-bold"
             />
           </div>
           <div>
@@ -221,7 +223,7 @@ export function DashboardPage() {
       )}
 
       {machinesQuery.isSuccess && machinesQuery.data.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {machinesQuery.data.map((machine) => (
             <MachineCard
               key={machine.id}

@@ -57,8 +57,8 @@ const areaOptions = Object.entries(appointmentAreaLabels).map(([value, label]) =
 const segmentOptions = affectedSegmentOptions.map((s) => ({ value: s, label: s }));
 
 const fieldLabelCls = "text-[10px] tracking-widest pl-1";
-const selectFieldCls = "h-auto rounded-xl px-4 py-3 text-sm font-bold";
-const inputFieldCls = "h-auto rounded-xl px-4 py-3 text-sm";
+const selectFieldCls = "h-auto rounded-lg px-3 py-2 text-sm font-bold";
+const inputFieldCls = "h-auto rounded-lg px-3 py-2 text-sm";
 
 export function AppointmentFormDialog({
   open,
@@ -163,15 +163,16 @@ export function AppointmentFormDialog({
       onOpenChange={onOpenChange}
       title={initial ? "Editar apontamento" : "Novo apontamento"}
       description="Preencha os campos para registrar a operação"
-      size="sm"
+      size="md"
       titleClassName="uppercase tracking-tight"
       descriptionClassName="text-xs font-medium"
-      closeButtonClassName="rounded-xl border border-white/5 bg-white/5 p-2.5"
+      closeButtonClassName="rounded-lg border border-white/5 bg-white/5 p-2.5"
+      contentClassName="gap-4"
       footer={
-        <div className="flex gap-4 pt-2">
+        <div className="flex gap-3 pt-1">
           <Button
             variant="outline"
-            className="flex-1 rounded-2xl border-white/10 bg-white/5 py-5 text-sm font-black uppercase active:scale-95"
+            className="flex-1 rounded-lg border-white/10 bg-white/5 py-3 text-sm font-black uppercase active:scale-95"
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
@@ -181,61 +182,63 @@ export function AppointmentFormDialog({
             form="appointment-form"
             type="submit"
             isLoading={isSubmitting}
-            className="flex-1 rounded-2xl py-5 text-sm font-black uppercase shadow-xl shadow-brand/20 active:scale-95"
+            className="flex-1 rounded-lg py-3 text-sm font-black uppercase shadow-xl shadow-brand/20 active:scale-95"
           >
             Registrar
           </Button>
         </div>
       }
     >
-      <form id="appointment-form" onSubmit={handleSubmit(handleFormSubmit)} noValidate className="space-y-4">
-        <div>
-          <FieldLabel required className={fieldLabelCls}>
-            Qual setor?
-          </FieldLabel>
-          <Controller
-            control={control}
-            name="sectorId"
-            render={({ field }) => (
-              <SearchableSelect
-                options={sectorOptions}
-                value={field.value}
-                onChange={(v) => {
-                  field.onChange(v);
-                  setValue("machineId", "");
-                }}
-                placeholder="Selecione..."
-                error={errors.sectorId?.message}
-                className={selectFieldCls}
-              />
-            )}
-          />
-          <FieldError message={errors.sectorId?.message} />
+      <form id="appointment-form" onSubmit={handleSubmit(handleFormSubmit)} noValidate className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <FieldLabel required className={fieldLabelCls}>
+              Qual setor?
+            </FieldLabel>
+            <Controller
+              control={control}
+              name="sectorId"
+              render={({ field }) => (
+                <SearchableSelect
+                  options={sectorOptions}
+                  value={field.value}
+                  onChange={(v) => {
+                    field.onChange(v);
+                    setValue("machineId", "");
+                  }}
+                  placeholder="Selecione..."
+                  error={errors.sectorId?.message}
+                  className={selectFieldCls}
+                />
+              )}
+            />
+            <FieldError message={errors.sectorId?.message} />
+          </div>
+
+          <div>
+            <FieldLabel required className={fieldLabelCls}>
+              Qual máquina?
+            </FieldLabel>
+            <Controller
+              control={control}
+              name="machineId"
+              render={({ field }) => (
+                <SearchableSelect
+                  options={machineOptions}
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Selecione..."
+                  disabled={!sectorId}
+                  error={errors.machineId?.message}
+                  className={selectFieldCls}
+                />
+              )}
+            />
+            <FieldError message={errors.machineId?.message} />
+          </div>
         </div>
 
-        <div>
-          <FieldLabel required className={fieldLabelCls}>
-            Qual máquina?
-          </FieldLabel>
-          <Controller
-            control={control}
-            name="machineId"
-            render={({ field }) => (
-              <SearchableSelect
-                options={machineOptions}
-                value={field.value}
-                onChange={field.onChange}
-                placeholder="Selecione..."
-                disabled={!sectorId}
-                error={errors.machineId?.message}
-                className={selectFieldCls}
-              />
-            )}
-          />
-          <FieldError message={errors.machineId?.message} />
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <FieldLabel required className={cn(fieldLabelCls, "flex items-center gap-1")}>
               Área do apontamento
@@ -284,7 +287,7 @@ export function AppointmentFormDialog({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <FieldLabel required className={fieldLabelCls}>
               Data de lançamento
@@ -326,7 +329,7 @@ export function AppointmentFormDialog({
             <button
               type="button"
               onClick={() => setQuickCreateOpen(true)}
-              className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-xl bg-brand text-white transition-colors hover:bg-brand-hover"
+              className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg bg-brand text-white transition-colors hover:bg-brand-hover"
               aria-label="Cadastrar novo usuário"
               title="Cadastrar novo usuário"
             >
@@ -340,15 +343,15 @@ export function AppointmentFormDialog({
             Apontamento
           </FieldLabel>
           <textarea
-            rows={4}
+            rows={3}
             placeholder="Descreva aqui os detalhes técnicos..."
-            className="h-24 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-muted focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+            className="h-20 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-muted focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
             {...register("description")}
           />
           <FieldError message={errors.description?.message} />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <FieldLabel required className={fieldLabelCls}>
               Início (HH:MM)

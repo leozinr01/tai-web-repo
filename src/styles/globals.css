@@ -38,15 +38,15 @@
 @layer components {
   .bg-tai {
     background:
-      radial-gradient(circle at 12% 18%, rgba(59, 130, 246, 0.14), rgba(0, 0, 0, 0) 90%),
-      radial-gradient(circle at 88% 2%, rgba(45, 212, 191, 0.2), rgba(0, 0, 0, 0) 95%),
-      linear-gradient(90deg, rgb(5, 9, 19) 0%, rgb(12, 22, 46) 100%);
+      radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.15), rgba(0, 0, 0, 0) 45%),
+      radial-gradient(circle at 85% 0%, rgba(45, 212, 191, 0.12), rgba(0, 0, 0, 0) 40%),
+      linear-gradient(rgb(2, 6, 23) 0%, rgb(1, 11, 26) 100%);
   }
   .label-caps {
     @apply text-[11px] font-semibold uppercase tracking-wider text-muted;
   }
   .panel {
-    @apply bg-panel border border-panel-border rounded-2xl backdrop-blur-sm shadow-card;
+    @apply bg-panel border border-panel-border rounded-2xl backdrop-blur-xl shadow-card;
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
