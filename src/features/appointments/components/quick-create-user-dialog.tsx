@@ -25,7 +25,7 @@ interface QuickCreateUserDialogProps {
   onOpenChange: (open: boolean) => void;
   companyId: string;
   isSubmitting: boolean;
-  onSubmit: (data: Omit<User, "id" | "createdAt" | "avatarInitials">) => Promise<User>;
+  onSubmit: (data: Omit<User, "id" | "createdAt" | "avatarInitials"> & { password: string }) => Promise<User>;
   onCreated: (user: User) => void;
 }
 
@@ -57,6 +57,7 @@ export function QuickCreateUserDialog({
       companyId,
       name: values.name,
       email: values.email,
+      password: values.password,
       role: values.role,
       status: UserStatus.ACTIVE,
     });

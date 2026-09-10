@@ -16,17 +16,3 @@ export function initials(name: string): string {
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
-/** Simula latencia de rede e uma pequena chance de erro, para validar loading/erro na UI. */
-export async function simulateNetwork<T>(
-  factory: () => T,
-  opts: { minMs?: number; maxMs?: number; failRate?: number } = {},
-): Promise<T> {
-  const { minMs = 250, maxMs = 700, failRate = 0 } = opts;
-  const delay = Math.floor(Math.random() * (maxMs - minMs)) + minMs;
-  await sleep(delay);
-  if (failRate > 0 && Math.random() < failRate) {
-    throw new Error("Nao foi possivel completar a operacao. Tente novamente.");
-  }
-  return factory();
-}

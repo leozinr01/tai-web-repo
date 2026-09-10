@@ -105,7 +105,7 @@ export function SettingsPage() {
     }
   };
 
-  const handleUserSubmit = async (values: UserAccessFormValues) => {
+  const handleUserSubmit = async (values: UserAccessFormValues & { password: string }) => {
     try {
       await createUserMutation.mutateAsync({ ...values, companyId, status: UserStatus.ACTIVE });
       toast({ title: "Novo acesso criado.", variant: "success" });

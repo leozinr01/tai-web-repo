@@ -23,7 +23,7 @@ export function UserFormDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (values: UserAccessFormValues) => Promise<void>;
+  onSubmit: (values: UserAccessFormValues & { password: string }) => Promise<void>;
   isSubmitting: boolean;
 }) {
   const {
@@ -55,7 +55,7 @@ export function UserFormDialog({
       return;
     }
     setPasswordError(undefined);
-    return onSubmit(values);
+    return onSubmit({ ...values, password });
   });
 
   return (

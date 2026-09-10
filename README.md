@@ -5,15 +5,19 @@ React + Vite + TypeScript (modo `strict`).
 
 O projeto foi desenhado desde o início com uma camada de repositórios baseada em
 interfaces (`data/contracts`), o que permite trocar as implementações sem
-reescrever telas, formulários ou regras de negócio. Hoje toda a aplicação roda
-sobre dados **mockados** (`data/repositories/mock`, persistidos em
-`localStorage`), sem nenhuma integração com backend externo.
+reescrever telas, formulários ou regras de negócio. A aplicação roda sobre o
+**Supabase** do projeto (`data/repositories/supabase`), consumindo o schema
+real já existente (`Empresas`, `User`, `Sala`, `Maquinas`, `Apontamentos`,
+`Ordem de serviço`, `Relatório`, `OEE geral`, `variables`, `dashboard_configs`)
+— não há mais dados mockados ou persistência em `localStorage` para dados de
+negócio.
 
 ## Como instalar e executar
 
-Pré-requisitos: Node.js 18+ e npm.
+Pré-requisitos: Node.js 18+ e npm, e as variáveis de ambiente do Supabase.
 
 ```bash
+cp .env.example .env   # preencha VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY
 npm install
 npm run dev
 ```
@@ -32,12 +36,15 @@ npm run test         # testes unitários (Vitest)
 
 ## Autenticação
 
-O login é simulado: valida contra os usuários mockados em
-`src/data/mocks/seed-users.ts` e a senha de demonstração definida em
-`DEMO_PASSWORD` (mesmo arquivo). A sessão é persistida em `localStorage`.
+O login usa o Supabase Auth real (`auth.signInWithPassword`). O perfil do
+usuário (empresa, nome, papel) vem da tabela `User`, vinculada via `idRef` ao
+`auth.users` do Supabase. A sessão é gerenciada pelo próprio client do
+Supabase (não mais em `localStorage`).
 
-Usuários com `status` mapeado como `inactive` têm o login bloqueado com uma
-mensagem específica.
+Usuários cujo campo `Status` indica inativo têm o login bloqueado com uma
+mensagem específica. Criar um novo acesso (tela de Configurações) cria também
+a conta real de autenticação, via a Edge Function `create-auth-user`
+(executada com a service role no servidor — só Admin/Master podem chamá-la).
 
 Somente usuários com perfil **Master** enxergam o item **Painel Master** no
 menu e conseguem acessar `/painel-master` — qualquer outro perfil que tente
@@ -65,9 +72,8 @@ src/
     contracts/      # interfaces de repositório (o "contrato" que qualquer
                      # implementação deve seguir)
     repositories/
-      mock/         # adaptadores mockados (localStorage) — usados em runtime
+      supabase/     # adaptadores reais sobre o Supabase — usados em runtime
       index.ts      # ponto único de resolução dos repositórios usados pela app
-    mocks/          # dados simulados (seed) usados pelos adaptadores mock
   hooks/            # hooks utilitários (debounce, media query, disclosure, toast)
   lib/               # utilitários puros (cn, csv, storage, labels, simulateNetwork)
   routes/           # configuração do React Router
@@ -83,13 +89,24 @@ Regras de arquitetura seguidas no código:
   React** — são módulos puros em TypeScript, prontos para serem extraídos para
   um pacote compartilhado com o futuro app React Native.
 
-## Como os mocks funcionam
+## Sobre o schema do Supabase
 
-As implementações em `data/repositories/mock/` usam `localStorage` como
-"banco" — na primeira execução, os dados de `data/mocks/seed-*.ts` são
-copiados para `localStorage`; a partir daí, toda leitura/escrita passa a usar
-o que está persistido lá, então edições feitas no painel sobrevivem a
-navegações e recarregamentos (até que o `localStorage` seja limpo).
+O banco (`data/repositories/supabase/`) é um schema legado, em português, que
+já existia e já está em produção — não foi desenhado sob medida para este
+painel. Por isso os adaptadores fazem algumas traduções:
+
+- **Setor é identificado pelo nome, não por id**: `Sala.sala` (texto) é a
+  chave usada por `Maquinas.IDsala`, `Apontamentos.Setor` e
+  `"Ordem de serviço".setor`.
+- **Máquina e usuário são referenciados por nome (texto) em `Apontamentos` e
+  `"Ordem de serviço"`**, não por id — os adaptadores resolvem isso via
+  lookup (`data/repositories/supabase/company-lookups.ts`).
+- **`Empresas` não tem colunas de e-mail nem status.** O e-mail exibido é
+  derivado do usuário Master/Admin vinculado à empresa; o status é sempre
+  "ativo" (não há onde persistir uma desativação). Essas telas ficam
+  limitadas de propósito, para não alterar o schema em produção.
+- **`Relatório`** e **`OEE geral`** já guardam histórico real (não simulado)
+  usado nas telas de Relatórios e no Dashboard.
 
 ## O que pode ser compartilhado com o futuro app React Native
 

@@ -35,6 +35,7 @@ export type WorkOrderStatus = (typeof WorkOrderStatus)[keyof typeof WorkOrderSta
 export const WorkOrderPeriodicity = {
   DIARIA: "daily",
   SEMANAL: "weekly",
+  QUINZENAL: "biweekly",
   MENSAL: "monthly",
   TRIMESTRAL: "quarterly",
   SEMESTRAL: "semiannual",

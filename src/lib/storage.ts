@@ -1,7 +1,6 @@
 /**
  * Wrapper simples sobre localStorage com fallback em memoria (SSR-safe) e
- * serializacao JSON. Usado pelos adaptadores mockados para persistir dados
- * entre recarregamentos de pagina.
+ * serializacao JSON. Usado para preferencias de UI (ex.: sidebar recolhida).
  */
 const memoryStore = new Map<string, string>();
 
@@ -32,7 +31,7 @@ export const storage = {
         memoryStore.set(key, raw);
       }
     } catch {
-      // silencioso: persistencia e best-effort em ambiente mockado
+      // silencioso: persistencia de preferencia de UI e best-effort
     }
   },
   remove(key: string): void {
@@ -40,13 +39,3 @@ export const storage = {
     else memoryStore.delete(key);
   },
 };
-
-export const STORAGE_KEYS = {
-  SESSION: "tai:session",
-  COMPANIES: "tai:companies",
-  USERS: "tai:users",
-  SECTORS: "tai:sectors",
-  MACHINES: "tai:machines",
-  APPOINTMENTS: "tai:appointments",
-  WORK_ORDERS: "tai:work_orders",
-} as const;

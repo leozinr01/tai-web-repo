@@ -16,6 +16,7 @@ export const workOrderStatusLabels: Record<WorkOrderStatus, string> = {
 export const workOrderPeriodicityLabels: Record<WorkOrderPeriodicity, string> = {
   [WorkOrderPeriodicity.DIARIA]: "Diária",
   [WorkOrderPeriodicity.SEMANAL]: "Semanal",
+  [WorkOrderPeriodicity.QUINZENAL]: "Quinzenal",
   [WorkOrderPeriodicity.MENSAL]: "Mensal",
   [WorkOrderPeriodicity.TRIMESTRAL]: "Trimestral",
   [WorkOrderPeriodicity.SEMESTRAL]: "Semestral",

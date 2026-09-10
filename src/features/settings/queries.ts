@@ -28,7 +28,8 @@ export function useUpdateCompanyLogo() {
 export function useCreateUser() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Omit<User, "id" | "createdAt" | "avatarInitials">) => repositories.users.create(data),
+    mutationFn: (data: Omit<User, "id" | "createdAt" | "avatarInitials"> & { password: string }) =>
+      repositories.users.create(data),
     onSuccess: (user: User) => qc.invalidateQueries({ queryKey: ["users", user.companyId] }),
   });
 }
