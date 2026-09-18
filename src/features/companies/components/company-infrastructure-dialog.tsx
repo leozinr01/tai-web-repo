@@ -16,7 +16,7 @@ import { SectorFormDialog } from "@/features/companies/components/sector-form-di
 import { MachineFormDialog } from "@/features/companies/components/machine-form-dialog";
 import type { Company } from "@/domain/entities/company";
 import type { Sector } from "@/domain/entities/sector";
-import type { Machine, MachineCustomVariable } from "@/domain/entities/machine";
+import type { Machine, MachineCustomVariable, MachineProductionConfig } from "@/domain/entities/machine";
 
 export function CompanyInfrastructureDialog({
   company,
@@ -95,12 +95,18 @@ export function CompanyInfrastructureDialog({
     name: string;
     sectorId: string;
     customVariables: MachineCustomVariable[];
+    productionConfig: MachineProductionConfig;
   }) => {
     try {
       if (editingMachine) {
         await updateMachine.mutateAsync({
           id: editingMachine.id,
-          data: { name: values.name, sectorId: values.sectorId, customVariables: values.customVariables },
+          data: {
+            name: values.name,
+            sectorId: values.sectorId,
+            customVariables: values.customVariables,
+            productionConfig: values.productionConfig,
+          },
         });
         toast({ title: "Máquina atualizada.", variant: "success" });
       } else {
@@ -109,8 +115,11 @@ export function CompanyInfrastructureDialog({
           sectorId: values.sectorId,
           name: values.name,
         });
-        if (values.customVariables.length > 0) {
-          await updateMachine.mutateAsync({ id: created.id, data: { customVariables: values.customVariables } });
+        if (values.customVariables.length > 0 || Object.values(values.productionConfig).some(Boolean)) {
+          await updateMachine.mutateAsync({
+            id: created.id,
+            data: { customVariables: values.customVariables, productionConfig: values.productionConfig },
+          });
         }
         toast({ title: "Máquina cadastrada.", variant: "success" });
       }

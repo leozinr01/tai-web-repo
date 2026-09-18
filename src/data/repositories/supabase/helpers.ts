@@ -39,6 +39,23 @@ export function minutesToHHMM(total: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
+/** Converte textos legados tipo "08:00", "08:00hs" ou "'08:00'::text" em horas (numero). */
+export function hoursTextToNumber(input: string | null | undefined): number {
+  if (!input) return 0;
+  const match = /(\d+)(?::(\d{1,2}))?/.exec(input);
+  if (!match) return 0;
+  const hours = parseInt(match[1] ?? "0", 10) || 0;
+  const minutes = parseInt(match[2] ?? "0", 10) || 0;
+  return hours + minutes / 60;
+}
+
+export function numberToHoursText(hours: number): string {
+  const safe = Math.max(0, hours || 0);
+  const wholeHours = Math.floor(safe);
+  const minutes = Math.round((safe - wholeHours) * 60);
+  return `${String(wholeHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
 const TIPO_TO_ROLE: Record<string, UserRole> = {
   Master: UserRole.MASTER,
   Admin: UserRole.ADMIN,

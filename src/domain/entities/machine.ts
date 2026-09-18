@@ -10,6 +10,21 @@ export interface MachineVariables {
   productionUnit: string;
 }
 
+export interface MachineProductionConfig {
+  /** Quantas horas tem um turno dessa maquina. */
+  shiftHours: number;
+  /** Quantas horas de producao por dia essa maquina tem programadas. */
+  dailyProductionHours: number;
+  /** Unidade de medida do produto produzido (ex: "Quilo (kg)"). */
+  productUnit: string;
+  /** Quantidade produzida no tempo registrado (shiftHours/dailyProductionHours). */
+  producedQuantity: number;
+  /** Segundos necessarios para fabricar 1 unidade do produto. */
+  secondsPerUnit: number;
+  /** Velocidade maxima da maquina, na mesma unidade de producao, por segundo. */
+  maxSpeed: number;
+}
+
 export type MachineVariableType = "int" | "float" | "bool";
 
 export interface MachineCustomVariable {
@@ -66,4 +81,5 @@ export interface Machine {
   customVariables: MachineCustomVariable[];
   cardSettings: MachineCardSettings;
   lossBreakdown: MachineLossBreakdown;
+  productionConfig: MachineProductionConfig;
 }

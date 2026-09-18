@@ -14,7 +14,7 @@ export interface MachineRepository {
   create(data: { companyId: string; sectorId: string; name: string }): Promise<Machine>;
   update(
     id: string,
-    data: Partial<Pick<Machine, "name" | "sectorId" | "customVariables" | "cardSettings">>,
+    data: Partial<Pick<Machine, "name" | "sectorId" | "customVariables" | "cardSettings" | "productionConfig">>,
   ): Promise<Machine>;
   remove(id: string): Promise<void>;
   updateCardSettingsForAll(companyId: string, cardSettings: MachineCardSettings): Promise<Machine[]>;

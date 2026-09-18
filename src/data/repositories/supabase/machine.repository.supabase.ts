@@ -4,6 +4,7 @@ import type {
   MachineCardSettings,
   MachineCustomVariable,
   MachineLossBreakdown,
+  MachineProductionConfig,
   MachineVariableType,
 } from "@/domain/entities/machine";
 import { MachineStatus } from "@/domain/types/enums";
@@ -13,8 +14,10 @@ import {
   domainVariableKeyToDbKey,
   flagsFromMachineStatus,
   hhmmToMinutes,
+  hoursTextToNumber,
   machineCode,
   machineStatusFromFlags,
+  numberToHoursText,
 } from "@/data/repositories/supabase/helpers";
 
 const HIGH_VIBRATION_THRESHOLD = 0.55;
@@ -48,6 +51,11 @@ interface MaquinaRow {
   OEE_Config_Unid_Med: string | null;
   VelocidadeAtual: number | null;
   ProdAtual: number | null;
+  turno: string | null;
+  OEE_Config_horas_Prod_prog: string | null;
+  OEE_Config_Qnt_Produzida: number | null;
+  OEE_Config_Tempo_Produz_seg: number | null;
+  VelocidadeMax: number | null;
 }
 
 const MAQUINA_COLUMNS = [
@@ -78,6 +86,11 @@ const MAQUINA_COLUMNS = [
   "OEE_Config_Unid_Med",
   "VelocidadeAtual",
   "ProdAtual",
+  "turno",
+  "OEE_Config_horas_Prod_prog",
+  "OEE_Config_Qnt_Produzida",
+  "OEE_Config_Tempo_Produz_seg",
+  "VelocidadeMax",
 ].join(", ");
 
 interface VariableRow {
@@ -210,6 +223,17 @@ function toLossBreakdown(row: MaquinaRow): MachineLossBreakdown {
   };
 }
 
+function toProductionConfig(row: MaquinaRow): MachineProductionConfig {
+  return {
+    shiftHours: hoursTextToNumber(row.turno),
+    dailyProductionHours: hoursTextToNumber(row.OEE_Config_horas_Prod_prog),
+    productUnit: row.OEE_Config_Unid_Med ?? "",
+    producedQuantity: row.OEE_Config_Qnt_Produzida ?? 0,
+    secondsPerUnit: row.OEE_Config_Tempo_Produz_seg ?? 0,
+    maxSpeed: row.VelocidadeMax ?? 0,
+  };
+}
+
 function toMachine(row: MaquinaRow, extras: Extras): Machine {
   const customVariables = (extras.variablesByMachine.get(row.id) ?? []).map(toCustomVariable);
   const name = row.maquina ?? "";
@@ -238,6 +262,7 @@ function toMachine(row: MaquinaRow, extras: Extras): Machine {
     customVariables,
     cardSettings: toCardSettings(extras.configByMachine.get(row.id)),
     lossBreakdown: toLossBreakdown(row),
+    productionConfig: toProductionConfig(row),
   };
 }
 
@@ -378,7 +403,7 @@ export class SupabaseMachineRepository implements MachineRepository {
 
   async update(
     id: string,
-    data: Partial<Pick<Machine, "name" | "sectorId" | "customVariables" | "cardSettings">>,
+    data: Partial<Pick<Machine, "name" | "sectorId" | "customVariables" | "cardSettings" | "productionConfig">>,
   ): Promise<Machine> {
     const numericId = Number(id);
     const { data: currentRow, error: fetchError } = await supabase
@@ -392,6 +417,15 @@ export class SupabaseMachineRepository implements MachineRepository {
     const patch: Record<string, unknown> = {};
     if (data.name !== undefined) patch.maquina = data.name;
     if (data.sectorId !== undefined) patch.IDsala = data.sectorId;
+    if (data.productionConfig !== undefined) {
+      const cfg = data.productionConfig;
+      patch.turno = numberToHoursText(cfg.shiftHours);
+      patch.OEE_Config_horas_Prod_prog = numberToHoursText(cfg.dailyProductionHours);
+      patch.OEE_Config_Unid_Med = cfg.productUnit;
+      patch.OEE_Config_Qnt_Produzida = Math.round(cfg.producedQuantity);
+      patch.OEE_Config_Tempo_Produz_seg = cfg.secondsPerUnit;
+      patch.VelocidadeMax = cfg.maxSpeed;
+    }
     if (Object.keys(patch).length > 0) {
       const { error } = await supabase.from("Maquinas").update(patch).eq("id", numericId);
       if (error) throw new Error(error.message);

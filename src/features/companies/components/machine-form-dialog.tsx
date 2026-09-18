@@ -9,13 +9,42 @@ import { FieldError, FieldLabel, Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn, uid } from "@/lib/utils";
 import type { Sector } from "@/domain/entities/sector";
-import type { Machine, MachineCustomVariable, MachineVariableType } from "@/domain/entities/machine";
+import type {
+  Machine,
+  MachineCustomVariable,
+  MachineProductionConfig,
+  MachineVariableType,
+} from "@/domain/entities/machine";
+
+const optionalNumber = z.coerce.number().min(0, "Informe um valor valido.").optional();
 
 const machineFormSchema = z.object({
   name: z.string().min(2, "Informe o nome da maquina."),
   sectorId: z.string().min(1, "Selecione um setor."),
+  shiftHours: optionalNumber,
+  dailyProductionHours: optionalNumber,
+  productUnit: z.string().optional(),
+  producedQuantity: optionalNumber,
+  secondsPerUnit: optionalNumber,
+  maxSpeed: optionalNumber,
 });
 type MachineFormValues = z.infer<typeof machineFormSchema>;
+
+const PRODUCT_UNIT_OPTIONS = [
+  { value: "Quilo (kg)", label: "Quilo (kg)" },
+  { value: "Unidade (un)", label: "Unidade (un)" },
+  { value: "Metro (m)", label: "Metro (m)" },
+  { value: "Litro (l)", label: "Litro (l)" },
+];
+
+const emptyProductionConfig: MachineProductionConfig = {
+  shiftHours: 0,
+  dailyProductionHours: 0,
+  productUnit: "",
+  producedQuantity: 0,
+  secondsPerUnit: 0,
+  maxSpeed: 0,
+};
 
 const VARIABLE_TYPE_LABEL: Record<MachineVariableType, string> = {
   int: "INT",
@@ -47,7 +76,9 @@ export function MachineFormDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (values: MachineFormValues & { customVariables: MachineCustomVariable[] }) => Promise<void>;
+  onSubmit: (
+    values: MachineFormValues & { customVariables: MachineCustomVariable[]; productionConfig: MachineProductionConfig },
+  ) => Promise<void>;
   isSubmitting: boolean;
   initial?: Machine | null;
   sectors: Sector[];
@@ -60,13 +91,14 @@ export function MachineFormDialog({
     formState: { errors },
   } = useForm<MachineFormValues>({
     resolver: zodResolver(machineFormSchema),
-    defaultValues: { name: "", sectorId: "" },
+    defaultValues: { name: "", sectorId: "", ...emptyProductionConfig },
   });
   const [customVariables, setCustomVariables] = useState<MachineCustomVariable[]>([]);
 
   useEffect(() => {
     if (open) {
-      reset({ name: initial?.name ?? "", sectorId: initial?.sectorId ?? "" });
+      const productionConfig = initial?.productionConfig ?? emptyProductionConfig;
+      reset({ name: initial?.name ?? "", sectorId: initial?.sectorId ?? "", ...productionConfig });
       setCustomVariables(initial?.customVariables ?? []);
     }
   }, [open, initial, reset]);
@@ -86,7 +118,26 @@ export function MachineFormDialog({
     setCustomVariables((prev) => prev.map((v) => (v.id === id ? { ...v, ...patch } : v)));
   };
 
-  const submit = handleSubmit((values) => onSubmit({ ...values, customVariables }));
+  const submit = handleSubmit(({ shiftHours, dailyProductionHours, productUnit, producedQuantity, secondsPerUnit, maxSpeed, ...values }) =>
+    onSubmit({
+      ...values,
+      shiftHours,
+      dailyProductionHours,
+      productUnit,
+      producedQuantity,
+      secondsPerUnit,
+      maxSpeed,
+      customVariables,
+      productionConfig: {
+        shiftHours: shiftHours ?? 0,
+        dailyProductionHours: dailyProductionHours ?? 0,
+        productUnit: productUnit ?? "",
+        producedQuantity: producedQuantity ?? 0,
+        secondsPerUnit: secondsPerUnit ?? 0,
+        maxSpeed: maxSpeed ?? 0,
+      },
+    }),
+  );
 
   return (
     <Dialog
@@ -131,6 +182,105 @@ export function MachineFormDialog({
           <p className="mt-1.5 text-[10px] italic text-muted">
             A máquina deve ser vinculada a um setor existente para esta empresa.
           </p>
+        </div>
+
+        <div className="rounded-lg border border-panel-border bg-white/5 p-3">
+          <FieldLabel className="mb-0">Dados da máquina</FieldLabel>
+
+          <div className="mt-2 space-y-3">
+            <div>
+              <FieldLabel className="text-[11px] font-normal normal-case text-muted">
+                Quantas horas tem um turno dessa máquina?
+              </FieldLabel>
+              <Input
+                type="number"
+                step="0.5"
+                min="0"
+                placeholder="Ex: 8"
+                error={errors.shiftHours?.message}
+                {...register("shiftHours")}
+              />
+              <FieldError message={errors.shiftHours?.message} />
+            </div>
+
+            <div>
+              <FieldLabel className="text-[11px] font-normal normal-case text-muted">
+                Quantas horas de produção por dia nessa máquina?
+              </FieldLabel>
+              <Input
+                type="number"
+                step="0.5"
+                min="0"
+                placeholder="Ex: 8"
+                error={errors.dailyProductionHours?.message}
+                {...register("dailyProductionHours")}
+              />
+              <FieldError message={errors.dailyProductionHours?.message} />
+            </div>
+
+            <div>
+              <FieldLabel className="text-[11px] font-normal normal-case text-muted">
+                Qual a unidade de medida do produto produzido nessa máquina?
+              </FieldLabel>
+              <Controller
+                control={control}
+                name="productUnit"
+                render={({ field }) => (
+                  <SearchableSelect
+                    options={PRODUCT_UNIT_OPTIONS}
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    placeholder="Selecione a unidade..."
+                  />
+                )}
+              />
+            </div>
+
+            <div>
+              <FieldLabel className="text-[11px] font-normal normal-case text-muted">
+                Quanto desse produto essa máquina produz no tempo registrado acima?
+              </FieldLabel>
+              <Input
+                type="number"
+                step="1"
+                min="0"
+                placeholder="Ex: 5000"
+                error={errors.producedQuantity?.message}
+                {...register("producedQuantity")}
+              />
+              <FieldError message={errors.producedQuantity?.message} />
+            </div>
+
+            <div>
+              <FieldLabel className="text-[11px] font-normal normal-case text-muted">
+                Quantos segundos (seg) para fabricar 1 unidade desse produto?
+              </FieldLabel>
+              <Input
+                type="number"
+                step="0.1"
+                min="0"
+                placeholder="Ex: 22"
+                error={errors.secondsPerUnit?.message}
+                {...register("secondsPerUnit")}
+              />
+              <FieldError message={errors.secondsPerUnit?.message} />
+            </div>
+
+            <div>
+              <FieldLabel className="text-[11px] font-normal normal-case text-muted">
+                Qual a velocidade máxima da máquina (unidade/seg)?
+              </FieldLabel>
+              <Input
+                type="number"
+                step="0.1"
+                min="0"
+                placeholder="Ex: 100"
+                error={errors.maxSpeed?.message}
+                {...register("maxSpeed")}
+              />
+              <FieldError message={errors.maxSpeed?.message} />
+            </div>
+          </div>
         </div>
 
         <div className="rounded-lg border border-panel-border bg-white/5 p-3">

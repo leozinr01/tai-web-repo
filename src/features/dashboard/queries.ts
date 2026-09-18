@@ -34,7 +34,7 @@ export function useUpdateMachine() {
       data,
     }: {
       id: string;
-      data: Partial<Pick<Machine, "name" | "sectorId" | "customVariables" | "cardSettings">>;
+      data: Partial<Pick<Machine, "name" | "sectorId" | "customVariables" | "cardSettings" | "productionConfig">>;
     }) => repositories.machines.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["machines"] }),
   });
