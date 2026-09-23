@@ -46,7 +46,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
         <ChevronLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
       </button>
 
-      <div className="flex flex-col gap-3 px-5 py-6">
+      <div className="flex flex-col gap-3 px-7 py-6">
         <img src="/logo-tai-project.png" alt="Tai Project" className={cn("w-auto object-contain", collapsed ? "h-8" : "h-12")} />
         {!collapsed && (
           <p className="font-display truncate text-lg font-bold tracking-tight text-white">Tai Project</p>
@@ -101,8 +101,8 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
         </ul>
       </nav>
 
-      <div className="border-t border-white/10 p-3">
-        <div className={cn("flex items-center gap-3 rounded-lg px-2 py-2", !collapsed && "bg-white/5")}>
+      <div className="border-t border-white/10 px-3 py-3">
+        <div className={cn("flex items-center gap-3 rounded-lg px-4 py-2", !collapsed && "bg-white/5")}>
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
             {user?.avatarInitials ?? "--"}
           </div>
@@ -119,7 +119,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
         <button
           onClick={() => logout()}
           className={cn(
-            "mt-2 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-danger-light hover:bg-danger/10",
+            "mt-2 flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-danger-light hover:bg-danger/10",
           )}
         >
           <LogOut className="h-4 w-4 shrink-0" />

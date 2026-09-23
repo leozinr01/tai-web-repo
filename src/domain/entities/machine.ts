@@ -48,6 +48,7 @@ export type MachineVariableKey =
 export interface MachineCardSettings {
   showOeeCircle: boolean;
   topVariableKeys: [MachineVariableKey, MachineVariableKey, MachineVariableKey];
+  topVariableVisible: [boolean, boolean, boolean];
   bottomVariableKeys: [MachineVariableKey, MachineVariableKey];
   bottomVariableVisible: [boolean, boolean];
 }
@@ -57,6 +58,8 @@ export interface MachineLossCategory {
   label: string;
   minutes: number;
 }
+
+export type MachineLossMetric = "availability" | "productivity" | "quality";
 
 export interface MachineLossBreakdown {
   availability: MachineLossCategory[];
