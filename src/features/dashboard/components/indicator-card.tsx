@@ -56,7 +56,7 @@ export function IndicatorCard({
                   fill={`url(#grad-${label})`}
                   isAnimationActive={false}
                   dot={false}
-                  activeDot={false}
+                  activeDot={{ r: 4, fill: color, stroke: "#0a1a2f", strokeWidth: 2 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
