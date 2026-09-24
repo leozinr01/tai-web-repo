@@ -18,7 +18,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/auth-context";
-import { useSectors, useMachines } from "@/features/dashboard/queries";
+import { useSectors, useMachines, useRegisterMachineLoss } from "@/features/dashboard/queries";
 import { useCreateAppointment } from "@/features/appointments/queries";
 import { AppointmentFormDialog } from "@/features/appointments/components/appointment-form-dialog";
 import { useDisclosure } from "@/hooks/use-disclosure";
@@ -31,7 +31,6 @@ interface MachineDrilldownDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   machine: Machine;
-  onOpenSettings?: () => void;
 }
 
 type MetricKey = "availability" | "productivity" | "quality";
@@ -117,7 +116,7 @@ type Level =
   | { level: "metric"; metric: MetricKey }
   | { level: "category"; metric: MetricKey; category: MachineLossCategory };
 
-export function MachineDrilldownDialog({ open, onOpenChange, machine, onOpenSettings }: MachineDrilldownDialogProps) {
+export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineDrilldownDialogProps) {
   const [nav, setNav] = useState<Level>({ level: "root" });
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -132,6 +131,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine, onOpenSett
     queryFn: () => repositories.users.listByCompany(companyId),
   });
   const createAppointmentMutation = useCreateAppointment();
+  const registerLossMutation = useRegisterMachineLoss();
 
   const reset = () => setNav({ level: "root" });
 
@@ -143,6 +143,14 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine, onOpenSett
   const handleCreateAppointment = async (values: AppointmentFormValues) => {
     try {
       await createAppointmentMutation.mutateAsync(values);
+      if (nav.level === "category") {
+        await registerLossMutation.mutateAsync({
+          machineId: machine.id,
+          metric: nav.metric,
+          categoryKey: nav.category.key,
+          minutes: values.durationMinutes,
+        });
+      }
       toast({ title: "Apontamento criado com sucesso.", variant: "success" });
       appointmentDialog.close();
     } catch (err) {
@@ -172,16 +180,6 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine, onOpenSett
                         <p className="text-lg font-bold text-white">{machine.name}</p>
                       </div>
                     </div>
-                    {onOpenSettings && (
-                      <button
-                        type="button"
-                        onClick={onOpenSettings}
-                        aria-label={`Configurar variáveis de ${machine.name}`}
-                        className="self-center rounded-2xl border border-white/10 bg-navy-950/70 p-3 text-[#21c1b3] transition-colors hover:bg-navy-950/90 sm:self-auto"
-                      >
-                        <Settings className="h-8 w-8" />
-                      </button>
-                    )}
                   </div>
 
                   <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">

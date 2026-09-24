@@ -14,7 +14,7 @@ import {
   Tag,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
+import { AreaChart, Area, ResponsiveContainer, Tooltip, YAxis } from "recharts";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -114,11 +114,13 @@ function AnimatedBottomStat({
   value,
   percent,
   barClassName,
+  disabled = false,
 }: {
   label: string;
   value: string;
   percent: number;
   barClassName: string;
+  disabled?: boolean;
 }) {
   const match = value.match(NUMERIC_VALUE_PATTERN);
   const numStr = match?.[1] ?? "0";
@@ -131,7 +133,12 @@ function AnimatedBottomStat({
   const animatedPercent = percent * progress;
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-panel-border bg-white/5 p-3">
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-lg border border-panel-border bg-white/5 p-3",
+        disabled && "opacity-40 grayscale",
+      )}
+    >
       <p className="label-caps">{label}</p>
       <p className="mt-1 text-sm font-bold text-slate-100">{animatedValue}</p>
       <div className="absolute inset-x-0 bottom-0 h-1 bg-white/10">
@@ -156,11 +163,19 @@ export function MachineCard({
   const updateMutation = useUpdateMachine();
   const animatedOee = useAnimatedNumber(machine.oeePercent);
   const [complementaresOpen, setComplementaresOpen] = useState(false);
-  const oeeHistoryData = machine.oeeHistory.map((value) => ({ value }));
+  const graphVariable = resolveVariableDisplay(
+    machine,
+    machine.cardSettings.graphVariableKey ?? machine.cardSettings.topVariableKeys[0],
+  );
+  // Sem relatorios, desenha o valor atual da variavel como uma area constante.
+  const currentGraphValue = parseFloat(graphVariable?.value ?? "") || 0;
+  const graphHistoryData = (
+    machine.graphHistory.length > 0 ? machine.graphHistory : Array.from({ length: 12 }, () => currentGraphValue)
+  ).map((value) => ({ value }));
 
   const top = machine.cardSettings.topVariableKeys
-    .map((key) => resolveVariableDisplay(machine, key))
-    .filter((v): v is NonNullable<typeof v> => v !== null);
+    .map((key, i) => ({ display: resolveVariableDisplay(machine, key), visible: machine.cardSettings.topVariableVisible[i] }))
+    .filter((v): v is { display: NonNullable<ReturnType<typeof resolveVariableDisplay>>; visible: boolean } => v.display !== null);
   const bottom = machine.cardSettings.bottomVariableKeys
     .map((key, i) => ({ display: resolveVariableDisplay(machine, key), visible: machine.cardSettings.bottomVariableVisible[i] }))
     .filter((v): v is { display: NonNullable<ReturnType<typeof resolveVariableDisplay>>; visible: boolean } => v.display !== null);
@@ -187,7 +202,7 @@ export function MachineCard({
 
   return (
     <>
-      <Card className="cursor-pointer p-5 transition-all duration-300 hover:scale-[1.02] hover:border-white/20 hover:bg-white/10 active:scale-[0.98]">
+      <Card className="cursor-pointer p-5 transition-colors duration-300 hover:border-white/20 hover:bg-white/10">
         <div className="flex items-start justify-between gap-2">
           <button
             type="button"
@@ -263,18 +278,19 @@ export function MachineCard({
               className="flex h-full flex-col justify-between rounded-lg border border-panel-border bg-white/5 p-3 text-left hover:border-brand"
             >
               <div className="min-w-0">
-                <p className="label-caps truncate">{top[0]?.label ?? "-"}</p>
-                <p className="mt-1 truncate text-lg font-bold text-white">{top[0]?.value ?? "-"}</p>
+                <p className="label-caps truncate">{graphVariable?.label ?? "-"}</p>
+                <p className="mt-1 truncate text-lg font-bold text-white">{graphVariable?.value ?? "-"}</p>
               </div>
-              <div className="mt-2 h-12 w-full">
+              <div className="mt-2 h-24 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={oeeHistoryData}>
+                  <AreaChart data={graphHistoryData}>
                     <defs>
                       <linearGradient id={`oee-trend-${machine.id}`} x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8} />
                         <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.05} />
                       </linearGradient>
                     </defs>
+                    <YAxis hide domain={[0, "auto"]} />
                     <Tooltip cursor={false} content={() => null} />
                     <Area
                       type="monotone"
@@ -304,10 +320,13 @@ export function MachineCard({
                 <Settings className="h-3.5 w-3.5" />
               </button>
             </div>
-            {top.map((v) => {
+            {top.map(({ display: v, visible }) => {
               const Icon = variableIcon[v.key] ?? Tag;
               return (
-                <div key={v.key} className="flex items-center justify-between text-xs">
+                <div
+                  key={v.key}
+                  className={cn("flex items-center justify-between text-xs", !visible && "opacity-40 grayscale")}
+                >
                   <span className="flex items-center gap-1 text-muted">
                     <Icon className="h-3 w-3 shrink-0 text-brand-light" />
                     {v.label}
@@ -349,32 +368,21 @@ export function MachineCard({
 
         {bottom.length > 0 && (
           <div className="mt-3 grid grid-cols-2 gap-3">
-            {bottom.map(({ display, visible }) =>
-              visible ? (
-                <AnimatedBottomStat
-                  key={display.key}
-                  label={display.label}
-                  value={display.value}
-                  percent={bottomBarPercent(machine, display.key)}
-                  barClassName={display.key === "production" ? "bg-success" : "bg-brand"}
-                />
-              ) : (
-                <div key={display.key} />
-              ),
-            )}
+            {bottom.map(({ display, visible }) => (
+              <AnimatedBottomStat
+                key={display.key}
+                label={display.label}
+                value={display.value}
+                percent={bottomBarPercent(machine, display.key)}
+                barClassName={display.key === "production" ? "bg-success" : "bg-brand"}
+                disabled={!visible}
+              />
+            ))}
           </div>
         )}
       </Card>
 
-      <MachineDrilldownDialog
-        open={drilldown.isOpen}
-        onOpenChange={drilldown.close}
-        machine={machine}
-        onOpenSettings={() => {
-          drilldown.close();
-          settingsDialog.open();
-        }}
-      />
+      <MachineDrilldownDialog open={drilldown.isOpen} onOpenChange={drilldown.close} machine={machine} />
       <MachineCardSettingsDialog
         open={settingsDialog.isOpen}
         onOpenChange={settingsDialog.close}

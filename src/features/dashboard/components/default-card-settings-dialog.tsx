@@ -9,6 +9,7 @@ import type { MachineCardSettings, MachineVariableKey } from "@/domain/entities/
 export const DEFAULT_CARD_SETTINGS: MachineCardSettings = {
   showOeeCircle: true,
   topVariableKeys: ["horimeter", "vibration", "temperature"],
+  topVariableVisible: [true, true, true],
   bottomVariableKeys: ["speed", "production"],
   bottomVariableVisible: [true, true],
 };
@@ -39,6 +40,14 @@ export function DefaultCardSettingsDialog({
       const next = [...s.topVariableKeys] as MachineCardSettings["topVariableKeys"];
       next[index] = value;
       return { ...s, topVariableKeys: next };
+    });
+  };
+
+  const toggleTopVisible = (index: 0 | 1 | 2) => {
+    setSettings((s) => {
+      const next = [...s.topVariableVisible] as MachineCardSettings["topVariableVisible"];
+      next[index] = !next[index];
+      return { ...s, topVariableVisible: next };
     });
   };
 
@@ -104,11 +113,22 @@ export function DefaultCardSettingsDialog({
             {[0, 1, 2].map((i) => (
               <div key={i} className="space-y-2">
                 <label className="label-caps block">Variável {i + 1}</label>
-                <SearchableSelect
-                  options={options}
-                  value={settings.topVariableKeys[i]}
-                  onChange={(v) => setTop(i as 0 | 1 | 2, v)}
-                />
+                <div className="flex items-center gap-2">
+                  <SearchableSelect
+                    options={options}
+                    value={settings.topVariableKeys[i]}
+                    onChange={(v) => setTop(i as 0 | 1 | 2, v)}
+                    className="flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleTopVisible(i as 0 | 1 | 2)}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-panel-border bg-white/5 text-muted hover:text-slate-200"
+                    aria-label={settings.topVariableVisible[i] ? "Ocultar" : "Mostrar"}
+                  >
+                    {settings.topVariableVisible[i] ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

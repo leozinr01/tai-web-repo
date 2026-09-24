@@ -37,6 +37,14 @@ export function MachineCardSettingsDialog({
     });
   };
 
+  const toggleTopVisible = (index: 0 | 1 | 2) => {
+    setSettings((s) => {
+      const next = [...s.topVariableVisible] as MachineCardSettings["topVariableVisible"];
+      next[index] = !next[index];
+      return { ...s, topVariableVisible: next };
+    });
+  };
+
   const setBottom = (index: 0 | 1, value: MachineVariableKey) => {
     setSettings((s) => {
       const next = [...s.bottomVariableKeys] as MachineCardSettings["bottomVariableKeys"];
@@ -89,6 +97,16 @@ export function MachineCardSettingsDialog({
             />
             Mostrar circulo de OEE
           </label>
+          {!settings.showOeeCircle && (
+            <div className="space-y-2">
+              <label className="label-caps block">Variavel do grafico</label>
+              <SearchableSelect
+                options={options}
+                value={settings.graphVariableKey ?? settings.topVariableKeys[0]}
+                onChange={(v) => setSettings((s) => ({ ...s, graphVariableKey: v }))}
+              />
+            </div>
+          )}
         </div>
 
         <div className="space-y-3">
@@ -99,11 +117,22 @@ export function MachineCardSettingsDialog({
             {[0, 1, 2].map((i) => (
               <div key={i} className="space-y-2">
                 <label className="label-caps block">Variavel {i + 1}</label>
-                <SearchableSelect
-                  options={options}
-                  value={settings.topVariableKeys[i]}
-                  onChange={(v) => setTop(i as 0 | 1 | 2, v)}
-                />
+                <div className="flex items-center gap-2">
+                  <SearchableSelect
+                    options={options}
+                    value={settings.topVariableKeys[i]}
+                    onChange={(v) => setTop(i as 0 | 1 | 2, v)}
+                    className="flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleTopVisible(i as 0 | 1 | 2)}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-panel-border bg-white/5 text-muted hover:text-slate-200"
+                    aria-label={settings.topVariableVisible[i] ? "Ocultar" : "Mostrar"}
+                  >
+                    {settings.topVariableVisible[i] ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

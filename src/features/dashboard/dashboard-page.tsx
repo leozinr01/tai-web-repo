@@ -1,12 +1,11 @@
 import { useMemo, useState } from "react";
-import { Filter, Gauge, Thermometer } from "lucide-react";
+import { Filter } from "lucide-react";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Switch } from "@/components/ui/switch";
 import { IndicatorCard } from "@/features/dashboard/components/indicator-card";
 import { MachineCard } from "@/features/dashboard/components/machine-card";
 import { DefaultCardSettingsDialog } from "@/features/dashboard/components/default-card-settings-dialog";
@@ -19,7 +18,7 @@ import {
 } from "@/features/dashboard/queries";
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { toast } from "@/hooks/use-toast";
-import { MachineStatus } from "@/domain/types/enums";
+import { MachineStatus, UserRole } from "@/domain/types/enums";
 import type { MachineCardSettings } from "@/domain/entities/machine";
 import { machineStatusLabels } from "@/lib/labels";
 
@@ -28,24 +27,23 @@ const statusOptions = Object.entries(machineStatusLabels).map(([value, label]) =
 export function DashboardPage() {
   const { user } = useAuth();
   const companyId = user?.companyId ?? "";
+  const isMaster = user?.role === UserRole.MASTER;
+  // Master enxerga todas as empresas (sem filtro de idRef); demais papeis ficam presos a propria empresa.
+  const scopeCompanyId = isMaster ? undefined : companyId;
 
   const [sectorId, setSectorId] = useState<string>("");
   const [machineId, setMachineId] = useState<string>("");
   const [status, setStatus] = useState<string>("");
-  const [highVibration, setHighVibration] = useState(false);
-  const [highTemperature, setHighTemperature] = useState(false);
   const defaultSettingsDialog = useDisclosure();
   const updateAllCardSettingsMutation = useUpdateAllMachinesCardSettings();
 
   const indicatorsQuery = useDashboardIndicators(companyId);
-  const sectorsQuery = useSectors(companyId);
-  const allMachinesQuery = useMachines(companyId, {});
-  const machinesQuery = useMachines(companyId, {
+  const sectorsQuery = useSectors(scopeCompanyId);
+  const allMachinesQuery = useMachines(scopeCompanyId, {});
+  const machinesQuery = useMachines(scopeCompanyId, {
     sectorId: sectorId || undefined,
     machineId: machineId || undefined,
     status: (status as MachineStatus) || undefined,
-    highVibration,
-    highTemperature,
   });
 
   const sectorOptions = useMemo(
@@ -66,11 +64,9 @@ export function DashboardPage() {
     setSectorId("");
     setMachineId("");
     setStatus("");
-    setHighVibration(false);
-    setHighTemperature(false);
   };
 
-  const hasFilters = !!sectorId || !!machineId || !!status || highVibration || highTemperature;
+  const hasFilters = !!sectorId || !!machineId || !!status;
 
   const handleSaveDefaultCardSettings = async (cardSettings: MachineCardSettings) => {
     try {
@@ -149,7 +145,7 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <label className="label-caps mb-1.5 block">Setor</label>
             <SearchableSelect
@@ -179,20 +175,6 @@ export function DashboardPage() {
               placeholder="Todos os Status"
               className="font-bold"
             />
-          </div>
-          <div>
-            <label className="label-caps mb-1.5 block">Vibracao alta</label>
-            <div className="flex h-10 items-center gap-2">
-              <Switch checked={highVibration} onCheckedChange={setHighVibration} aria-label="Vibracao alta" />
-              <Gauge className="h-4 w-4 text-muted" />
-            </div>
-          </div>
-          <div>
-            <label className="label-caps mb-1.5 block">Temp. alta</label>
-            <div className="flex h-10 items-center gap-2">
-              <Switch checked={highTemperature} onCheckedChange={setHighTemperature} aria-label="Temp. alta" />
-              <Thermometer className="h-4 w-4 text-muted" />
-            </div>
           </div>
         </div>
       </Card>

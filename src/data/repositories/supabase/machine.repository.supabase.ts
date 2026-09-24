@@ -4,6 +4,7 @@ import type {
   MachineCardSettings,
   MachineCustomVariable,
   MachineLossBreakdown,
+  MachineLossMetric,
   MachineProductionConfig,
   MachineVariableType,
 } from "@/domain/entities/machine";
@@ -12,11 +13,13 @@ import { supabase } from "@/lib/supabase-client";
 import {
   dbVariableKeyToDomainKey,
   domainVariableKeyToDbKey,
+  findVariableValue,
   flagsFromMachineStatus,
   hhmmToMinutes,
   hoursTextToNumber,
   machineCode,
   machineStatusFromFlags,
+  minutesToHHMM,
   numberToHoursText,
 } from "@/data/repositories/supabase/helpers";
 
@@ -105,43 +108,79 @@ interface VariableRow {
 
 interface DashboardConfigRow {
   id: string;
+  id_empresa: string;
   maquina_id: number;
   selection: string[] | null;
   bottom_selection: string[] | null;
   bottom_enabled: boolean[] | null;
+  top_enabled: boolean[] | null;
   oee_enabled: boolean | null;
   oee_graph_variable: string | null;
 }
 
 interface Extras {
   variablesByMachine: Map<number, VariableRow[]>;
-  configByMachine: Map<number, DashboardConfigRow>;
+  /** Uma maquina pode ter configs de mais de uma empresa (ex: visao do Master); ver `ownerConfig`. */
+  configsByMachine: Map<number, DashboardConfigRow[]>;
   historyByMachine: Map<number, number[]>;
+  reportVariablesByMachine: Map<number, Record<string, unknown>[]>;
 }
 
-async function loadExtras(companyId: string, machineIds: number[]): Promise<Extras> {
+interface HistoryRow {
+  maquina_id: number;
+  OEE: number | null;
+  variables: Record<string, unknown> | null;
+}
+
+/** Trechos (minusculos) que identificam cada variavel fixa nas chaves de `Relatório.variables`. */
+const BUILTIN_REPORT_MATCHERS: Record<string, string[]> = {
+  horimeter: ["horímetro", "horimetro"],
+  vibration: ["vibra"],
+  temperature: ["temperatura"],
+  speed: ["velocidade"],
+  production: ["produção", "producao", "produc"],
+};
+
+function graphHistoryFor(
+  key: string,
+  customVariables: MachineCustomVariable[],
+  reportVariables: Record<string, unknown>[],
+): number[] {
+  const custom = customVariables.find((v) => v.id === key);
+  const matchers = BUILTIN_REPORT_MATCHERS[key] ?? (custom?.label ? [custom.label.toLowerCase()] : []);
+  const hasMatch = (variables: Record<string, unknown>) =>
+    Object.keys(variables).some((k) => matchers.some((m) => k.toLowerCase().includes(m)));
+  return matchers.length === 0 ? [] : reportVariables.filter(hasMatch).map((v) => findVariableValue(v, matchers));
+}
+
+async function loadExtras(companyId: string | undefined, machineIds: number[]): Promise<Extras> {
   const variablesByMachine = new Map<number, VariableRow[]>();
-  const configByMachine = new Map<number, DashboardConfigRow>();
+  const configsByMachine = new Map<number, DashboardConfigRow[]>();
   const historyByMachine = new Map<number, number[]>();
-  if (machineIds.length === 0) return { variablesByMachine, configByMachine, historyByMachine };
+  const reportVariablesByMachine = new Map<number, Record<string, unknown>[]>();
+  if (machineIds.length === 0) return { variablesByMachine, configsByMachine, historyByMachine, reportVariablesByMachine };
+
+  let configsQuery = supabase
+    .from("dashboard_configs")
+    .select("id, id_empresa, maquina_id, selection, bottom_selection, bottom_enabled, top_enabled, oee_enabled, oee_graph_variable")
+    .in("maquina_id", machineIds);
+  if (companyId) configsQuery = configsQuery.eq("id_empresa", companyId);
+
+  let historyQuery = supabase
+    .from("Relatório")
+    .select("maquina_id, OEE, variables, created_at")
+    .in("maquina_id", machineIds)
+    .order("created_at", { ascending: false })
+    .limit(machineIds.length * 12);
+  if (companyId) historyQuery = historyQuery.eq("idRef", companyId);
 
   const [variablesRes, configsRes, historyRes] = await Promise.all([
     supabase
       .from("variables")
       .select("id, maquina_id, name, type, grandeza, number_value, bool_value")
       .in("maquina_id", machineIds),
-    supabase
-      .from("dashboard_configs")
-      .select("id, maquina_id, selection, bottom_selection, bottom_enabled, oee_enabled, oee_graph_variable")
-      .eq("id_empresa", companyId)
-      .in("maquina_id", machineIds),
-    supabase
-      .from("Relatório")
-      .select("maquina_id, OEE, created_at")
-      .eq("idRef", companyId)
-      .in("maquina_id", machineIds)
-      .order("created_at", { ascending: false })
-      .limit(machineIds.length * 12),
+    configsQuery,
+    historyQuery,
   ]);
   if (variablesRes.error) throw new Error(variablesRes.error.message);
   if (configsRes.error) throw new Error(configsRes.error.message);
@@ -153,19 +192,30 @@ async function loadExtras(companyId: string, machineIds: number[]): Promise<Extr
     variablesByMachine.set(row.maquina_id, list);
   }
   for (const row of (configsRes.data ?? []) as DashboardConfigRow[]) {
-    configByMachine.set(row.maquina_id, row);
+    const list = configsByMachine.get(row.maquina_id) ?? [];
+    list.push(row);
+    configsByMachine.set(row.maquina_id, list);
   }
   const historyDesc = new Map<number, number[]>();
-  for (const row of (historyRes.data ?? []) as { maquina_id: number; OEE: number | null }[]) {
+  const reportVariablesDesc = new Map<number, Record<string, unknown>[]>();
+  for (const row of (historyRes.data ?? []) as HistoryRow[]) {
     const list = historyDesc.get(row.maquina_id) ?? [];
-    if (list.length < 12) list.push(Math.round((row.OEE ?? 0) * 100));
+    const variablesList = reportVariablesDesc.get(row.maquina_id) ?? [];
+    if (list.length < 12) {
+      list.push(Math.round((row.OEE ?? 0) * 100));
+      variablesList.push(row.variables ?? {});
+    }
     historyDesc.set(row.maquina_id, list);
+    reportVariablesDesc.set(row.maquina_id, variablesList);
   }
   for (const [machineId, list] of historyDesc.entries()) {
     historyByMachine.set(machineId, [...list].reverse());
   }
+  for (const [machineId, list] of reportVariablesDesc.entries()) {
+    reportVariablesByMachine.set(machineId, [...list].reverse());
+  }
 
-  return { variablesByMachine, configByMachine, historyByMachine };
+  return { variablesByMachine, configsByMachine, historyByMachine, reportVariablesByMachine };
 }
 
 function toCustomVariable(row: VariableRow): MachineCustomVariable {
@@ -184,22 +234,33 @@ function defaultCardSettings(): MachineCardSettings {
   return {
     showOeeCircle: true,
     topVariableKeys: ["horimeter", "vibration", "temperature"],
+    topVariableVisible: [true, true, true],
     bottomVariableKeys: ["speed", "production"],
     bottomVariableVisible: [true, true],
   };
+}
+
+/** Prefere a config da empresa dona da maquina, que e onde `upsertCardSettings` grava. */
+function ownerConfig(configs: DashboardConfigRow[] | undefined, ownerCompanyId: string): DashboardConfigRow | undefined {
+  return configs?.find((c) => c.id_empresa === ownerCompanyId) ?? configs?.[0];
 }
 
 function toCardSettings(row: DashboardConfigRow | undefined): MachineCardSettings {
   if (!row) return defaultCardSettings();
   const top = (row.selection ?? []).map(dbVariableKeyToDomainKey);
   const bottom = (row.bottom_selection ?? []).map(dbVariableKeyToDomainKey);
+  const topVisible = row.top_enabled ?? [true, true, true];
   const visible = row.bottom_enabled ?? [true, true];
   const fallback = defaultCardSettings();
   return {
     showOeeCircle: row.oee_enabled ?? true,
     topVariableKeys: [top[0] ?? fallback.topVariableKeys[0], top[1] ?? fallback.topVariableKeys[1], top[2] ?? fallback.topVariableKeys[2]],
+    topVariableVisible: [topVisible[0] ?? true, topVisible[1] ?? true, topVisible[2] ?? true],
     bottomVariableKeys: [bottom[0] ?? fallback.bottomVariableKeys[0], bottom[1] ?? fallback.bottomVariableKeys[1]],
     bottomVariableVisible: [visible[0] ?? true, visible[1] ?? true],
+    graphVariableKey: row.oee_graph_variable
+      ? dbVariableKeyToDomainKey(row.oee_graph_variable)
+      : (top[0] ?? fallback.topVariableKeys[0]),
   };
 }
 
@@ -236,6 +297,7 @@ function toProductionConfig(row: MaquinaRow): MachineProductionConfig {
 
 function toMachine(row: MaquinaRow, extras: Extras): Machine {
   const customVariables = (extras.variablesByMachine.get(row.id) ?? []).map(toCustomVariable);
+  const cardSettings = toCardSettings(ownerConfig(extras.configsByMachine.get(row.id), row.idRef));
   const name = row.maquina ?? "";
   return {
     id: String(row.id),
@@ -259,8 +321,13 @@ function toMachine(row: MaquinaRow, extras: Extras): Machine {
     },
     complementaryCount: customVariables.length,
     oeeHistory: extras.historyByMachine.get(row.id) ?? Array.from({ length: 12 }, () => 0),
+    graphHistory: graphHistoryFor(
+      cardSettings.graphVariableKey ?? cardSettings.topVariableKeys[0],
+      customVariables,
+      extras.reportVariablesByMachine.get(row.id) ?? [],
+    ),
     customVariables,
-    cardSettings: toCardSettings(extras.configByMachine.get(row.id)),
+    cardSettings,
     lossBreakdown: toLossBreakdown(row),
     productionConfig: toProductionConfig(row),
   };
@@ -315,8 +382,11 @@ async function upsertCardSettings(companyId: string, machineId: number, cardSett
     selection,
     bottom_selection: bottomSelection,
     bottom_enabled: cardSettings.bottomVariableVisible,
+    top_enabled: cardSettings.topVariableVisible,
     oee_enabled: cardSettings.showOeeCircle,
-    oee_graph_variable: existing?.oee_graph_variable ?? selection[0],
+    oee_graph_variable: cardSettings.graphVariableKey
+      ? domainVariableKeyToDbKey(cardSettings.graphVariableKey)
+      : (existing?.oee_graph_variable ?? selection[0]),
     updated_at: new Date().toISOString(),
   };
 
@@ -331,9 +401,88 @@ async function upsertCardSettings(companyId: string, machineId: number, cardSett
   }
 }
 
+/** Coluna hhmm (texto) de cada categoria de perda, agrupadas pelo pilar de OEE que elas afetam. */
+const LOSS_COLUMN_BY_METRIC_CATEGORY: Record<MachineLossMetric, Record<string, keyof MaquinaRow>> = {
+  availability: {
+    breakdown: "OEE_disp_quebra_falhas",
+    setup: "OEE_disp_setup",
+    idle: "OEE_disp_ociosidade",
+  },
+  productivity: {
+    small_stops: "OEE_produt_peq_falhas",
+    reduced_speed: "OEE_produt_qued_veloc",
+    raw_material_defect: "OEE_produt_def_mat_prima",
+  },
+  quality: {
+    non_conforming_product: "OEE_qualidad_prod_nao_conform",
+    scrap: "OEE_qualidad_refugo",
+    rework: "OEE_qualidad_retrabalho",
+  },
+};
+
+/** % do pilar = 100 - (minutos perdidos / minutos de producao programada por dia), limitado a [0, 100]. */
+function pillarPercentFromLossMinutes(lossMinutes: number, baselineMinutes: number): number {
+  if (baselineMinutes <= 0) return 100;
+  return Math.max(0, Math.min(100, Math.round(100 - (lossMinutes / baselineMinutes) * 100)));
+}
+
+async function registerMachineLoss(
+  machineId: number,
+  metric: MachineLossMetric,
+  categoryKey: string,
+  minutesToAdd: number,
+): Promise<void> {
+  const column = LOSS_COLUMN_BY_METRIC_CATEGORY[metric]?.[categoryKey];
+  if (!column) throw new Error("Categoria de perda invalida.");
+
+  const { data, error } = await supabase
+    .from("Maquinas")
+    .select(
+      "id, OEE_disp_quebra_falhas, OEE_disp_setup, OEE_disp_ociosidade, OEE_produt_peq_falhas, OEE_produt_qued_veloc, OEE_produt_def_mat_prima, OEE_qualidad_prod_nao_conform, OEE_qualidad_refugo, OEE_qualidad_retrabalho, OEE_Config_horas_Prod_prog, turno",
+    )
+    .eq("id", machineId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Maquina nao encontrada.");
+  const current = data as unknown as MaquinaRow;
+
+  const updatedMinutes = hhmmToMinutes(current[column] as string | null) + Math.max(0, Math.round(minutesToAdd));
+  const minutesFor = (key: keyof MaquinaRow) =>
+    key === column ? updatedMinutes : hhmmToMinutes(current[key] as string | null);
+
+  const availabilityLoss =
+    minutesFor("OEE_disp_quebra_falhas") + minutesFor("OEE_disp_setup") + minutesFor("OEE_disp_ociosidade");
+  const productivityLoss =
+    minutesFor("OEE_produt_peq_falhas") + minutesFor("OEE_produt_qued_veloc") + minutesFor("OEE_produt_def_mat_prima");
+  const qualityLoss =
+    minutesFor("OEE_qualidad_prod_nao_conform") +
+    minutesFor("OEE_qualidad_refugo") +
+    minutesFor("OEE_qualidad_retrabalho");
+
+  const baselineMinutes =
+    hoursTextToNumber(current.OEE_Config_horas_Prod_prog) * 60 || hoursTextToNumber(current.turno) * 60 || 480;
+
+  const availabilityPercent = pillarPercentFromLossMinutes(availabilityLoss, baselineMinutes);
+  const productivityPercent = pillarPercentFromLossMinutes(productivityLoss, baselineMinutes);
+  const qualityPercent = pillarPercentFromLossMinutes(qualityLoss, baselineMinutes);
+  const oeePercent = Math.round((availabilityPercent * productivityPercent * qualityPercent) / 10000);
+
+  const payload: Record<string, unknown> = {
+    [column]: minutesToHHMM(updatedMinutes),
+    OEE_disponibilidade: availabilityPercent / 100,
+    OEE_produtividade: productivityPercent / 100,
+    OEE_qualidade: qualityPercent / 100,
+    OEE: oeePercent / 100,
+  };
+
+  const { error: updateError } = await supabase.from("Maquinas").update(payload).eq("id", machineId);
+  if (updateError) throw new Error(updateError.message);
+}
+
 export class SupabaseMachineRepository implements MachineRepository {
-  async listByCompany(companyId: string, filters?: MachineFilters): Promise<Machine[]> {
-    let query = supabase.from("Maquinas").select(MAQUINA_COLUMNS).eq("idRef", companyId);
+  async listByCompany(companyId: string | undefined, filters?: MachineFilters): Promise<Machine[]> {
+    let query = supabase.from("Maquinas").select(MAQUINA_COLUMNS);
+    if (companyId) query = query.eq("idRef", companyId);
     if (filters?.sectorId) query = query.eq("IDsala", filters.sectorId);
     if (filters?.machineId) query = query.eq("id", Number(filters.machineId));
 
@@ -449,5 +598,13 @@ export class SupabaseMachineRepository implements MachineRepository {
     const ids = (machines ?? []).map((m) => m.id as number);
     await Promise.all(ids.map((machineId) => upsertCardSettings(companyId, machineId, cardSettings)));
     return this.listByCompany(companyId);
+  }
+
+  async registerLoss(machineId: string, metric: MachineLossMetric, categoryKey: string, minutes: number): Promise<Machine> {
+    const numericId = Number(machineId);
+    await registerMachineLoss(numericId, metric, categoryKey, minutes);
+    const updated = await this.getById(machineId);
+    if (!updated) throw new Error("Maquina nao encontrada.");
+    return updated;
   }
 }

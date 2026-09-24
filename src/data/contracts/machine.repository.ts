@@ -1,4 +1,4 @@
-import type { Machine, MachineCardSettings } from "@/domain/entities/machine";
+import type { Machine, MachineCardSettings, MachineLossMetric } from "@/domain/entities/machine";
 
 export interface MachineFilters {
   sectorId?: string;
@@ -9,7 +9,8 @@ export interface MachineFilters {
 }
 
 export interface MachineRepository {
-  listByCompany(companyId: string, filters?: MachineFilters): Promise<Machine[]>;
+  /** `companyId` undefined = sem filtro por empresa (visao "todas as empresas", usada pelo Master). */
+  listByCompany(companyId: string | undefined, filters?: MachineFilters): Promise<Machine[]>;
   getById(id: string): Promise<Machine | null>;
   create(data: { companyId: string; sectorId: string; name: string }): Promise<Machine>;
   update(
@@ -18,4 +19,6 @@ export interface MachineRepository {
   ): Promise<Machine>;
   remove(id: string): Promise<void>;
   updateCardSettingsForAll(companyId: string, cardSettings: MachineCardSettings): Promise<Machine[]>;
+  /** Soma `minutes` na categoria de perda informada e recalcula/persiste os percentuais de OEE da maquina. */
+  registerLoss(machineId: string, metric: MachineLossMetric, categoryKey: string, minutes: number): Promise<Machine>;
 }

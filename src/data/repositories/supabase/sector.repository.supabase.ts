@@ -17,12 +17,10 @@ function toSector(row: SalaRow): Sector {
 }
 
 export class SupabaseSectorRepository implements SectorRepository {
-  async listByCompany(companyId: string): Promise<Sector[]> {
-    const { data, error } = await supabase
-      .from("Sala")
-      .select("sala, idRef")
-      .eq("idRef", companyId)
-      .order("sala", { ascending: true });
+  async listByCompany(companyId: string | undefined): Promise<Sector[]> {
+    let query = supabase.from("Sala").select("sala, idRef").order("sala", { ascending: true });
+    if (companyId) query = query.eq("idRef", companyId);
+    const { data, error } = await query;
     if (error) throw new Error(error.message);
     return ((data ?? []) as SalaRow[]).map(toSector);
   }
