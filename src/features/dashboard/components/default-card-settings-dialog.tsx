@@ -6,7 +6,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { builtinVariableOptions } from "@/features/dashboard/machine-variables";
 import type { MachineCardSettings, MachineVariableKey } from "@/domain/entities/machine";
 
-export const DEFAULT_CARD_SETTINGS: MachineCardSettings = {
+const DEFAULT_CARD_SETTINGS: MachineCardSettings = {
   showOeeCircle: true,
   topVariableKeys: ["horimeter", "vibration", "temperature"],
   topVariableVisible: [true, true, true],

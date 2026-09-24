@@ -8,7 +8,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FieldError, FieldLabel, Input } from "@/components/ui/input";
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/features/auth/auth-context";
+import { useAuth } from "@/features/auth/use-auth";
 import {
   useCompany,
   useCompanyUsers,
