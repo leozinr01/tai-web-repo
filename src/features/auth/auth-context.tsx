@@ -1,16 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { AuthSession, User } from "@/domain/entities/user";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import type { AuthSession } from "@/domain/entities/user";
 import { repositories } from "@/data/repositories";
-
-interface AuthContextValue {
-  user: User | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+import { AuthContext, type AuthContextValue } from "@/features/auth/use-auth";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
@@ -51,10 +42,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth deve ser usado dentro de AuthProvider.");
-  return ctx;
 }

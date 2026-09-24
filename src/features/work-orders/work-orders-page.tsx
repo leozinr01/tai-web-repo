@@ -9,7 +9,7 @@ import { FilterField } from "@/components/ui/filter-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
-import { useAuth } from "@/features/auth/auth-context";
+import { useAuth } from "@/features/auth/use-auth";
 import { useSectors, useMachines } from "@/features/dashboard/queries";
 import { useWorkOrders, useCreateWorkOrder, useUpdateWorkOrder } from "@/features/work-orders/queries";
 import { WorkOrderFormDialog } from "@/features/work-orders/components/work-order-form-dialog";

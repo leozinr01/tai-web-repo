@@ -169,6 +169,10 @@ export function MachineCard({
   );
   // Sem relatorios, desenha o valor atual da variavel como uma area constante.
   const currentGraphValue = parseFloat(graphVariable?.value ?? "") || 0;
+  const graphUnit = graphVariable?.value.match(NUMERIC_VALUE_PATTERN)?.[2]?.trim() ?? "";
+  const formatGraphValue = (value: number) =>
+    `${Number.isInteger(value) ? value : value.toFixed(2)}${graphUnit ? ` ${graphUnit}` : ""}`;
+  const [hoveredGraphValue, setHoveredGraphValue] = useState<number | null>(null);
   const graphHistoryData = (
     machine.graphHistory.length > 0 ? machine.graphHistory : Array.from({ length: 12 }, () => currentGraphValue)
   ).map((value) => ({ value }));
@@ -279,11 +283,20 @@ export function MachineCard({
             >
               <div className="min-w-0">
                 <p className="label-caps truncate">{graphVariable?.label ?? "-"}</p>
-                <p className="mt-1 truncate text-lg font-bold text-white">{graphVariable?.value ?? "-"}</p>
+                <p className="mt-1 truncate text-lg font-bold text-white">
+                  {hoveredGraphValue !== null ? formatGraphValue(hoveredGraphValue) : (graphVariable?.value ?? "-")}
+                </p>
               </div>
               <div className="mt-2 h-24 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={graphHistoryData}>
+                  <AreaChart
+                    data={graphHistoryData}
+                    onMouseMove={(state) => {
+                      const value = state?.activePayload?.[0]?.value;
+                      setHoveredGraphValue(typeof value === "number" ? value : null);
+                    }}
+                    onMouseLeave={() => setHoveredGraphValue(null)}
+                  >
                     <defs>
                       <linearGradient id={`oee-trend-${machine.id}`} x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8} />
@@ -291,7 +304,21 @@ export function MachineCard({
                       </linearGradient>
                     </defs>
                     <YAxis hide domain={[0, "auto"]} />
-                    <Tooltip cursor={false} content={() => null} />
+                    <Tooltip
+                      cursor={false}
+                      isAnimationActive={false}
+                      position={{ y: 0 }}
+                      wrapperStyle={{ zIndex: 50, outline: "none" }}
+                      content={({ active, payload }) => {
+                        const value = payload?.[0]?.value;
+                        if (!active || typeof value !== "number") return null;
+                        return (
+                          <div className="rounded-md border border-panel-border bg-[#0a1a2f] px-2 py-1 text-xs font-semibold text-slate-100 shadow-lg">
+                            {formatGraphValue(value)}
+                          </div>
+                        );
+                      }}
+                    />
                     <Area
                       type="monotone"
                       dataKey="value"

@@ -9,7 +9,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { IndicatorCard } from "@/features/dashboard/components/indicator-card";
 import { MachineCard } from "@/features/dashboard/components/machine-card";
 import { DefaultCardSettingsDialog } from "@/features/dashboard/components/default-card-settings-dialog";
-import { useAuth } from "@/features/auth/auth-context";
+import { useAuth } from "@/features/auth/use-auth";
 import {
   useDashboardIndicators,
   useMachines,

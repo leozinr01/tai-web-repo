@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, useLocation } from "react-router-dom";
 import { User, PenTool, Loader2 } from "lucide-react";
 import { loginSchema, type LoginFormValues } from "@/domain/schemas/auth.schema";
-import { useAuth } from "@/features/auth/auth-context";
+import { useAuth } from "@/features/auth/use-auth";
 import { FieldError } from "@/components/ui/input";
 
 export function LoginPage() {

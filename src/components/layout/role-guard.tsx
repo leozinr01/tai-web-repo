@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { useAuth } from "@/features/auth/auth-context";
+import { useAuth } from "@/features/auth/use-auth";
 import type { UserRole } from "@/domain/types/enums";
 
 export function RoleGuard({ allow }: { allow: UserRole[] }) {

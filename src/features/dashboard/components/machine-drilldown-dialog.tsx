@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/features/auth/auth-context";
+import { useAuth } from "@/features/auth/use-auth";
 import { useSectors, useMachines, useRegisterMachineLoss } from "@/features/dashboard/queries";
 import { useCreateAppointment } from "@/features/appointments/queries";
 import { AppointmentFormDialog } from "@/features/appointments/components/appointment-form-dialog";
