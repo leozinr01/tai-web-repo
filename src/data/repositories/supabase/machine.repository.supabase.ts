@@ -13,6 +13,7 @@ import { supabase } from "@/lib/supabase-client";
 import {
   dbVariableKeyToDomainKey,
   domainVariableKeyToDbKey,
+  findVariableValue,
   flagsFromMachineStatus,
   hhmmToMinutes,
   hoursTextToNumber,
@@ -107,6 +108,7 @@ interface VariableRow {
 
 interface DashboardConfigRow {
   id: string;
+  id_empresa: string;
   maquina_id: number;
   selection: string[] | null;
   bottom_selection: string[] | null;
@@ -118,25 +120,55 @@ interface DashboardConfigRow {
 
 interface Extras {
   variablesByMachine: Map<number, VariableRow[]>;
-  configByMachine: Map<number, DashboardConfigRow>;
+  /** Uma maquina pode ter configs de mais de uma empresa (ex: visao do Master); ver `ownerConfig`. */
+  configsByMachine: Map<number, DashboardConfigRow[]>;
   historyByMachine: Map<number, number[]>;
+  reportVariablesByMachine: Map<number, Record<string, unknown>[]>;
+}
+
+interface HistoryRow {
+  maquina_id: number;
+  OEE: number | null;
+  variables: Record<string, unknown> | null;
+}
+
+/** Trechos (minusculos) que identificam cada variavel fixa nas chaves de `Relatório.variables`. */
+const BUILTIN_REPORT_MATCHERS: Record<string, string[]> = {
+  horimeter: ["horímetro", "horimetro"],
+  vibration: ["vibra"],
+  temperature: ["temperatura"],
+  speed: ["velocidade"],
+  production: ["produção", "producao", "produc"],
+};
+
+function graphHistoryFor(
+  key: string,
+  customVariables: MachineCustomVariable[],
+  reportVariables: Record<string, unknown>[],
+): number[] {
+  const custom = customVariables.find((v) => v.id === key);
+  const matchers = BUILTIN_REPORT_MATCHERS[key] ?? (custom?.label ? [custom.label.toLowerCase()] : []);
+  const hasMatch = (variables: Record<string, unknown>) =>
+    Object.keys(variables).some((k) => matchers.some((m) => k.toLowerCase().includes(m)));
+  return matchers.length === 0 ? [] : reportVariables.filter(hasMatch).map((v) => findVariableValue(v, matchers));
 }
 
 async function loadExtras(companyId: string | undefined, machineIds: number[]): Promise<Extras> {
   const variablesByMachine = new Map<number, VariableRow[]>();
-  const configByMachine = new Map<number, DashboardConfigRow>();
+  const configsByMachine = new Map<number, DashboardConfigRow[]>();
   const historyByMachine = new Map<number, number[]>();
-  if (machineIds.length === 0) return { variablesByMachine, configByMachine, historyByMachine };
+  const reportVariablesByMachine = new Map<number, Record<string, unknown>[]>();
+  if (machineIds.length === 0) return { variablesByMachine, configsByMachine, historyByMachine, reportVariablesByMachine };
 
   let configsQuery = supabase
     .from("dashboard_configs")
-    .select("id, maquina_id, selection, bottom_selection, bottom_enabled, top_enabled, oee_enabled, oee_graph_variable")
+    .select("id, id_empresa, maquina_id, selection, bottom_selection, bottom_enabled, top_enabled, oee_enabled, oee_graph_variable")
     .in("maquina_id", machineIds);
   if (companyId) configsQuery = configsQuery.eq("id_empresa", companyId);
 
   let historyQuery = supabase
     .from("Relatório")
-    .select("maquina_id, OEE, created_at")
+    .select("maquina_id, OEE, variables, created_at")
     .in("maquina_id", machineIds)
     .order("created_at", { ascending: false })
     .limit(machineIds.length * 12);
@@ -160,19 +192,30 @@ async function loadExtras(companyId: string | undefined, machineIds: number[]): 
     variablesByMachine.set(row.maquina_id, list);
   }
   for (const row of (configsRes.data ?? []) as DashboardConfigRow[]) {
-    configByMachine.set(row.maquina_id, row);
+    const list = configsByMachine.get(row.maquina_id) ?? [];
+    list.push(row);
+    configsByMachine.set(row.maquina_id, list);
   }
   const historyDesc = new Map<number, number[]>();
-  for (const row of (historyRes.data ?? []) as { maquina_id: number; OEE: number | null }[]) {
+  const reportVariablesDesc = new Map<number, Record<string, unknown>[]>();
+  for (const row of (historyRes.data ?? []) as HistoryRow[]) {
     const list = historyDesc.get(row.maquina_id) ?? [];
-    if (list.length < 12) list.push(Math.round((row.OEE ?? 0) * 100));
+    const variablesList = reportVariablesDesc.get(row.maquina_id) ?? [];
+    if (list.length < 12) {
+      list.push(Math.round((row.OEE ?? 0) * 100));
+      variablesList.push(row.variables ?? {});
+    }
     historyDesc.set(row.maquina_id, list);
+    reportVariablesDesc.set(row.maquina_id, variablesList);
   }
   for (const [machineId, list] of historyDesc.entries()) {
     historyByMachine.set(machineId, [...list].reverse());
   }
+  for (const [machineId, list] of reportVariablesDesc.entries()) {
+    reportVariablesByMachine.set(machineId, [...list].reverse());
+  }
 
-  return { variablesByMachine, configByMachine, historyByMachine };
+  return { variablesByMachine, configsByMachine, historyByMachine, reportVariablesByMachine };
 }
 
 function toCustomVariable(row: VariableRow): MachineCustomVariable {
@@ -197,6 +240,11 @@ function defaultCardSettings(): MachineCardSettings {
   };
 }
 
+/** Prefere a config da empresa dona da maquina, que e onde `upsertCardSettings` grava. */
+function ownerConfig(configs: DashboardConfigRow[] | undefined, ownerCompanyId: string): DashboardConfigRow | undefined {
+  return configs?.find((c) => c.id_empresa === ownerCompanyId) ?? configs?.[0];
+}
+
 function toCardSettings(row: DashboardConfigRow | undefined): MachineCardSettings {
   if (!row) return defaultCardSettings();
   const top = (row.selection ?? []).map(dbVariableKeyToDomainKey);
@@ -210,6 +258,9 @@ function toCardSettings(row: DashboardConfigRow | undefined): MachineCardSetting
     topVariableVisible: [topVisible[0] ?? true, topVisible[1] ?? true, topVisible[2] ?? true],
     bottomVariableKeys: [bottom[0] ?? fallback.bottomVariableKeys[0], bottom[1] ?? fallback.bottomVariableKeys[1]],
     bottomVariableVisible: [visible[0] ?? true, visible[1] ?? true],
+    graphVariableKey: row.oee_graph_variable
+      ? dbVariableKeyToDomainKey(row.oee_graph_variable)
+      : (top[0] ?? fallback.topVariableKeys[0]),
   };
 }
 
@@ -246,6 +297,7 @@ function toProductionConfig(row: MaquinaRow): MachineProductionConfig {
 
 function toMachine(row: MaquinaRow, extras: Extras): Machine {
   const customVariables = (extras.variablesByMachine.get(row.id) ?? []).map(toCustomVariable);
+  const cardSettings = toCardSettings(ownerConfig(extras.configsByMachine.get(row.id), row.idRef));
   const name = row.maquina ?? "";
   return {
     id: String(row.id),
@@ -269,8 +321,13 @@ function toMachine(row: MaquinaRow, extras: Extras): Machine {
     },
     complementaryCount: customVariables.length,
     oeeHistory: extras.historyByMachine.get(row.id) ?? Array.from({ length: 12 }, () => 0),
+    graphHistory: graphHistoryFor(
+      cardSettings.graphVariableKey ?? cardSettings.topVariableKeys[0],
+      customVariables,
+      extras.reportVariablesByMachine.get(row.id) ?? [],
+    ),
     customVariables,
-    cardSettings: toCardSettings(extras.configByMachine.get(row.id)),
+    cardSettings,
     lossBreakdown: toLossBreakdown(row),
     productionConfig: toProductionConfig(row),
   };
@@ -327,7 +384,9 @@ async function upsertCardSettings(companyId: string, machineId: number, cardSett
     bottom_enabled: cardSettings.bottomVariableVisible,
     top_enabled: cardSettings.topVariableVisible,
     oee_enabled: cardSettings.showOeeCircle,
-    oee_graph_variable: existing?.oee_graph_variable ?? selection[0],
+    oee_graph_variable: cardSettings.graphVariableKey
+      ? domainVariableKeyToDbKey(cardSettings.graphVariableKey)
+      : (existing?.oee_graph_variable ?? selection[0]),
     updated_at: new Date().toISOString(),
   };
 

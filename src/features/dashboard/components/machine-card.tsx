@@ -14,7 +14,7 @@ import {
   Tag,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
+import { AreaChart, Area, ResponsiveContainer, Tooltip, YAxis } from "recharts";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -163,7 +163,15 @@ export function MachineCard({
   const updateMutation = useUpdateMachine();
   const animatedOee = useAnimatedNumber(machine.oeePercent);
   const [complementaresOpen, setComplementaresOpen] = useState(false);
-  const oeeHistoryData = machine.oeeHistory.map((value) => ({ value }));
+  const graphVariable = resolveVariableDisplay(
+    machine,
+    machine.cardSettings.graphVariableKey ?? machine.cardSettings.topVariableKeys[0],
+  );
+  // Sem relatorios, desenha o valor atual da variavel como uma area constante.
+  const currentGraphValue = parseFloat(graphVariable?.value ?? "") || 0;
+  const graphHistoryData = (
+    machine.graphHistory.length > 0 ? machine.graphHistory : Array.from({ length: 12 }, () => currentGraphValue)
+  ).map((value) => ({ value }));
 
   const top = machine.cardSettings.topVariableKeys
     .map((key, i) => ({ display: resolveVariableDisplay(machine, key), visible: machine.cardSettings.topVariableVisible[i] }))
@@ -270,18 +278,19 @@ export function MachineCard({
               className="flex h-full flex-col justify-between rounded-lg border border-panel-border bg-white/5 p-3 text-left hover:border-brand"
             >
               <div className="min-w-0">
-                <p className="label-caps truncate">{top[0]?.display.label ?? "-"}</p>
-                <p className="mt-1 truncate text-lg font-bold text-white">{top[0]?.display.value ?? "-"}</p>
+                <p className="label-caps truncate">{graphVariable?.label ?? "-"}</p>
+                <p className="mt-1 truncate text-lg font-bold text-white">{graphVariable?.value ?? "-"}</p>
               </div>
-              <div className="mt-2 h-12 w-full">
+              <div className="mt-2 h-24 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={oeeHistoryData}>
+                  <AreaChart data={graphHistoryData}>
                     <defs>
                       <linearGradient id={`oee-trend-${machine.id}`} x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8} />
                         <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.05} />
                       </linearGradient>
                     </defs>
+                    <YAxis hide domain={[0, "auto"]} />
                     <Tooltip cursor={false} content={() => null} />
                     <Area
                       type="monotone"

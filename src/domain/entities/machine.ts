@@ -51,6 +51,8 @@ export interface MachineCardSettings {
   topVariableVisible: [boolean, boolean, boolean];
   bottomVariableKeys: [MachineVariableKey, MachineVariableKey];
   bottomVariableVisible: [boolean, boolean];
+  /** Variavel exibida no mini grafico quando o circulo de OEE esta desativado. */
+  graphVariableKey?: MachineVariableKey;
 }
 
 export interface MachineLossCategory {
@@ -81,6 +83,8 @@ export interface Machine {
   variables: MachineVariables;
   complementaryCount: number;
   oeeHistory: number[];
+  /** Historico (mais antigo -> mais recente) da variavel `cardSettings.graphVariableKey`; vazio se nao houver relatorios. */
+  graphHistory: number[];
   customVariables: MachineCustomVariable[];
   cardSettings: MachineCardSettings;
   lossBreakdown: MachineLossBreakdown;

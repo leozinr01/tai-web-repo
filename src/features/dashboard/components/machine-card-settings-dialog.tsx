@@ -97,6 +97,16 @@ export function MachineCardSettingsDialog({
             />
             Mostrar circulo de OEE
           </label>
+          {!settings.showOeeCircle && (
+            <div className="space-y-2">
+              <label className="label-caps block">Variavel do grafico</label>
+              <SearchableSelect
+                options={options}
+                value={settings.graphVariableKey ?? settings.topVariableKeys[0]}
+                onChange={(v) => setSettings((s) => ({ ...s, graphVariableKey: v }))}
+              />
+            </div>
+          )}
         </div>
 
         <div className="space-y-3">
