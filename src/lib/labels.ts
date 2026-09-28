@@ -36,13 +36,12 @@ export const appointmentAreaLabels: Record<AppointmentArea, string> = {
   [AppointmentArea.QUALIDADE]: "Qualidade",
 };
 
-/** Mesmas opcoes do app.smarttai.com.br; gravadas como texto em `Apontamentos.seguimento_OEE`. */
-export const affectedSegmentOptions = [
-  "Quebra de Máquina",
-  "Setup / Troca",
-  "Falta de Material",
-  "Pequenas Paradas",
-  "Velocidade Reduzida",
-  "Refugo",
-  "Retrabalho",
-];
+/**
+ * Seguimentos de cada pilar do OEE, gravados como texto em `Apontamentos.seguimento_OEE`.
+ * Mesmos nomes das categorias de perda do detalhe da maquina (`toLossBreakdown`).
+ */
+export const affectedSegmentsByArea: Record<AppointmentArea, string[]> = {
+  [AppointmentArea.DISPONIBILIDADE]: ["Quebra / Falhas", "Setup", "Ociosidade"],
+  [AppointmentArea.PRODUTIVIDADE]: ["Pequenas Falhas", "Queda de Velocidade", "Defeito Matéria Prima"],
+  [AppointmentArea.QUALIDADE]: ["Produto não Conforme", "Refugo", "Retrabalho"],
+};

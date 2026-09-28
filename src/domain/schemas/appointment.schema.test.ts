@@ -6,7 +6,7 @@ const validPayload = {
   sectorId: "sector_1",
   machineId: "machine_1",
   area: AppointmentArea.DISPONIBILIDADE,
-  affectedSegment: "Quebra de Máquina",
+  affectedSegment: "Quebra / Falhas",
   date: "2026-08-01",
   time: "10:00",
   durationMinutes: 15,

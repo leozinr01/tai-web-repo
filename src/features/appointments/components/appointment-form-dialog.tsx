@@ -14,7 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { appointmentSchema, type AppointmentFormValues } from "@/domain/schemas/appointment.schema";
 import { AppointmentArea } from "@/domain/types/enums";
-import { appointmentAreaLabels, affectedSegmentOptions } from "@/lib/labels";
+import { appointmentAreaLabels, affectedSegmentsByArea } from "@/lib/labels";
 import type { Sector } from "@/domain/entities/sector";
 import type { Machine } from "@/domain/entities/machine";
 import type { User } from "@/domain/entities/user";
@@ -50,7 +50,7 @@ interface AppointmentFormDialogProps {
   machines: Machine[];
   users: User[];
   initial?: Appointment | null;
-  prefill?: { sectorId: string; machineId: string; area?: AppointmentArea };
+  prefill?: { sectorId: string; machineId: string; area?: AppointmentArea; affectedSegment?: string };
 }
 
 const areaOptions = Object.entries(appointmentAreaLabels).map(([value, label]) => ({ value, label }));
@@ -121,7 +121,7 @@ export function AppointmentFormDialog({
               sectorId: prefill?.sectorId ?? "",
               machineId: prefill?.machineId ?? "",
               area: prefill?.area ?? EMPTY_AREA,
-              affectedSegment: "",
+              affectedSegment: prefill?.affectedSegment ?? "",
               date: format(new Date(), "yyyy-MM-dd"),
               time: format(new Date(), "HH:mm"),
               startTime: format(new Date(), "HH:mm"),
@@ -157,12 +157,15 @@ export function AppointmentFormDialog({
     return merged;
   }, [users, extraUsers]);
   const userOptions = useMemo(() => allUsers.map((u) => ({ value: u.id, label: u.name })), [allUsers]);
-  // Apontamentos antigos podem ter seguimentos fora da lista atual; mantem o valor salvo como opcao ao editar.
+  const area = watch("area");
+  // So os seguimentos do pilar escolhido. Apontamentos antigos podem ter seguimentos fora da lista;
+  // ao editar, o valor salvo continua como opcao enquanto o pilar for o original.
   const segmentOptions = useMemo(() => {
-    const values = [...affectedSegmentOptions];
-    if (initial?.affectedSegment && !values.includes(initial.affectedSegment)) values.push(initial.affectedSegment);
+    const values = [...(affectedSegmentsByArea[area] ?? [])];
+    const saved = initial?.affectedSegment;
+    if (saved && initial?.area === area && !values.includes(saved)) values.push(saved);
     return values.map((s) => ({ value: s, label: s }));
-  }, [initial]);
+  }, [area, initial]);
 
   return (
     <Dialog
@@ -260,7 +263,13 @@ export function AppointmentFormDialog({
                 <SearchableSelect
                   options={areaOptions}
                   value={field.value}
-                  onChange={field.onChange}
+                  onChange={(v) => {
+                    field.onChange(v);
+                    // O seguimento depende do pilar; limpa se nao pertencer ao novo.
+                    if (!affectedSegmentsByArea[v as AppointmentArea]?.includes(watch("affectedSegment"))) {
+                      setValue("affectedSegment", "");
+                    }
+                  }}
                   placeholder="Selecione..."
                   error={errors.area?.message}
                   className={selectFieldCls}
@@ -272,7 +281,7 @@ export function AppointmentFormDialog({
           <div>
             <FieldLabel required className={cn(fieldLabelCls, "flex items-center gap-1")}>
               Seguimento afetado
-              <span title="Tipo de perda que causou a ocorrência.">
+              <span title="Tipo de perda dentro da área escolhida.">
                 <Info className="h-3 w-3 text-muted" />
               </span>
             </FieldLabel>
@@ -284,7 +293,8 @@ export function AppointmentFormDialog({
                   options={segmentOptions}
                   value={field.value}
                   onChange={field.onChange}
-                  placeholder="Selecione..."
+                  placeholder={area ? "Selecione..." : "Escolha a área primeiro"}
+                  disabled={!area}
                   error={errors.affectedSegment?.message}
                   className={selectFieldCls}
                 />
