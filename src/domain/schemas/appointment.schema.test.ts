@@ -5,8 +5,8 @@ import { AppointmentArea } from "@/domain/types/enums";
 const validPayload = {
   sectorId: "sector_1",
   machineId: "machine_1",
-  area: AppointmentArea.MECANICA,
-  affectedSegment: "Producao",
+  area: AppointmentArea.DISPONIBILIDADE,
+  affectedSegment: "Quebra de Máquina",
   date: "2026-08-01",
   time: "10:00",
   durationMinutes: 15,
@@ -28,5 +28,10 @@ describe("appointmentSchema", () => {
   it("rejeita descricao vazia", () => {
     const result = appointmentSchema.safeParse({ ...validPayload, description: "" });
     expect(result.success).toBe(false);
+  });
+
+  it("rejeita area vazia ou fora dos pilares do OEE", () => {
+    expect(appointmentSchema.safeParse({ ...validPayload, area: "" }).success).toBe(false);
+    expect(appointmentSchema.safeParse({ ...validPayload, area: "operational" }).success).toBe(false);
   });
 });

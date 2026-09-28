@@ -46,10 +46,12 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
         <ChevronLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
       </button>
 
-      <div className="flex flex-col gap-3 px-7 py-6">
-        <img src="/logo-tai-project.png" alt="Tai Project" className={cn("w-auto object-contain", collapsed ? "h-8" : "h-12")} />
+      <div className={cn("flex flex-col gap-3 py-6", collapsed ? "px-7" : "pl-3 pr-7")}>
+        <img src="/logo-tai-project.png" alt="Tai Project" className={cn("w-auto self-start object-contain object-left", collapsed ? "h-8" : "h-12")} />
         {!collapsed && (
-          <p className="font-display truncate text-lg font-bold tracking-tight text-white">Tai Project</p>
+          <p className="font-display truncate text-lg font-bold tracking-tight text-white">
+            Tai <span className="text-brand-light">Project</span>
+          </p>
         )}
       </div>
 

@@ -31,17 +31,18 @@ export const userRoleLabels: Record<UserRole, string> = {
 };
 
 export const appointmentAreaLabels: Record<AppointmentArea, string> = {
-  [AppointmentArea.MECANICA]: "Mecânica",
-  [AppointmentArea.ELETRICA]: "Elétrica",
-  [AppointmentArea.OPERACIONAL]: "Operacional",
+  [AppointmentArea.DISPONIBILIDADE]: "Disponibilidade",
+  [AppointmentArea.PRODUTIVIDADE]: "Produtividade",
   [AppointmentArea.QUALIDADE]: "Qualidade",
-  [AppointmentArea.OUTRO]: "Outro",
 };
 
+/** Mesmas opcoes do app.smarttai.com.br; gravadas como texto em `Apontamentos.seguimento_OEE`. */
 export const affectedSegmentOptions = [
-  "Produção",
-  "Manutenção",
-  "Qualidade",
-  "Logística",
-  "Segurança",
+  "Quebra de Máquina",
+  "Setup / Troca",
+  "Falta de Material",
+  "Pequenas Paradas",
+  "Velocidade Reduzida",
+  "Refugo",
+  "Retrabalho",
 ];
