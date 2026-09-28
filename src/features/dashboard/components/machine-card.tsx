@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Pencil,
   Settings,
@@ -64,18 +64,33 @@ function bottomBarPercent(machine: Machine, key: MachineVariableKey): number {
   return 100;
 }
 
+// Mesma formula do sistema antigo: sem historico, desenha uma onda decorativa em torno do valor atual,
+// com formato fixo por maquina/variavel (a semente e a soma dos codigos dos caracteres).
+function decorativeWave(value: number, seed: string): number[] {
+  const amplitude = Math.max(Math.abs(value) * 0.08, 1);
+  const offset = [...seed].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+  return Array.from({ length: 12 }, (_, i) => {
+    const step = i + 1 + offset;
+    return value + (Math.sin(step * 0.67) * 0.6 + Math.cos(step * 0.23) * 0.4) * amplitude;
+  });
+}
+
+// Anima do valor exibido atualmente ate o novo alvo, para que a atualizacao automatica nao reinicie do zero.
 function useAnimatedNumber(target: number, duration = 1000) {
   const [value, setValue] = useState(0);
+  const currentRef = useRef(0);
 
   useEffect(() => {
-    setValue(0);
+    const from = currentRef.current;
     let raf = 0;
     const start = performance.now();
 
     const tick = (now: number) => {
       const t = Math.min((now - start) / duration, 1);
       const eased = 1 - Math.pow(1 - t, 3);
-      setValue(target * eased);
+      const next = from + (target - from) * eased;
+      currentRef.current = next;
+      setValue(next);
       if (t < 1) raf = requestAnimationFrame(tick);
     };
 
@@ -87,27 +102,6 @@ function useAnimatedNumber(target: number, duration = 1000) {
 }
 
 const NUMERIC_VALUE_PATTERN = /^(-?\d+(?:\.\d+)?)(.*)$/;
-
-function useAnimationProgress(duration: number, resetKey: string) {
-  const [t, setT] = useState(0);
-
-  useEffect(() => {
-    setT(0);
-    let raf = 0;
-    const start = performance.now();
-
-    const tick = (now: number) => {
-      const raw = Math.min((now - start) / duration, 1);
-      setT(1 - Math.pow(1 - raw, 3));
-      if (raw < 1) raf = requestAnimationFrame(tick);
-    };
-
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [resetKey, duration]);
-
-  return t;
-}
 
 function AnimatedBottomStat({
   label,
@@ -128,9 +122,9 @@ function AnimatedBottomStat({
   const decimals = numStr.split(".")[1]?.length ?? 0;
   const targetNum = parseFloat(numStr);
 
-  const progress = useAnimationProgress(1200, `${targetNum}|${percent}`);
-  const animatedValue = match ? `${(targetNum * progress).toFixed(decimals)}${suffix}` : value;
-  const animatedPercent = percent * progress;
+  const animatedNum = useAnimatedNumber(targetNum, 1200);
+  const animatedValue = match ? `${animatedNum.toFixed(decimals)}${suffix}` : value;
+  const animatedPercent = useAnimatedNumber(percent, 1200);
 
   return (
     <div
@@ -163,19 +157,19 @@ export function MachineCard({
   const updateMutation = useUpdateMachine();
   const animatedOee = useAnimatedNumber(machine.oeePercent);
   const [complementaresOpen, setComplementaresOpen] = useState(false);
-  const graphVariable = resolveVariableDisplay(
-    machine,
-    machine.cardSettings.graphVariableKey ?? machine.cardSettings.topVariableKeys[0],
-  );
-  // Sem relatorios, desenha o valor atual da variavel como uma area constante.
+  const graphKey = machine.cardSettings.graphVariableKey ?? machine.cardSettings.topVariableKeys[0];
+  const graphVariable = resolveVariableDisplay(machine, graphKey);
   const currentGraphValue = parseFloat(graphVariable?.value ?? "") || 0;
   const graphUnit = graphVariable?.value.match(NUMERIC_VALUE_PATTERN)?.[2]?.trim() ?? "";
   const formatGraphValue = (value: number) =>
     `${Number.isInteger(value) ? value : value.toFixed(2)}${graphUnit ? ` ${graphUnit}` : ""}`;
   const [hoveredGraphValue, setHoveredGraphValue] = useState<number | null>(null);
+  // Com relatorios que variam, usa o historico real; senao a onda e so visual e o hover mostra o valor atual.
+  const hasGraphHistory =
+    machine.graphHistory.length > 1 && Math.max(...machine.graphHistory) !== Math.min(...machine.graphHistory);
   const graphHistoryData = (
-    machine.graphHistory.length > 0 ? machine.graphHistory : Array.from({ length: 12 }, () => currentGraphValue)
-  ).map((value) => ({ value }));
+    hasGraphHistory ? machine.graphHistory : decorativeWave(currentGraphValue, `${machine.id}-${graphKey}`)
+  ).map((value) => ({ value, shown: hasGraphHistory ? value : currentGraphValue }));
 
   const top = machine.cardSettings.topVariableKeys
     .map((key, i) => ({ display: resolveVariableDisplay(machine, key), visible: machine.cardSettings.topVariableVisible[i] }))
@@ -292,7 +286,7 @@ export function MachineCard({
                   <AreaChart
                     data={graphHistoryData}
                     onMouseMove={(state) => {
-                      const value = state?.activePayload?.[0]?.value;
+                      const value = state?.activePayload?.[0]?.payload?.shown;
                       setHoveredGraphValue(typeof value === "number" ? value : null);
                     }}
                     onMouseLeave={() => setHoveredGraphValue(null)}
@@ -303,14 +297,15 @@ export function MachineCard({
                         <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.05} />
                       </linearGradient>
                     </defs>
-                    <YAxis hide domain={[0, "auto"]} />
+                    {/* Valores zerados geram onda abaixo de 0; o eixo desce junto para ela nao ser cortada. */}
+                    <YAxis hide domain={[(min: number) => Math.min(0, min), "auto"]} />
                     <Tooltip
                       cursor={false}
                       isAnimationActive={false}
                       position={{ y: 0 }}
                       wrapperStyle={{ zIndex: 50, outline: "none" }}
                       content={({ active, payload }) => {
-                        const value = payload?.[0]?.value;
+                        const value = payload?.[0]?.payload?.shown;
                         if (!active || typeof value !== "number") return null;
                         return (
                           <div className="rounded-md border border-panel-border bg-[#0a1a2f] px-2 py-1 text-xs font-semibold text-slate-100 shadow-lg">

@@ -64,7 +64,7 @@ const VARIABLE_UNITS = [
 ];
 
 const selectClassName =
-  "h-9 shrink-0 rounded-lg border border-white/10 bg-white/5 px-2 text-xs text-white focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand";
+  "h-9 shrink-0 rounded-lg border border-white/10 bg-white/5 px-2 text-xs text-white [color-scheme:dark] focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand [&>option]:bg-navy-950 [&>option]:text-white";
 
 export function MachineFormDialog({
   open,

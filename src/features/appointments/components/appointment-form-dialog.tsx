@@ -50,11 +50,12 @@ interface AppointmentFormDialogProps {
   machines: Machine[];
   users: User[];
   initial?: Appointment | null;
-  prefill?: { sectorId: string; machineId: string };
+  prefill?: { sectorId: string; machineId: string; area?: AppointmentArea };
 }
 
 const areaOptions = Object.entries(appointmentAreaLabels).map(([value, label]) => ({ value, label }));
-const segmentOptions = affectedSegmentOptions.map((s) => ({ value: s, label: s }));
+// Comeca vazio para obrigar a escolha do pilar (o schema rejeita "").
+const EMPTY_AREA = "" as AppointmentArea;
 
 const fieldLabelCls = "text-[10px] tracking-widest pl-1";
 const selectFieldCls = "h-auto rounded-lg px-3 py-2 text-sm font-bold";
@@ -89,7 +90,7 @@ export function AppointmentFormDialog({
     defaultValues: {
       sectorId: "",
       machineId: "",
-      area: AppointmentArea.OPERACIONAL,
+      area: EMPTY_AREA,
       affectedSegment: "",
       date: format(new Date(), "yyyy-MM-dd"),
       time: format(new Date(), "HH:mm"),
@@ -119,7 +120,7 @@ export function AppointmentFormDialog({
           : {
               sectorId: prefill?.sectorId ?? "",
               machineId: prefill?.machineId ?? "",
-              area: AppointmentArea.OPERACIONAL,
+              area: prefill?.area ?? EMPTY_AREA,
               affectedSegment: "",
               date: format(new Date(), "yyyy-MM-dd"),
               time: format(new Date(), "HH:mm"),
@@ -156,6 +157,12 @@ export function AppointmentFormDialog({
     return merged;
   }, [users, extraUsers]);
   const userOptions = useMemo(() => allUsers.map((u) => ({ value: u.id, label: u.name })), [allUsers]);
+  // Apontamentos antigos podem ter seguimentos fora da lista atual; mantem o valor salvo como opcao ao editar.
+  const segmentOptions = useMemo(() => {
+    const values = [...affectedSegmentOptions];
+    if (initial?.affectedSegment && !values.includes(initial.affectedSegment)) values.push(initial.affectedSegment);
+    return values.map((s) => ({ value: s, label: s }));
+  }, [initial]);
 
   return (
     <Dialog
@@ -242,7 +249,7 @@ export function AppointmentFormDialog({
           <div>
             <FieldLabel required className={cn(fieldLabelCls, "flex items-center gap-1")}>
               Área do apontamento
-              <span title="Classifica a natureza técnica do apontamento.">
+              <span title="Pilar do OEE afetado: Disponibilidade, Produtividade ou Qualidade.">
                 <Info className="h-3 w-3 text-muted" />
               </span>
             </FieldLabel>
@@ -265,7 +272,7 @@ export function AppointmentFormDialog({
           <div>
             <FieldLabel required className={cn(fieldLabelCls, "flex items-center gap-1")}>
               Seguimento afetado
-              <span title="Área do processo impactada pela ocorrência.">
+              <span title="Tipo de perda que causou a ocorrência.">
                 <Info className="h-3 w-3 text-muted" />
               </span>
             </FieldLabel>

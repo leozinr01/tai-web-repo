@@ -3,19 +3,28 @@ import { repositories } from "@/data/repositories";
 import type { MachineFilters } from "@/data/contracts/machine.repository";
 import type { Machine, MachineCardSettings, MachineLossMetric } from "@/domain/entities/machine";
 
+// Intervalo de atualizacao automatica do dashboard (dados das maquinas mudam em tempo real).
+export const DASHBOARD_REFRESH_MS = 10_000;
+
 export function useDashboardIndicators(companyId: string) {
   return useQuery({
     queryKey: ["dashboard-indicators", companyId],
     queryFn: () => repositories.indicators.getDashboardIndicators(companyId),
     refetchOnMount: "always",
+    refetchInterval: DASHBOARD_REFRESH_MS,
   });
 }
 
-export function useMachines(companyId: string | undefined, filters: MachineFilters) {
+export function useMachines(
+  companyId: string | undefined,
+  filters: MachineFilters,
+  options: { refetchInterval?: number } = {},
+) {
   return useQuery({
     queryKey: ["machines", companyId, filters],
     queryFn: () => repositories.machines.listByCompany(companyId, filters),
     refetchOnMount: "always",
+    refetchInterval: options.refetchInterval,
   });
 }
 

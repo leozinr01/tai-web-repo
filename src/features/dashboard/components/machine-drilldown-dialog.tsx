@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import * as RadixDialog from "@radix-ui/react-dialog";
 import {
@@ -25,6 +25,7 @@ import { useDisclosure } from "@/hooks/use-disclosure";
 import { toast } from "@/hooks/use-toast";
 import { repositories } from "@/data/repositories";
 import type { AppointmentFormValues } from "@/domain/schemas/appointment.schema";
+import { AppointmentArea } from "@/domain/types/enums";
 import type { Machine, MachineLossCategory } from "@/domain/entities/machine";
 
 interface MachineDrilldownDialogProps {
@@ -51,6 +52,12 @@ const metricRingColor: Record<MetricKey, string> = {
   availability: "#3b4fe6",
   productivity: "#1bb58f",
   quality: "#2f6de2",
+};
+
+const metricArea: Record<MetricKey, AppointmentArea> = {
+  availability: AppointmentArea.DISPONIBILIDADE,
+  productivity: AppointmentArea.PRODUTIVIDADE,
+  quality: AppointmentArea.QUALIDADE,
 };
 
 const CATEGORY_COLORS = ["#eab308", "#3b82f6", "#a855f7"];
@@ -132,6 +139,23 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
   });
   const createAppointmentMutation = useCreateAppointment();
   const registerLossMutation = useRegisterMachineLoss();
+
+  // Referencia estavel: o formulario reseta quando `prefill` muda, e o dashboard rebusca as maquinas periodicamente.
+  const prefillMetric = nav.level === "root" ? undefined : nav.metric;
+  const appointmentPrefill = useMemo(
+    () => ({
+      sectorId: machine.sectorId,
+      machineId: machine.id,
+      area: prefillMetric ? metricArea[prefillMetric] : undefined,
+    }),
+    [machine.sectorId, machine.id, prefillMetric],
+  );
+
+  // `nav.category` e uma copia do momento do clique; le os minutos atuais da maquina para refletir apontamentos novos.
+  const currentCategory =
+    nav.level === "category"
+      ? (machine.lossBreakdown[nav.metric].find((c) => c.key === nav.category.key) ?? nav.category)
+      : null;
 
   const reset = () => setNav({ level: "root" });
 
@@ -341,7 +365,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
                               })()}
                             </div>
                             <span className="text-2xl font-black text-white sm:text-4xl">
-                              {formatHours(nav.category.minutes)} hs
+                              {formatHours(currentCategory?.minutes ?? nav.category.minutes)} hs
                             </span>
                           </div>
                           <button
@@ -379,7 +403,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
         sectors={sectorsQuery.data ?? []}
         machines={machinesQuery.data ?? []}
         users={usersQuery.data ?? []}
-        prefill={{ sectorId: machine.sectorId, machineId: machine.id }}
+        prefill={appointmentPrefill}
       />
     </>
   );

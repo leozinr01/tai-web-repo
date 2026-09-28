@@ -11,6 +11,7 @@ import { MachineCard } from "@/features/dashboard/components/machine-card";
 import { DefaultCardSettingsDialog } from "@/features/dashboard/components/default-card-settings-dialog";
 import { useAuth } from "@/features/auth/use-auth";
 import {
+  DASHBOARD_REFRESH_MS,
   useDashboardIndicators,
   useMachines,
   useSectors,
@@ -40,11 +41,15 @@ export function DashboardPage() {
   const indicatorsQuery = useDashboardIndicators(companyId);
   const sectorsQuery = useSectors(scopeCompanyId);
   const allMachinesQuery = useMachines(scopeCompanyId, {});
-  const machinesQuery = useMachines(scopeCompanyId, {
-    sectorId: sectorId || undefined,
-    machineId: machineId || undefined,
-    status: (status as MachineStatus) || undefined,
-  });
+  const machinesQuery = useMachines(
+    scopeCompanyId,
+    {
+      sectorId: sectorId || undefined,
+      machineId: machineId || undefined,
+      status: (status as MachineStatus) || undefined,
+    },
+    { refetchInterval: DASHBOARD_REFRESH_MS },
+  );
 
   const sectorOptions = useMemo(
     () => (sectorsQuery.data ?? []).map((s) => ({ value: s.id, label: s.name })),

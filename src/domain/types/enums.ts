@@ -49,11 +49,10 @@ export const CompanyStatus = {
 } as const;
 export type CompanyStatus = (typeof CompanyStatus)[keyof typeof CompanyStatus];
 
+/** Pilar do OEE afetado pelo apontamento. Os valores sao gravados como estao na coluna `OEE` de `Apontamentos`. */
 export const AppointmentArea = {
-  MECANICA: "mechanical",
-  ELETRICA: "electrical",
-  OPERACIONAL: "operational",
-  QUALIDADE: "quality",
-  OUTRO: "other",
+  DISPONIBILIDADE: "Disponibilidade",
+  PRODUTIVIDADE: "Produtividade",
+  QUALIDADE: "Qualidade",
 } as const;
 export type AppointmentArea = (typeof AppointmentArea)[keyof typeof AppointmentArea];

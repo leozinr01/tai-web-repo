@@ -27,15 +27,11 @@ interface ApontamentoRow {
 const APONTAMENTO_COLUMNS =
   'id, created_at, "idMaquina", data_lancamento, hora_lancamento, "lançador", apontamento, "idRef", tempo_parada, "OEE", "seguimento_OEE", "Setor"';
 
-/** `OEE`/`seguimento_OEE` guardam o pilar afetado (schema legado), sem relacao direta com o enum de area deste painel. Mapeamento e melhor esforco. */
-function areaFromOee(oee: string | null): AppointmentArea {
-  if (oee === "Qualidade") return AppointmentArea.QUALIDADE;
-  if (oee === "Disponibilidade" || oee === "Produtividade") return AppointmentArea.OPERACIONAL;
-  return AppointmentArea.OUTRO;
-}
+const AREA_VALUES = Object.values(AppointmentArea) as string[];
 
-function oeeFromArea(area: AppointmentArea): string {
-  return area === AppointmentArea.QUALIDADE ? "Qualidade" : "Disponibilidade";
+/** A coluna `OEE` guarda o pilar afetado com o mesmo texto do enum; valores fora dele caem em Disponibilidade. */
+function areaFromOee(oee: string | null): AppointmentArea {
+  return oee && AREA_VALUES.includes(oee) ? (oee as AppointmentArea) : AppointmentArea.DISPONIBILIDADE;
 }
 
 function toAppointment(
@@ -127,7 +123,7 @@ export class SupabaseAppointmentRepository implements AppointmentRepository {
         apontamento: data.description,
         idRef: companyId,
         tempo_parada: minutesToHHMM(data.durationMinutes),
-        OEE: oeeFromArea(data.area),
+        OEE: data.area,
         seguimento_OEE: data.affectedSegment,
         Setor: data.sectorId,
       })
@@ -158,7 +154,7 @@ export class SupabaseAppointmentRepository implements AppointmentRepository {
     if (data.time !== undefined) patch.hora_lancamento = data.time;
     if (data.description !== undefined) patch.apontamento = data.description;
     if (data.durationMinutes !== undefined) patch.tempo_parada = minutesToHHMM(data.durationMinutes);
-    if (data.area !== undefined) patch.OEE = oeeFromArea(data.area);
+    if (data.area !== undefined) patch.OEE = data.area;
     if (data.affectedSegment !== undefined) patch.seguimento_OEE = data.affectedSegment;
     if (data.sectorId !== undefined) patch.Setor = data.sectorId;
     if (data.machineId !== undefined) {
