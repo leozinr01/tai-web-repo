@@ -142,13 +142,15 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
 
   // Referencia estavel: o formulario reseta quando `prefill` muda, e o dashboard rebusca as maquinas periodicamente.
   const prefillMetric = nav.level === "root" ? undefined : nav.metric;
+  const prefillSegment = nav.level === "category" ? nav.category.label : undefined;
   const appointmentPrefill = useMemo(
     () => ({
       sectorId: machine.sectorId,
       machineId: machine.id,
       area: prefillMetric ? metricArea[prefillMetric] : undefined,
+      affectedSegment: prefillSegment,
     }),
-    [machine.sectorId, machine.id, prefillMetric],
+    [machine.sectorId, machine.id, prefillMetric, prefillSegment],
   );
 
   // `nav.category` e uma copia do momento do clique; le os minutos atuais da maquina para refletir apontamentos novos.
