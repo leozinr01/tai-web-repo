@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { useAuth } from "@/features/auth/use-auth";
+import { canWriteRecords } from "@/domain/permissions";
 import { useSectors, useMachines } from "@/features/dashboard/queries";
 import { useWorkOrders, useCreateWorkOrder, useUpdateWorkOrder } from "@/features/work-orders/queries";
 import { WorkOrderFormDialog } from "@/features/work-orders/components/work-order-form-dialog";
@@ -36,6 +37,7 @@ const statusBorder: Record<WorkOrderStatus, string> = {
 export function WorkOrdersPage() {
   const { user } = useAuth();
   const companyId = user?.companyId ?? "";
+  const canWrite = canWriteRecords(user?.role);
 
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -201,11 +203,13 @@ export function WorkOrdersPage() {
             />
           </FilterField>
         </div>
-        <div className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2 lg:grid-cols-6">
-          <Button onClick={() => setFormOpen(true)} className="h-11">
-            <Plus className="h-4 w-4" /> Nova O.S.
-          </Button>
-        </div>
+        {canWrite && (
+          <div className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2 lg:grid-cols-6">
+            <Button onClick={() => setFormOpen(true)} className="h-11">
+              <Plus className="h-4 w-4" /> Nova O.S.
+            </Button>
+          </div>
+        )}
       </Card>
 
       {ordersQuery.isLoading && (
@@ -230,11 +234,13 @@ export function WorkOrdersPage() {
           <EmptyState
             icon={<Wrench className="h-10 w-10" />}
             title="Nenhuma ordem de serviço encontrada"
-            description="Ajuste os filtros ou crie uma nova O.S."
+            description={canWrite ? "Ajuste os filtros ou crie uma nova O.S." : "Ajuste os filtros."}
             action={
-              <Button onClick={() => setFormOpen(true)} size="sm">
-                <Plus className="h-4 w-4" /> Nova O.S.
-              </Button>
+              canWrite && (
+                <Button onClick={() => setFormOpen(true)} size="sm">
+                  <Plus className="h-4 w-4" /> Nova O.S.
+                </Button>
+              )
             }
           />
         </Card>
@@ -305,10 +311,14 @@ export function WorkOrdersPage() {
       <WorkOrderDetailsDialog
         order={viewing}
         onOpenChange={(open) => !open && setViewing(null)}
-        onEdit={() => {
-          setEditing(viewing);
-          setViewing(null);
-        }}
+        onEdit={
+          canWrite
+            ? () => {
+                setEditing(viewing);
+                setViewing(null);
+              }
+            : undefined
+        }
         machineName={viewing ? machineById.get(viewing.machineId) : undefined}
         sectorName={viewing ? sectorById.get(viewing.sectorId) : undefined}
       />

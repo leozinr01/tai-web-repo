@@ -1,11 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { repositories } from "@/data/repositories";
+import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import type { AppointmentFilters } from "@/data/contracts/appointment.repository";
 import type { Appointment } from "@/domain/entities/appointment";
 
 const KEY = "appointments";
 
+const watchAppointments = (companyId: string, onChange: () => void) =>
+  repositories.appointments.watch(companyId, onChange);
+
 export function useAppointments(companyId: string, filters: AppointmentFilters) {
+  useLiveInvalidation(watchAppointments, KEY, companyId);
   return useQuery({
     queryKey: [KEY, companyId, filters],
     queryFn: () => repositories.appointments.list(companyId, filters),

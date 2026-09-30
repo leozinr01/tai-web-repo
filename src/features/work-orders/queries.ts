@@ -1,11 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { repositories } from "@/data/repositories";
+import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 import type { WorkOrderFilters } from "@/data/contracts/work-order.repository";
 import type { WorkOrder } from "@/domain/entities/work-order";
 
 const KEY = "work-orders";
 
+const watchWorkOrders = (companyId: string, onChange: () => void) =>
+  repositories.workOrders.watch(companyId, onChange);
+
 export function useWorkOrders(companyId: string, filters: WorkOrderFilters) {
+  useLiveInvalidation(watchWorkOrders, KEY, companyId);
   return useQuery({
     queryKey: [KEY, companyId, filters],
     queryFn: () => repositories.workOrders.list(companyId, filters),

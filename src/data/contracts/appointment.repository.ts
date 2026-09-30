@@ -1,4 +1,5 @@
 import type { Appointment } from "@/domain/entities/appointment";
+import type { AppointmentArea } from "@/domain/types/enums";
 
 export interface AppointmentFilters {
   dateFrom?: string;
@@ -6,6 +7,8 @@ export interface AppointmentFilters {
   sectorId?: string;
   machineId?: string;
   authorId?: string;
+  area?: AppointmentArea;
+  affectedSegment?: string;
   page?: number;
   pageSize?: number;
 }
@@ -23,4 +26,6 @@ export interface AppointmentRepository {
   create(data: Omit<Appointment, "id" | "createdAt" | "companyId" | "authorName">): Promise<Appointment>;
   update(id: string, data: Partial<Appointment>): Promise<Appointment>;
   remove(id: string): Promise<void>;
+  /** Chama `onChange` quando algum apontamento da empresa muda. Devolve a funcao para parar. */
+  watch(companyId: string, onChange: () => void): () => void;
 }

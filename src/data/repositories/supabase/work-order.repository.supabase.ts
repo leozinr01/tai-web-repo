@@ -5,6 +5,8 @@ import { WorkOrderPeriodicity, WorkOrderStatus } from "@/domain/types/enums";
 import { supabase } from "@/lib/supabase-client";
 import { workOrderPeriodicityLabels, workOrderStatusLabels } from "@/lib/labels";
 import { getMachineNameMaps, getUserNameToId } from "@/data/repositories/supabase/company-lookups";
+import { fetchAllRows } from "@/data/repositories/supabase/helpers";
+import { watchCompanyTable } from "@/data/repositories/supabase/realtime";
 
 const TABLE = "Ordem de serviço";
 
@@ -61,9 +63,9 @@ function toWorkOrder(row: OsRow, machineIdByName: Map<string, string>, userIdByN
 
 export class SupabaseWorkOrderRepository implements WorkOrderRepository {
   async list(companyId: string, filters?: WorkOrderFilters): Promise<WorkOrder[]> {
-    const { data, error } = await supabase.from(TABLE).select(OS_COLUMNS).eq("idRef", companyId);
-    if (error) throw new Error(error.message);
-    const rows = (data ?? []) as OsRow[];
+    const rows = await fetchAllRows<OsRow>((from, to) =>
+      supabase.from(TABLE).select(OS_COLUMNS).eq("idRef", companyId).order("id").range(from, to),
+    );
 
     const [{ nameToId }, userNameToId] = await Promise.all([
       getMachineNameMaps(companyId),
@@ -182,5 +184,9 @@ export class SupabaseWorkOrderRepository implements WorkOrderRepository {
   async remove(id: string): Promise<void> {
     const { error } = await supabase.from(TABLE).delete().eq("id", Number(id));
     if (error) throw new Error(error.message);
+  }
+
+  watch(companyId: string, onChange: () => void): () => void {
+    return watchCompanyTable(TABLE, companyId, onChange);
   }
 }

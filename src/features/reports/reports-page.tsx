@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Download, BarChart3, Filter, Calendar } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
+import { formatDate } from "@/lib/utils";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,12 +12,15 @@ import { FilterField } from "@/components/ui/filter-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
+import { Pagination } from "@/components/ui/pagination";
 import { useAuth } from "@/features/auth/use-auth";
 import { useSectors, useMachines } from "@/features/dashboard/queries";
 import { repositories } from "@/data/repositories";
 import { toCsv, downloadCsv } from "@/lib/csv";
 import { toast } from "@/hooks/use-toast";
 import type { ReportRow } from "@/domain/entities/report";
+
+const PAGE_SIZE = 50;
 
 export function ReportsPage() {
   const { user } = useAuth();
@@ -33,10 +37,19 @@ export function ReportsPage() {
   const machinesQuery = useMachines(companyId, {});
 
   const filters = { from: from || undefined, to: to || undefined, sectorId: sectorId || undefined, machineId: machineId || undefined };
+  // A pagina volta para 1 sempre que algum filtro muda.
+  const filtersKey = JSON.stringify(filters);
+  const [pageState, setPageState] = useState({ filtersKey, page: 1 });
+  const page = pageState.filtersKey === filtersKey ? pageState.page : 1;
+  const setPage = (next: number) => setPageState({ filtersKey, page: next });
+  const [isExporting, setIsExporting] = useState(false);
+
   const reportsQuery = useQuery({
-    queryKey: ["reports", companyId, filters],
-    queryFn: () => repositories.reports.list(companyId, filters),
+    queryKey: ["reports", companyId, filters, page],
+    queryFn: () => repositories.reports.list(companyId, filters, page, PAGE_SIZE),
+    placeholderData: keepPreviousData,
   });
+  const rows = reportsQuery.data?.items ?? [];
 
   const sectorOptions = useMemo(() => (sectorsQuery.data ?? []).map((s) => ({ value: s.id, label: s.name })), [sectorsQuery.data]);
   const machineOptions = useMemo(() => (machinesQuery.data ?? []).map((m) => ({ value: m.id, label: m.name })), [machinesQuery.data]);
@@ -48,13 +61,23 @@ export function ReportsPage() {
     setMachineId("");
   };
 
-  const handleExport = () => {
-    const rows = reportsQuery.data ?? [];
-    if (rows.length === 0) {
+  const handleExport = async () => {
+    // Exporta tudo que bate com os filtros, nao so a pagina que esta na tela.
+    setIsExporting(true);
+    let allRows: ReportRow[];
+    try {
+      allRows = await repositories.reports.listAll(companyId, filters);
+    } catch (err) {
+      toast({ title: "Não foi possível exportar.", description: err instanceof Error ? err.message : undefined, variant: "error" });
+      return;
+    } finally {
+      setIsExporting(false);
+    }
+    if (allRows.length === 0) {
       toast({ title: "Não há dados para exportar.", variant: "warning" });
       return;
     }
-    const csv = toCsv<ReportRow>(rows, [
+    const csv = toCsv<ReportRow>(allRows, [
       { key: "datetime", label: "Data/Hora" },
       { key: "sectorName", label: "Setor" },
       { key: "machineName", label: "Máquina" },
@@ -81,7 +104,7 @@ export function ReportsPage() {
             Relatórios
           </h1>
         </div>
-        <Button onClick={handleExport} className="gap-2 rounded-xl border-0 bg-white/5 text-sm font-bold text-white shadow-none hover:bg-white/10">
+        <Button onClick={handleExport} isLoading={isExporting} className="gap-2 rounded-xl border-0 bg-white/5 text-sm font-bold text-white shadow-none hover:bg-white/10">
           <Download className="h-4 w-4" /> Exportar
         </Button>
       </div>
@@ -163,7 +186,7 @@ export function ReportsPage() {
           />
         )}
 
-        {reportsQuery.isSuccess && reportsQuery.data.length === 0 && (
+        {reportsQuery.isSuccess && rows.length === 0 && (
           <EmptyState
             icon={<BarChart3 className="h-10 w-10" />}
             title="Nenhum registro encontrado"
@@ -171,71 +194,74 @@ export function ReportsPage() {
           />
         )}
 
-        {reportsQuery.isSuccess && reportsQuery.data.length > 0 && (
-          <div className="max-h-[62vh] overflow-auto rounded-xl border border-panel-border">
-            <table className="w-full min-w-[1000px] text-sm">
-              <thead className="sticky top-0 z-10 bg-[#041022]/95 backdrop-blur-xl">
-                <tr className="border-b border-panel-border text-[10px] font-bold uppercase tracking-widest text-muted">
-                  <th className="px-3 py-3 text-left align-middle">Data/Hora</th>
-                  <th className="px-3 py-3 text-left align-middle">Setor/Máquina</th>
-                  <th className="px-3 py-3 text-center align-middle">OEE / D/P/Q</th>
-                  <th className="px-3 py-3 text-center align-middle">Horímetro</th>
-                  <th className="px-3 py-3 text-center align-middle">Vibr. máx</th>
-                  <th className="px-3 py-3 text-center align-middle">Temp. máx</th>
-                  <th className="px-3 py-3 text-center align-middle">Prod. atual</th>
-                  <th className="px-3 py-3 text-left align-middle">Variáveis adicionais</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {reportsQuery.data.map((row) => (
-                  <tr key={row.id} className="group transition-colors hover:bg-white/5">
-                    <td className="px-3 py-3">
-                      <p className="text-xs font-bold text-white">{format(parseISO(row.datetime), "dd/MM/yyyy")}</p>
-                      <p className="text-[10px] text-muted">{format(parseISO(row.datetime), "HH:mm")}</p>
-                    </td>
-                    <td className="px-3 py-3">
-                      <p className="truncate text-xs font-bold text-brand">{row.sectorName}</p>
-                      <p className="truncate text-[10px] font-medium text-white">{row.machineName}</p>
-                    </td>
-                    <td className="px-3 py-3 text-center align-middle">
-                      <p className="text-xs font-bold text-brand">{row.oee}%</p>
-                      <p className="text-[9px] font-bold text-muted">{row.availability}% / {row.productivity}% / {row.quality}%</p>
-                    </td>
-                    <td className="px-3 py-3 text-center align-middle text-xs font-bold text-white">{row.horimeterHours}h</td>
-                    <td className="px-3 py-3 text-center align-middle text-xs font-bold text-warning">{row.vibrationMax.toFixed(2)}</td>
-                    <td className="px-3 py-3 text-center align-middle text-xs font-bold text-danger">{row.temperatureMax.toFixed(2)}</td>
-                    <td className="px-3 py-3 text-center align-middle text-xs font-bold text-success-light">
-                      {row.production} {row.productionUnit}
-                    </td>
-                    <td className="px-3 py-3 align-top">
-                      <details className="group rounded-lg bg-white/5 px-2 py-1.5">
-                        <summary className="cursor-pointer list-none text-[10px] font-bold uppercase tracking-widest text-brand [&::-webkit-details-marker]:hidden">
-                          {row.additionalVariablesCount} variáveis
-                        </summary>
-                        <div className="mt-2 grid gap-1">
-                          <div className="flex items-center justify-between gap-3 rounded-md bg-white/5 px-2 py-1">
-                            <span className="text-[10px] text-muted">Horímetro (h)</span>
-                            <span className="text-[10px] font-semibold text-white">{row.horimeterHours}</span>
-                          </div>
-                          <div className="flex items-center justify-between gap-3 rounded-md bg-white/5 px-2 py-1">
-                            <span className="text-[10px] text-muted">Vibração (mm/s)</span>
-                            <span className="text-[10px] font-semibold text-white">{row.vibrationMax.toFixed(2)}</span>
-                          </div>
-                          <div className="flex items-center justify-between gap-3 rounded-md bg-white/5 px-2 py-1">
-                            <span className="text-[10px] text-muted">Temperatura (°C)</span>
-                            <span className="text-[10px] font-semibold text-white">{row.temperatureMax.toFixed(2)}</span>
-                          </div>
-                          <div className="flex items-center justify-between gap-3 rounded-md bg-white/5 px-2 py-1">
-                            <span className="text-[10px] text-muted">Produção</span>
-                            <span className="text-[10px] font-semibold text-white">{row.production} {row.productionUnit}</span>
-                          </div>
-                        </div>
-                      </details>
-                    </td>
+        {reportsQuery.isSuccess && rows.length > 0 && (
+          <div>
+            <div className="max-h-[62vh] overflow-auto rounded-xl border border-panel-border">
+              <table className="w-full min-w-[1000px] text-sm">
+                <thead className="sticky top-0 z-10 bg-[#041022]/95 backdrop-blur-xl">
+                  <tr className="border-b border-panel-border text-[10px] font-bold uppercase tracking-widest text-muted">
+                    <th className="px-3 py-3 text-left align-middle">Data/Hora</th>
+                    <th className="px-3 py-3 text-left align-middle">Setor/Máquina</th>
+                    <th className="px-3 py-3 text-center align-middle">OEE / D/P/Q</th>
+                    <th className="px-3 py-3 text-center align-middle">Horímetro</th>
+                    <th className="px-3 py-3 text-center align-middle">Vibr. máx</th>
+                    <th className="px-3 py-3 text-center align-middle">Temp. máx</th>
+                    <th className="px-3 py-3 text-center align-middle">Prod. atual</th>
+                    <th className="px-3 py-3 text-left align-middle">Variáveis adicionais</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {rows.map((row) => (
+                    <tr key={row.id} className="group transition-colors hover:bg-white/5">
+                      <td className="px-3 py-3">
+                        <p className="text-xs font-bold text-white">{formatDate(row.datetime)}</p>
+                        <p className="text-[10px] text-muted">{formatDate(row.datetime, "HH:mm")}</p>
+                      </td>
+                      <td className="px-3 py-3">
+                        <p className="truncate text-xs font-bold text-brand">{row.sectorName}</p>
+                        <p className="truncate text-[10px] font-medium text-white">{row.machineName}</p>
+                      </td>
+                      <td className="px-3 py-3 text-center align-middle">
+                        <p className="text-xs font-bold text-brand">{row.oee}%</p>
+                        <p className="text-[9px] font-bold text-muted">{row.availability}% / {row.productivity}% / {row.quality}%</p>
+                      </td>
+                      <td className="px-3 py-3 text-center align-middle text-xs font-bold text-white">{row.horimeterHours}h</td>
+                      <td className="px-3 py-3 text-center align-middle text-xs font-bold text-warning">{row.vibrationMax.toFixed(2)}</td>
+                      <td className="px-3 py-3 text-center align-middle text-xs font-bold text-danger">{row.temperatureMax.toFixed(2)}</td>
+                      <td className="px-3 py-3 text-center align-middle text-xs font-bold text-success-light">
+                        {row.production} {row.productionUnit}
+                      </td>
+                      <td className="px-3 py-3 align-top">
+                        <details className="group rounded-lg bg-white/5 px-2 py-1.5">
+                          <summary className="cursor-pointer list-none text-[10px] font-bold uppercase tracking-widest text-brand [&::-webkit-details-marker]:hidden">
+                            {row.additionalVariablesCount} variáveis
+                          </summary>
+                          <div className="mt-2 grid gap-1">
+                            <div className="flex items-center justify-between gap-3 rounded-md bg-white/5 px-2 py-1">
+                              <span className="text-[10px] text-muted">Horímetro (h)</span>
+                              <span className="text-[10px] font-semibold text-white">{row.horimeterHours}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-3 rounded-md bg-white/5 px-2 py-1">
+                              <span className="text-[10px] text-muted">Vibração (mm/s)</span>
+                              <span className="text-[10px] font-semibold text-white">{row.vibrationMax.toFixed(2)}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-3 rounded-md bg-white/5 px-2 py-1">
+                              <span className="text-[10px] text-muted">Temperatura (°C)</span>
+                              <span className="text-[10px] font-semibold text-white">{row.temperatureMax.toFixed(2)}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-3 rounded-md bg-white/5 px-2 py-1">
+                              <span className="text-[10px] text-muted">Produção</span>
+                              <span className="text-[10px] font-semibold text-white">{row.production} {row.productionUnit}</span>
+                            </div>
+                          </div>
+                        </details>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination page={page} pageSize={PAGE_SIZE} total={reportsQuery.data.total} onPageChange={setPage} />
           </div>
         )}
       </Card>

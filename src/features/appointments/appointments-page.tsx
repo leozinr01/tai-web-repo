@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
-import { Plus, Clock, MoreVertical, ClipboardList, Filter, Calendar, Factory, Zap, User as UserIcon } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { Plus, Clock, MoreVertical, ClipboardList, Filter, Calendar, Factory, Zap, User as UserIcon, Download } from "lucide-react";
+import { format } from "date-fns";
+import { formatDate } from "@/lib/utils";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,12 +12,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { useAuth } from "@/features/auth/use-auth";
+import { canWriteRecords } from "@/domain/permissions";
 import { useSectors, useMachines } from "@/features/dashboard/queries";
 import { useAppointments, useCreateAppointment, useUpdateAppointment } from "@/features/appointments/queries";
 import { AppointmentFormDialog } from "@/features/appointments/components/appointment-form-dialog";
 import { AppointmentDetailsDialog } from "@/features/appointments/components/appointment-details-dialog";
 import { AppointmentQuickEditDialog } from "@/features/appointments/components/appointment-quick-edit-dialog";
 import { toast } from "@/hooks/use-toast";
+import { toCsv, downloadCsv } from "@/lib/csv";
+import { appointmentAreaLabels, affectedSegmentsByArea } from "@/lib/labels";
+import type { AppointmentArea } from "@/domain/types/enums";
+import { formatDuration } from "@/domain/appointment-time";
 import type { AppointmentFormValues } from "@/domain/schemas/appointment.schema";
 import type { Appointment } from "@/domain/entities/appointment";
 import { repositories } from "@/data/repositories";
@@ -24,9 +30,12 @@ import { useQuery } from "@tanstack/react-query";
 
 const ALL_ITEMS_PAGE_SIZE = 100000;
 
+const areaOptions = Object.entries(appointmentAreaLabels).map(([value, label]) => ({ value, label }));
+
 export function AppointmentsPage() {
   const { user } = useAuth();
   const companyId = user?.companyId ?? "";
+  const canWrite = canWriteRecords(user?.role);
 
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -35,6 +44,8 @@ export function AppointmentsPage() {
   const [sectorId, setSectorId] = useState("");
   const [machineId, setMachineId] = useState("");
   const [authorId, setAuthorId] = useState("");
+  const [area, setArea] = useState<AppointmentArea | "">("");
+  const [segment, setSegment] = useState("");
 
   const [formOpen, setFormOpen] = useState(false);
   const [viewing, setViewing] = useState<Appointment | null>(null);
@@ -53,6 +64,8 @@ export function AppointmentsPage() {
     sectorId: sectorId || undefined,
     machineId: machineId || undefined,
     authorId: authorId || undefined,
+    area: area || undefined,
+    affectedSegment: segment || undefined,
     page: 1,
     pageSize: ALL_ITEMS_PAGE_SIZE,
   };
@@ -73,6 +86,17 @@ export function AppointmentsPage() {
     () => (usersQuery.data ?? []).map((u) => ({ value: u.id, label: u.name })),
     [usersQuery.data],
   );
+  // Seguimentos da area escolhida (ou de todas), mais os antigos que aparecem nos registros
+  // carregados e nao estao na lista atual (ex.: "Quebra de Máquina"), para tambem poderem ser filtrados.
+  const loadedItems = appointmentsQuery.data?.items;
+  const segmentOptions = useMemo(() => {
+    const segments = area ? affectedSegmentsByArea[area] : Object.values(affectedSegmentsByArea).flat();
+    const legacy = (loadedItems ?? [])
+      .filter((a) => a.affectedSegment && (!area || a.area === area))
+      .map((a) => a.affectedSegment)
+      .sort((a, b) => a.localeCompare(b, "pt-BR"));
+    return [...new Set([...segments, ...legacy, ...(segment ? [segment] : [])])].map((s) => ({ value: s, label: s }));
+  }, [area, loadedItems, segment]);
   const machineById = useMemo(() => {
     const map = new Map<string, string>();
     (machinesQuery.data ?? []).forEach((m) => map.set(m.id, m.name));
@@ -90,6 +114,8 @@ export function AppointmentsPage() {
     setSectorId("");
     setMachineId("");
     setAuthorId("");
+    setArea("");
+    setSegment("");
   };
 
   const handleCreate = async (values: AppointmentFormValues) => {
@@ -121,17 +147,51 @@ export function AppointmentsPage() {
     }
   };
 
-  const formatDuration = (minutes: number) => {
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  // Exporta o que esta filtrado na tela (a lista ja vem inteira, sem paginacao no banco).
+  const handleExport = () => {
+    const items = appointmentsQuery.data?.items ?? [];
+    if (items.length === 0) {
+      toast({ title: "Não há dados para exportar.", variant: "warning" });
+      return;
+    }
+    const rows = items.map((a) => ({
+      date: formatDate(a.date),
+      time: a.time,
+      sector: sectorById.get(a.sectorId) ?? a.sectorId,
+      machine: machineById.get(a.machineId) ?? "-",
+      area: a.area,
+      segment: a.affectedSegment,
+      duration: formatDuration(a.durationMinutes),
+      durationMinutes: a.durationMinutes,
+      author: a.authorName,
+      description: a.description,
+    }));
+    const csv = toCsv(rows, [
+      { key: "date", label: "Data" },
+      { key: "time", label: "Hora" },
+      { key: "sector", label: "Setor" },
+      { key: "machine", label: "Máquina" },
+      { key: "area", label: "Área" },
+      { key: "segment", label: "Seguimento afetado" },
+      { key: "duration", label: "Tempo parado (hh:mm)" },
+      { key: "durationMinutes", label: "Tempo parado (min)" },
+      { key: "author", label: "Lançador" },
+      { key: "description", label: "Apontamento" },
+    ]);
+    downloadCsv(`apontamentos-tai-project-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, csv);
+    toast({ title: `${items.length} apontamentos exportados.`, variant: "success" });
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <Breadcrumb current="Apontamentos" />
-        <h1 className="font-display mt-1 text-2xl font-bold text-white sm:text-3xl">Apontamentos</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <Breadcrumb current="Apontamentos" />
+          <h1 className="font-display mt-1 text-2xl font-bold text-white sm:text-3xl">Apontamentos</h1>
+        </div>
+        <Button onClick={handleExport} className="gap-2 rounded-xl border-0 bg-white/5 text-sm font-bold text-white shadow-none hover:bg-white/10">
+          <Download className="h-4 w-4" /> Exportar
+        </Button>
       </div>
 
       <Card className="p-4">
@@ -146,7 +206,7 @@ export function AppointmentsPage() {
             Limpar filtros
           </button>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <FilterField label="Data início">
             <Input
               ref={dateFromRef}
@@ -199,11 +259,36 @@ export function AppointmentsPage() {
               className="h-11 border-white/20 bg-white/10 text-sm font-bold"
             />
           </FilterField>
-          <div className="flex items-end">
-            <Button onClick={() => setFormOpen(true)} className="h-11 w-full">
-              <Plus className="h-4 w-4" /> Novo
-            </Button>
-          </div>
+          <FilterField label="Área">
+            <SearchableSelect
+              options={[{ value: "", label: "Todas as Áreas" }, ...areaOptions]}
+              value={area}
+              onChange={(v) => {
+                setArea(v as AppointmentArea | "");
+                // O seguimento depende da area; limpa se nao pertencer a nova.
+                if (v && !affectedSegmentsByArea[v as AppointmentArea]?.includes(segment)) setSegment("");
+              }}
+              placeholder="Todas as Áreas"
+              searchable={false}
+              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
+            />
+          </FilterField>
+          <FilterField label="Seguimento">
+            <SearchableSelect
+              options={[{ value: "", label: "Todos os Seguimentos" }, ...segmentOptions]}
+              value={segment}
+              onChange={setSegment}
+              placeholder="Todos os Seguimentos"
+              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
+            />
+          </FilterField>
+          {canWrite && (
+            <div className="flex items-end">
+              <Button onClick={() => setFormOpen(true)} className="h-11 w-full">
+                <Plus className="h-4 w-4" /> Novo
+              </Button>
+            </div>
+          )}
         </div>
       </Card>
 
@@ -227,11 +312,13 @@ export function AppointmentsPage() {
           <EmptyState
             icon={<ClipboardList className="h-10 w-10" />}
             title="Nenhum apontamento encontrado"
-            description="Ajuste os filtros ou registre um novo apontamento."
+            description={canWrite ? "Ajuste os filtros ou registre um novo apontamento." : "Ajuste os filtros."}
             action={
-              <Button onClick={() => setFormOpen(true)} size="sm">
-                <Plus className="h-4 w-4" /> Novo apontamento
-              </Button>
+              canWrite && (
+                <Button onClick={() => setFormOpen(true)} size="sm">
+                  <Plus className="h-4 w-4" /> Novo apontamento
+                </Button>
+              )
             }
           />
         )}
@@ -253,7 +340,7 @@ export function AppointmentsPage() {
                 {appointmentsQuery.data.items.map((appt) => (
                   <tr key={appt.id} className="group border-b border-panel-border last:border-0 hover:bg-navy-800/50">
                     <td className="px-4 py-3">
-                      <p className="text-xs font-bold text-white">{format(parseISO(appt.date), "dd/MM/yyyy")}</p>
+                      <p className="text-xs font-bold text-white">{formatDate(appt.date)}</p>
                       <p className="text-[10px] text-muted">{appt.time}</p>
                     </td>
                     <td className="px-4 py-3">
@@ -309,10 +396,14 @@ export function AppointmentsPage() {
       <AppointmentDetailsDialog
         appointment={viewing}
         onOpenChange={(open) => !open && setViewing(null)}
-        onEdit={() => {
-          setEditing(viewing);
-          setViewing(null);
-        }}
+        onEdit={
+          canWrite
+            ? () => {
+                setEditing(viewing);
+                setViewing(null);
+              }
+            : undefined
+        }
         machineName={viewing ? machineById.get(viewing.machineId) : undefined}
         sectorName={viewing ? sectorById.get(viewing.sectorId) : undefined}
       />

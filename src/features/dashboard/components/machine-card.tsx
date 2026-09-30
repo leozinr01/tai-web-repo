@@ -24,6 +24,8 @@ import { machineStatusLabels } from "@/lib/labels";
 import { MachineStatus } from "@/domain/types/enums";
 import { resolveVariableDisplay } from "@/features/dashboard/machine-variables";
 import { useUpdateMachine } from "@/features/dashboard/queries";
+import { useAuth } from "@/features/auth/use-auth";
+import { canManageCompany } from "@/domain/permissions";
 import { MachineDrilldownDialog } from "@/features/dashboard/components/machine-drilldown-dialog";
 import { MachineCardSettingsDialog } from "@/features/dashboard/components/machine-card-settings-dialog";
 import { MachineFormDialog } from "@/features/companies/components/machine-form-dialog";
@@ -155,6 +157,8 @@ export function MachineCard({
   const settingsDialog = useDisclosure();
   const editDialog = useDisclosure();
   const updateMutation = useUpdateMachine();
+  const { user } = useAuth();
+  const canManage = canManageCompany(user?.role);
   const animatedOee = useAnimatedNumber(machine.oeePercent);
   const [complementaresOpen, setComplementaresOpen] = useState(false);
   const graphKey = machine.cardSettings.graphVariableKey ?? machine.cardSettings.topVariableKeys[0];
@@ -215,13 +219,15 @@ export function MachineCard({
             </p>
           </button>
           <div className="flex items-center gap-2">
-            <button
-              className="text-muted hover:text-slate-200"
-              aria-label={`Editar ${machine.name}`}
-              onClick={editDialog.open}
-            >
-              <Pencil className="h-4 w-4" />
-            </button>
+            {canManage && (
+              <button
+                className="text-muted hover:text-slate-200"
+                aria-label={`Editar ${machine.name}`}
+                onClick={editDialog.open}
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            )}
             <Badge
               tone={statusTone[machine.status]}
               icon={(() => {
@@ -333,14 +339,16 @@ export function MachineCard({
           <div className="space-y-2">
             <div className="mb-1 flex items-center justify-between">
               <p className="label-caps">Variáveis</p>
-              <button
-                type="button"
-                onClick={settingsDialog.open}
-                className="text-muted hover:text-slate-200"
-                aria-label={`Configurar variáveis de ${machine.name}`}
-              >
-                <Settings className="h-3.5 w-3.5" />
-              </button>
+              {canManage && (
+                <button
+                  type="button"
+                  onClick={settingsDialog.open}
+                  className="text-muted hover:text-slate-200"
+                  aria-label={`Configurar variáveis de ${machine.name}`}
+                >
+                  <Settings className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
             {top.map(({ display: v, visible }) => {
               const Icon = variableIcon[v.key] ?? Tag;

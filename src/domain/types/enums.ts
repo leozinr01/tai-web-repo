@@ -56,3 +56,21 @@ export const AppointmentArea = {
   QUALIDADE: "Qualidade",
 } as const;
 export type AppointmentArea = (typeof AppointmentArea)[keyof typeof AppointmentArea];
+
+/**
+ * Seguimento afetado, gravado como esta na coluna `seguimento_OEE` de `Apontamentos`.
+ * A grafia (maiusculas, acentos) precisa ser identica a do sistema antigo, que usa o mesmo banco:
+ * qualquer diferenca vira outra categoria para ele e para os relatorios.
+ */
+export const AffectedSegment = {
+  QUEBRAS_FALHAS: "Quebras e falhas",
+  SETUP: "Setup",
+  OCIOSIDADE: "Ociosidade",
+  PEQUENAS_FALHAS: "Pequenas falhas",
+  QUEDA_VELOCIDADE: "Queda de velocidade",
+  DEFEITO_MATERIA_PRIMA: "Defeito matéria prima",
+  PRODUTO_NAO_CONFORME: "Produto não conforme",
+  REFUGO: "Refugo",
+  RETRABALHO: "Retrabalho",
+} as const;
+export type AffectedSegment = (typeof AffectedSegment)[keyof typeof AffectedSegment];

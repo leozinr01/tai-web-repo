@@ -6,8 +6,9 @@ import type {
 import type { Appointment } from "@/domain/entities/appointment";
 import { AppointmentArea } from "@/domain/types/enums";
 import { supabase } from "@/lib/supabase-client";
-import { formatBrDate, hhmmToMinutes, minutesToHHMM, padTime, parseBrDate } from "@/data/repositories/supabase/helpers";
+import { fetchAllRows, formatBrDate, hhmmToMinutes, minutesToHHMM, padTime, parseBrDate } from "@/data/repositories/supabase/helpers";
 import { getMachineNameMaps, getUserNameToId } from "@/data/repositories/supabase/company-lookups";
+import { watchCompanyTable } from "@/data/repositories/supabase/realtime";
 
 interface ApontamentoRow {
   id: number;
@@ -58,12 +59,12 @@ function toAppointment(
 
 export class SupabaseAppointmentRepository implements AppointmentRepository {
   async list(companyId: string, filters?: AppointmentFilters): Promise<PagedResult<Appointment>> {
-    let query = supabase.from("Apontamentos").select(APONTAMENTO_COLUMNS).eq("idRef", companyId);
-    if (filters?.sectorId) query = query.eq("Setor", filters.sectorId);
-
-    const { data, error } = await query;
-    if (error) throw new Error(error.message);
-    const rows = (data ?? []) as ApontamentoRow[];
+    // Data fica como texto dd/mm/aaaa no banco, entao o filtro de periodo e a paginacao sao feitos aqui.
+    const rows = await fetchAllRows<ApontamentoRow>((from, to) => {
+      let query = supabase.from("Apontamentos").select(APONTAMENTO_COLUMNS).eq("idRef", companyId);
+      if (filters?.sectorId) query = query.eq("Setor", filters.sectorId);
+      return query.order("id").range(from, to);
+    });
 
     const [{ nameToId }, userNameToId] = await Promise.all([
       getMachineNameMaps(companyId),
@@ -75,6 +76,8 @@ export class SupabaseAppointmentRepository implements AppointmentRepository {
     if (filters?.dateTo) items = items.filter((a) => a.date <= filters.dateTo!);
     if (filters?.machineId) items = items.filter((a) => a.machineId === filters.machineId);
     if (filters?.authorId) items = items.filter((a) => a.authorId === filters.authorId);
+    if (filters?.area) items = items.filter((a) => a.area === filters.area);
+    if (filters?.affectedSegment) items = items.filter((a) => a.affectedSegment === filters.affectedSegment);
 
     items = [...items].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 
@@ -183,5 +186,9 @@ export class SupabaseAppointmentRepository implements AppointmentRepository {
   async remove(id: string): Promise<void> {
     const { error } = await supabase.from("Apontamentos").delete().eq("id", Number(id));
     if (error) throw new Error(error.message);
+  }
+
+  watch(companyId: string, onChange: () => void): () => void {
+    return watchCompanyTable("Apontamentos", companyId, onChange);
   }
 }

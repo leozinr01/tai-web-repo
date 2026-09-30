@@ -55,6 +55,9 @@ export function SearchableSelect({
 
   return (
     <Popover.Root
+      // modal: o conteudo vai para um portal fora do Dialog, e o bloqueio de scroll do Dialog
+      // engolia a roda do mouse na lista. Como modal, o Popover libera o scroll dentro dele.
+      modal
       open={open}
       onOpenChange={(next) => {
         setOpen(next);

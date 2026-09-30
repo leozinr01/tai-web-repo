@@ -1,4 +1,4 @@
-import { AppointmentArea, MachineStatus, UserRole, WorkOrderPeriodicity, WorkOrderStatus } from "@/domain/types/enums";
+import { AffectedSegment, AppointmentArea, MachineStatus, UserRole, WorkOrderPeriodicity, WorkOrderStatus } from "@/domain/types/enums";
 
 export const machineStatusLabels: Record<MachineStatus, string> = {
   [MachineStatus.PRODUZINDO]: "Produzindo",
@@ -41,7 +41,11 @@ export const appointmentAreaLabels: Record<AppointmentArea, string> = {
  * Mesmos nomes das categorias de perda do detalhe da maquina (`toLossBreakdown`).
  */
 export const affectedSegmentsByArea: Record<AppointmentArea, string[]> = {
-  [AppointmentArea.DISPONIBILIDADE]: ["Quebra / Falhas", "Setup", "Ociosidade"],
-  [AppointmentArea.PRODUTIVIDADE]: ["Pequenas Falhas", "Queda de Velocidade", "Defeito Matéria Prima"],
-  [AppointmentArea.QUALIDADE]: ["Produto não Conforme", "Refugo", "Retrabalho"],
+  [AppointmentArea.DISPONIBILIDADE]: [AffectedSegment.QUEBRAS_FALHAS, AffectedSegment.SETUP, AffectedSegment.OCIOSIDADE],
+  [AppointmentArea.PRODUTIVIDADE]: [
+    AffectedSegment.PEQUENAS_FALHAS,
+    AffectedSegment.QUEDA_VELOCIDADE,
+    AffectedSegment.DEFEITO_MATERIA_PRIMA,
+  ],
+  [AppointmentArea.QUALIDADE]: [AffectedSegment.PRODUTO_NAO_CONFORME, AffectedSegment.REFUGO, AffectedSegment.RETRABALHO],
 };

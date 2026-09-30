@@ -6,26 +6,19 @@ import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input, FieldError, FieldLabel } from "@/components/ui/input";
 import type { Appointment } from "@/domain/entities/appointment";
+import { formatDuration, parseDuration } from "@/domain/appointment-time";
 
 const quickEditSchema = z.object({
-  duration: z.string().regex(/^\d{1,3}:[0-5]\d$/, "Use o formato HH:MM."),
+  duration: z
+    .string()
+    .regex(/^\d{1,3}:[0-5]\d$/, "Use o formato HH:MM.")
+    .refine((v) => parseDuration(v) > 0, "A duração deve ser maior que zero."),
   description: z
     .string()
     .min(3, "Descreva o apontamento com ao menos 3 caracteres.")
     .max(500, "Limite de 500 caracteres."),
 });
 type QuickEditValues = z.infer<typeof quickEditSchema>;
-
-function formatDuration(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-
-function parseDuration(value: string): number {
-  const [h = "0", m = "0"] = value.split(":");
-  return Number(h) * 60 + Number(m);
-}
 
 interface AppointmentQuickEditDialogProps {
   appointment: Appointment | null;

@@ -34,7 +34,8 @@ export function WorkOrderStatusBadge({ status }: { status: WorkOrder["status"] }
 interface WorkOrderDetailsDialogProps {
   order: WorkOrder | null;
   onOpenChange: (open: boolean) => void;
-  onEdit: () => void;
+  /** Sem onEdit, o botao Editar nao aparece (perfil sem permissao). */
+  onEdit?: () => void;
   machineName?: string;
   sectorName?: string;
 }
@@ -55,12 +56,14 @@ export function WorkOrderDetailsDialog({ order, onOpenChange, onEdit, machineNam
       footer={
         order && (
           <div className="flex gap-4 pt-2">
-            <Button
-              className="flex-1 rounded-2xl py-5 text-sm font-black uppercase shadow-xl shadow-brand/20 active:scale-95"
-              onClick={onEdit}
-            >
-              Editar O.S.
-            </Button>
+            {onEdit && (
+              <Button
+                className="flex-1 rounded-2xl py-5 text-sm font-black uppercase shadow-xl shadow-brand/20 active:scale-95"
+                onClick={onEdit}
+              >
+                Editar O.S.
+              </Button>
+            )}
             <Button
               variant="outline"
               className="flex-1 rounded-2xl border-white/10 bg-white/5 py-5 text-sm font-black uppercase active:scale-95"

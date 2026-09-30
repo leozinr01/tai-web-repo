@@ -9,6 +9,8 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useCreateUser } from "@/features/settings/queries";
 import { QuickCreateUserDialog } from "@/features/appointments/components/quick-create-user-dialog";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/features/auth/use-auth";
+import { canManageCompany } from "@/domain/permissions";
 import { workOrderSchema, type WorkOrderFormValues } from "@/domain/schemas/work-order.schema";
 import { WorkOrderPeriodicity } from "@/domain/types/enums";
 import { workOrderPeriodicityLabels } from "@/lib/labels";
@@ -42,6 +44,8 @@ export function WorkOrderFormDialog({
   const [extraUsers, setExtraUsers] = useState<User[]>([]);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const createUserMutation = useCreateUser();
+  const { user: currentUser } = useAuth();
+  const canCreateUser = canManageCompany(currentUser?.role);
 
   const {
     register,
@@ -190,15 +194,17 @@ export function WorkOrderFormDialog({
               />
               <FieldError message={errors.executorId?.message} />
             </div>
-            <button
-              type="button"
-              onClick={() => setQuickCreateOpen(true)}
-              className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-lg bg-brand text-white transition-colors hover:bg-brand-hover"
-              aria-label="Cadastrar novo usuário"
-              title="Cadastrar novo usuário"
-            >
-              <UserPlus className="h-4 w-4" />
-            </button>
+            {canCreateUser && (
+              <button
+                type="button"
+                onClick={() => setQuickCreateOpen(true)}
+                className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-lg bg-brand text-white transition-colors hover:bg-brand-hover"
+                aria-label="Cadastrar novo usuário"
+                title="Cadastrar novo usuário"
+              >
+                <UserPlus className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
 
