@@ -15,4 +15,6 @@ export interface WorkOrderRepository {
   create(data: Omit<WorkOrder, "id" | "number" | "createdAt" | "updatedAt" | "companyId" | "executorName">): Promise<WorkOrder>;
   update(id: string, data: Partial<WorkOrder>): Promise<WorkOrder>;
   remove(id: string): Promise<void>;
+  /** Chama `onChange` quando alguma O.S. da empresa muda. Devolve a funcao para parar. */
+  watch(companyId: string, onChange: () => void): () => void;
 }

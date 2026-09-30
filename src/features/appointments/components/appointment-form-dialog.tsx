@@ -11,8 +11,11 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useCreateUser } from "@/features/settings/queries";
 import { QuickCreateUserDialog } from "@/features/appointments/components/quick-create-user-dialog";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/features/auth/use-auth";
+import { canManageCompany } from "@/domain/permissions";
 import { cn } from "@/lib/utils";
 import { appointmentSchema, type AppointmentFormValues } from "@/domain/schemas/appointment.schema";
+import { durationBetween } from "@/domain/appointment-time";
 import { AppointmentArea } from "@/domain/types/enums";
 import { appointmentAreaLabels, affectedSegmentsByArea } from "@/lib/labels";
 import type { Sector } from "@/domain/entities/sector";
@@ -20,21 +23,18 @@ import type { Machine } from "@/domain/entities/machine";
 import type { User } from "@/domain/entities/user";
 import type { Appointment } from "@/domain/entities/appointment";
 
-const formSchema = appointmentSchema.omit({ durationMinutes: true }).extend({
-  startTime: z.string().min(1, "Informe o horário de início."),
-  endTime: z.string().min(1, "Informe o horário de fim."),
-});
+const formSchema = appointmentSchema
+  .omit({ durationMinutes: true })
+  .extend({
+    startTime: z.string().min(1, "Informe o horário de início."),
+    endTime: z.string().min(1, "Informe o horário de fim."),
+  })
+  // A duracao e calculada depois da validacao, entao a regra "maior que zero" do schema precisa ser checada aqui.
+  .refine((v) => !v.startTime || !v.endTime || durationBetween(v.startTime, v.endTime) > 0, {
+    message: "O fim precisa ser diferente do início.",
+    path: ["endTime"],
+  });
 type FormValues = z.infer<typeof formSchema>;
-
-function timeToMinutes(time: string): number {
-  const [h = "0", m = "0"] = time.split(":");
-  return Number(h) * 60 + Number(m);
-}
-
-function durationBetween(startTime: string, endTime: string): number {
-  const diff = timeToMinutes(endTime) - timeToMinutes(startTime);
-  return diff > 0 ? diff : diff + 24 * 60;
-}
 
 function addMinutesToTime(time: string, minutes: number): string {
   return format(addMinutes(parse(time, "HH:mm", new Date()), minutes), "HH:mm");
@@ -76,6 +76,8 @@ export function AppointmentFormDialog({
   const [extraUsers, setExtraUsers] = useState<User[]>([]);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const createUserMutation = useCreateUser();
+  const { user: currentUser } = useAuth();
+  const canCreateUser = canManageCompany(currentUser?.role);
 
   const {
     register,
@@ -343,15 +345,17 @@ export function AppointmentFormDialog({
               />
               <FieldError message={errors.authorId?.message} />
             </div>
-            <button
-              type="button"
-              onClick={() => setQuickCreateOpen(true)}
-              className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg bg-brand text-white transition-colors hover:bg-brand-hover"
-              aria-label="Cadastrar novo usuário"
-              title="Cadastrar novo usuário"
-            >
-              <UserPlus className="h-4 w-4" />
-            </button>
+            {canCreateUser && (
+              <button
+                type="button"
+                onClick={() => setQuickCreateOpen(true)}
+                className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg bg-brand text-white transition-colors hover:bg-brand-hover"
+                aria-label="Cadastrar novo usuário"
+                title="Cadastrar novo usuário"
+              >
+                <UserPlus className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
 

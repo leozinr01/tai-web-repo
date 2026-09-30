@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { cn, initials, uid } from "@/lib/utils";
+import { cn, formatDate, initials, uid } from "@/lib/utils";
+
+describe("formatDate", () => {
+  it("formata data ISO no padrao brasileiro", () => {
+    expect(formatDate("2026-09-30")).toBe("30/09/2026");
+    expect(formatDate("2026-09-30T09:05:00", "HH:mm")).toBe("09:05");
+  });
+
+  it("nao quebra com data vazia ou invalida", () => {
+    expect(formatDate("")).toBe("-");
+    expect(formatDate(null)).toBe("-");
+    expect(formatDate("30/09/2026")).toBe("-");
+    expect(formatDate("lixo")).toBe("-");
+  });
+});
 
 describe("cn", () => {
   it("mescla classes e resolve conflitos do Tailwind", () => {

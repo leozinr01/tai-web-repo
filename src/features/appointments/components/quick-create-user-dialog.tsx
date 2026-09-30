@@ -8,6 +8,8 @@ import { Input, FieldError, FieldLabel } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { UserRole, UserStatus } from "@/domain/types/enums";
 import { userRoleLabels } from "@/lib/labels";
+import { assignableRoles } from "@/domain/permissions";
+import { useAuth } from "@/features/auth/use-auth";
 import type { User } from "@/domain/entities/user";
 
 const quickUserSchema = z.object({
@@ -18,7 +20,6 @@ const quickUserSchema = z.object({
 });
 type QuickUserValues = z.infer<typeof quickUserSchema>;
 
-const roleOptions = Object.entries(userRoleLabels).map(([value, label]) => ({ value, label }));
 
 interface QuickCreateUserDialogProps {
   open: boolean;
@@ -37,6 +38,8 @@ export function QuickCreateUserDialog({
   onSubmit,
   onCreated,
 }: QuickCreateUserDialogProps) {
+  const { user: currentUser } = useAuth();
+  const roleOptions = assignableRoles(currentUser?.role).map((r) => ({ value: r, label: userRoleLabels[r] }));
   const {
     register,
     handleSubmit,

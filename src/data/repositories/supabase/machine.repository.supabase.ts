@@ -8,7 +8,7 @@ import type {
   MachineProductionConfig,
   MachineVariableType,
 } from "@/domain/entities/machine";
-import { MachineStatus } from "@/domain/types/enums";
+import { AffectedSegment, MachineStatus } from "@/domain/types/enums";
 import { supabase } from "@/lib/supabase-client";
 import {
   dbVariableKeyToDomainKey,
@@ -267,19 +267,19 @@ function toCardSettings(row: DashboardConfigRow | undefined): MachineCardSetting
 function toLossBreakdown(row: MaquinaRow): MachineLossBreakdown {
   return {
     availability: [
-      { key: "breakdown", label: "Quebra / Falhas", minutes: hhmmToMinutes(row.OEE_disp_quebra_falhas) },
-      { key: "setup", label: "Setup", minutes: hhmmToMinutes(row.OEE_disp_setup) },
-      { key: "idle", label: "Ociosidade", minutes: hhmmToMinutes(row.OEE_disp_ociosidade) },
+      { key: "breakdown", label: AffectedSegment.QUEBRAS_FALHAS, minutes: hhmmToMinutes(row.OEE_disp_quebra_falhas) },
+      { key: "setup", label: AffectedSegment.SETUP, minutes: hhmmToMinutes(row.OEE_disp_setup) },
+      { key: "idle", label: AffectedSegment.OCIOSIDADE, minutes: hhmmToMinutes(row.OEE_disp_ociosidade) },
     ],
     productivity: [
-      { key: "small_stops", label: "Pequenas Falhas", minutes: hhmmToMinutes(row.OEE_produt_peq_falhas) },
-      { key: "reduced_speed", label: "Queda de Velocidade", minutes: hhmmToMinutes(row.OEE_produt_qued_veloc) },
-      { key: "raw_material_defect", label: "Defeito Matéria Prima", minutes: hhmmToMinutes(row.OEE_produt_def_mat_prima) },
+      { key: "small_stops", label: AffectedSegment.PEQUENAS_FALHAS, minutes: hhmmToMinutes(row.OEE_produt_peq_falhas) },
+      { key: "reduced_speed", label: AffectedSegment.QUEDA_VELOCIDADE, minutes: hhmmToMinutes(row.OEE_produt_qued_veloc) },
+      { key: "raw_material_defect", label: AffectedSegment.DEFEITO_MATERIA_PRIMA, minutes: hhmmToMinutes(row.OEE_produt_def_mat_prima) },
     ],
     quality: [
-      { key: "non_conforming_product", label: "Produto não Conforme", minutes: hhmmToMinutes(row.OEE_qualidad_prod_nao_conform) },
-      { key: "scrap", label: "Refugo", minutes: hhmmToMinutes(row.OEE_qualidad_refugo) },
-      { key: "rework", label: "Retrabalho", minutes: hhmmToMinutes(row.OEE_qualidad_retrabalho) },
+      { key: "non_conforming_product", label: AffectedSegment.PRODUTO_NAO_CONFORME, minutes: hhmmToMinutes(row.OEE_qualidad_prod_nao_conform) },
+      { key: "scrap", label: AffectedSegment.REFUGO, minutes: hhmmToMinutes(row.OEE_qualidad_refugo) },
+      { key: "rework", label: AffectedSegment.RETRABALHO, minutes: hhmmToMinutes(row.OEE_qualidad_retrabalho) },
     ],
   };
 }

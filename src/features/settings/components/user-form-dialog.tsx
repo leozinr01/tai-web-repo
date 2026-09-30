@@ -12,8 +12,9 @@ import {
 } from "@/domain/schemas/settings.schema";
 import { UserRole } from "@/domain/types/enums";
 import { userRoleLabels } from "@/lib/labels";
+import { assignableRoles } from "@/domain/permissions";
+import { useAuth } from "@/features/auth/use-auth";
 
-const roleOptions = Object.entries(userRoleLabels).map(([value, label]) => ({ value, label }));
 
 export function UserFormDialog({
   open,
@@ -26,6 +27,8 @@ export function UserFormDialog({
   onSubmit: (values: UserAccessFormValues & { password: string }) => Promise<void>;
   isSubmitting: boolean;
 }) {
+  const { user: currentUser } = useAuth();
+  const roleOptions = assignableRoles(currentUser?.role).map((r) => ({ value: r, label: userRoleLabels[r] }));
   const {
     register,
     handleSubmit,

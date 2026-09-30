@@ -1,10 +1,11 @@
 import type { ReportFilters, ReportRepository } from "@/data/contracts/report.repository";
+import type { PagedResult } from "@/data/contracts/appointment.repository";
 import type { ReportRow } from "@/domain/entities/report";
 import { supabase } from "@/lib/supabase-client";
-import { findVariableValue } from "@/data/repositories/supabase/helpers";
+import { fetchAllRows, findVariableValue, RANGE_NOT_SATISFIABLE } from "@/data/repositories/supabase/helpers";
 
-/** Limite de linhas por consulta: `Relatório` acumula uma linha por maquina a cada hora (milhares de registros), sem paginacao nesta tela. */
-const MAX_ROWS = 2000;
+// `Relatório` acumula uma linha por maquina a cada hora (dezenas de milhares de registros):
+// a tela pagina no banco e so a exportacao busca tudo.
 
 interface RelatorioRow {
   id: number;
@@ -38,7 +39,9 @@ function findVariableUnit(variables: Record<string, unknown> | null | undefined,
 
 function toReportRow(row: RelatorioRow): ReportRow {
   const time = (row.hora ?? "00:00").padStart(5, "0");
-  const datetime = row.date ? new Date(`${row.date}T${time}:00`).toISOString() : row.created_at;
+  // `hora` vem do equipamento como texto; se vier fora do padrao usa created_at (toISOString lancaria erro).
+  const local = row.date ? new Date(`${row.date}T${time}:00`) : null;
+  const datetime = local && !Number.isNaN(local.getTime()) ? local.toISOString() : row.created_at;
   return {
     id: String(row.id),
     datetime,
@@ -59,21 +62,35 @@ function toReportRow(row: RelatorioRow): ReportRow {
   };
 }
 
-export class SupabaseReportRepository implements ReportRepository {
-  async list(companyId: string, filters?: ReportFilters): Promise<ReportRow[]> {
-    let query = supabase
-      .from("Relatório")
-      .select(COLUMNS)
-      .eq("idRef", companyId)
-      .order("created_at", { ascending: false })
-      .limit(MAX_ROWS);
-    if (filters?.sectorId) query = query.eq("IDsala", filters.sectorId);
-    if (filters?.machineId) query = query.eq("maquina_id", Number(filters.machineId));
-    if (filters?.from) query = query.gte("date", filters.from);
-    if (filters?.to) query = query.lte("date", filters.to);
+function reportQuery(companyId: string, filters: ReportFilters, count?: "exact") {
+  let query = supabase
+    .from("Relatório")
+    .select(COLUMNS, count ? { count } : undefined)
+    .eq("idRef", companyId);
+  if (filters.sectorId) query = query.eq("IDsala", filters.sectorId);
+  if (filters.machineId) query = query.eq("maquina_id", Number(filters.machineId));
+  if (filters.from) query = query.gte("date", filters.from);
+  if (filters.to) query = query.lte("date", filters.to);
+  // id desempata registros com o mesmo created_at, para as paginas nao repetirem nem pularem linhas.
+  return query.order("created_at", { ascending: false }).order("id", { ascending: false });
+}
 
-    const { data, error } = await query;
+export class SupabaseReportRepository implements ReportRepository {
+  async list(companyId: string, filters: ReportFilters, page: number, pageSize: number): Promise<PagedResult<ReportRow>> {
+    const start = (page - 1) * pageSize;
+    const { data, error, count } = await reportQuery(companyId, filters, "exact").range(start, start + pageSize - 1);
+    if (error?.code === RANGE_NOT_SATISFIABLE) {
+      // Pagina alem do fim: devolve vazia, mas com o total certo para a paginacao se ajustar.
+      const { count: total, error: countError } = await reportQuery(companyId, filters, "exact").limit(0);
+      if (countError) throw new Error(countError.message);
+      return { items: [], total: total ?? 0, page, pageSize };
+    }
     if (error) throw new Error(error.message);
-    return ((data ?? []) as RelatorioRow[]).map(toReportRow);
+    return { items: ((data ?? []) as RelatorioRow[]).map(toReportRow), total: count ?? 0, page, pageSize };
+  }
+
+  async listAll(companyId: string, filters: ReportFilters): Promise<ReportRow[]> {
+    const rows = await fetchAllRows<RelatorioRow>((from, to) => reportQuery(companyId, filters).range(from, to));
+    return rows.map(toReportRow);
   }
 }

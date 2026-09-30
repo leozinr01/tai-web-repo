@@ -4,6 +4,31 @@
  */
 import { MachineStatus, UserRole, UserStatus } from "@/domain/types/enums";
 
+/** Maximo de linhas que o Supabase devolve por requisicao (acima disso ele corta sem avisar). */
+export const SUPABASE_MAX_ROWS = 1000;
+
+/** Erro do PostgREST quando o `.range()` comeca depois da ultima linha (ele nao devolve lista vazia). */
+export const RANGE_NOT_SATISFIABLE = "PGRST103";
+
+type RangeResult = PromiseLike<{ data: unknown[] | null; error: { message: string; code?: string } | null }>;
+
+/**
+ * Busca todas as linhas de uma consulta, de SUPABASE_MAX_ROWS em SUPABASE_MAX_ROWS.
+ * `build` recebe o intervalo e deve aplicar `.range(from, to)` numa consulta com ordem estavel.
+ */
+export async function fetchAllRows<T>(build: (from: number, to: number) => RangeResult): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += SUPABASE_MAX_ROWS) {
+    const { data, error } = await build(from, from + SUPABASE_MAX_ROWS - 1);
+    // Total multiplo exato de SUPABASE_MAX_ROWS: a pagina seguinte ja esta fora do intervalo.
+    if (error?.code === RANGE_NOT_SATISFIABLE) return rows;
+    if (error) throw new Error(error.message);
+    const page = (data ?? []) as T[];
+    rows.push(...page);
+    if (page.length < SUPABASE_MAX_ROWS) return rows;
+  }
+}
+
 export function parseBrDate(input: string | null | undefined): string {
   if (!input) return "";
   const [d, m, y] = input.split("/");

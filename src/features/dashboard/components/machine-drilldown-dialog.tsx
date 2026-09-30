@@ -18,6 +18,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/use-auth";
+import { canWriteRecords } from "@/domain/permissions";
 import { useSectors, useMachines, useRegisterMachineLoss } from "@/features/dashboard/queries";
 import { useCreateAppointment } from "@/features/appointments/queries";
 import { AppointmentFormDialog } from "@/features/appointments/components/appointment-form-dialog";
@@ -370,13 +371,15 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
                               {formatHours(currentCategory?.minutes ?? nav.category.minutes)} hs
                             </span>
                           </div>
-                          <button
-                            type="button"
-                            onClick={appointmentDialog.open}
-                            className="rounded-xl bg-brand px-6 py-3 text-sm font-black text-white shadow-lg shadow-brand/25 transition-all hover:bg-brand-hover"
-                          >
-                            Apontamento
-                          </button>
+                          {canWriteRecords(user?.role) && (
+                            <button
+                              type="button"
+                              onClick={appointmentDialog.open}
+                              className="rounded-xl bg-brand px-6 py-3 text-sm font-black text-white shadow-lg shadow-brand/25 transition-all hover:bg-brand-hover"
+                            >
+                              Apontamento
+                            </button>
+                          )}
                         </div>
                       </div>
 

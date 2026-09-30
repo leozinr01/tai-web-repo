@@ -10,6 +10,7 @@ import { IndicatorCard } from "@/features/dashboard/components/indicator-card";
 import { MachineCard } from "@/features/dashboard/components/machine-card";
 import { DefaultCardSettingsDialog } from "@/features/dashboard/components/default-card-settings-dialog";
 import { useAuth } from "@/features/auth/use-auth";
+import { canManageCompany } from "@/domain/permissions";
 import {
   DASHBOARD_REFRESH_MS,
   useDashboardIndicators,
@@ -29,6 +30,7 @@ export function DashboardPage() {
   const { user } = useAuth();
   const companyId = user?.companyId ?? "";
   const isMaster = user?.role === UserRole.MASTER;
+  const canManage = canManageCompany(user?.role);
   // Master enxerga todas as empresas (sem filtro de idRef); demais papeis ficam presos a propria empresa.
   const scopeCompanyId = isMaster ? undefined : companyId;
 
@@ -134,12 +136,14 @@ export function DashboardPage() {
             Filtros de operacao
           </p>
           <div className="flex items-center gap-3">
-            <button
-              onClick={defaultSettingsDialog.open}
-              className="text-[10px] font-semibold uppercase tracking-wide text-brand hover:underline"
-            >
-              Cards (todos)
-            </button>
+            {canManage && (
+              <button
+                onClick={defaultSettingsDialog.open}
+                className="text-[10px] font-semibold uppercase tracking-wide text-brand hover:underline"
+              >
+                Cards (todos)
+              </button>
+            )}
             <button
               onClick={clearFilters}
               disabled={!hasFilters}

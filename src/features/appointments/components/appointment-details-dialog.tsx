@@ -1,19 +1,16 @@
-import { format, parseISO } from "date-fns";
+import { formatDate } from "@/lib/utils";
 import { Clock } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import type { Appointment } from "@/domain/entities/appointment";
+import { formatDuration } from "@/domain/appointment-time";
 
-function formatDuration(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
 
 interface AppointmentDetailsDialogProps {
   appointment: Appointment | null;
   onOpenChange: (open: boolean) => void;
-  onEdit: () => void;
+  /** Sem onEdit, o botao Editar nao aparece (perfil sem permissao). */
+  onEdit?: () => void;
   machineName?: string;
   sectorName?: string;
 }
@@ -30,7 +27,7 @@ export function AppointmentDetailsDialog({
       open={!!appointment}
       onOpenChange={onOpenChange}
       title="Detalhes do apontamento"
-      description={appointment ? `Registro operacional • ${format(parseISO(appointment.date), "dd/MM/yyyy")}` : undefined}
+      description={appointment ? `Registro operacional • ${formatDate(appointment.date)}` : undefined}
       size="sm"
       titleClassName="uppercase tracking-tight"
       descriptionClassName="text-xs font-medium"
@@ -38,13 +35,15 @@ export function AppointmentDetailsDialog({
       footer={
         appointment && (
           <div className="flex gap-4 pt-2">
-            <Button
-              variant="outline"
-              className="flex-1 rounded-2xl border-brand/40 bg-white/5 py-5 text-sm font-black uppercase text-brand-light active:scale-95"
-              onClick={onEdit}
-            >
-              Editar
-            </Button>
+            {onEdit && (
+              <Button
+                variant="outline"
+                className="flex-1 rounded-2xl border-brand/40 bg-white/5 py-5 text-sm font-black uppercase text-brand-light active:scale-95"
+                onClick={onEdit}
+              >
+                Editar
+              </Button>
+            )}
             <Button
               variant="outline"
               className="flex-1 rounded-2xl border-white/10 bg-white/5 py-5 text-sm font-black uppercase active:scale-95"
@@ -62,7 +61,7 @@ export function AppointmentDetailsDialog({
             <div className="rounded-xl border border-white/10 bg-white/5 p-3">
               <p className="label-caps">Data / Hora</p>
               <p className="mt-1 text-sm font-bold text-white">
-                {format(parseISO(appointment.date), "dd/MM/yyyy")} às {appointment.time}
+                {formatDate(appointment.date)} às {appointment.time}
               </p>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/5 p-3">

@@ -28,11 +28,13 @@ import {
 import type { ChangePasswordFormValues } from "@/domain/schemas/auth.schema";
 import { UserStatus } from "@/domain/types/enums";
 import { userRoleLabels } from "@/lib/labels";
+import { assignableRoles, canManageCompany } from "@/domain/permissions";
 import type { User } from "@/domain/entities/user";
 
 export function SettingsPage() {
   const { user } = useAuth();
   const companyId = user?.companyId ?? "";
+  const canManage = canManageCompany(user?.role);
 
   const companyQuery = useCompany(companyId);
   const usersQuery = useCompanyUsers(companyId);
@@ -172,102 +174,113 @@ export function SettingsPage() {
                   <p className="text-sm font-semibold text-slate-200">Logo da empresa</p>
                   <p className="text-xs text-muted">PNG, JPG ou SVG (Max. 2MB)</p>
                 </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept={ACCEPTED_LOGO_TYPES.join(",")}
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  isLoading={updateLogoMutation.isPending}
-                  className="h-auto border-0 bg-brand/10 px-6 py-2.5 text-[10px] font-black uppercase tracking-widest text-brand hover:bg-brand hover:text-white"
-                >
-                  <Upload className="h-3.5 w-3.5" /> Fazer upload
-                </Button>
+                {canManage && (
+                  <>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept={ACCEPTED_LOGO_TYPES.join(",")}
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      isLoading={updateLogoMutation.isPending}
+                      className="h-auto border-0 bg-brand/10 px-6 py-2.5 text-[10px] font-black uppercase tracking-widest text-brand hover:bg-brand hover:text-white"
+                    >
+                      <Upload className="h-3.5 w-3.5" /> Fazer upload
+                    </Button>
+                  </>
+                )}
                 {logoError && <p className="text-xs text-danger">{logoError}</p>}
               </div>
 
-              <div className="mt-4">
-                <FieldLabel>URL do logo (manual)</FieldLabel>
-                <div className="flex gap-2">
-                  <Input
-                    value={manualLogoUrl}
-                    onChange={(e) => setManualLogoUrl(e.target.value)}
-                    placeholder="https://exemplo.com/logo.png"
-                    error={manualLogoError ?? undefined}
-                    className="h-[46px] flex-1 px-4"
-                  />
-                  <Button
-                    onClick={handleSaveManualLogoUrl}
-                    isLoading={updateLogoMutation.isPending}
-                    className="h-[46px] rounded-xl border-0 bg-brand/20 px-6 text-[10px] font-bold uppercase text-brand hover:bg-brand hover:text-white"
-                  >
-                    Salvar
-                  </Button>
+              {canManage && (
+                <div className="mt-4">
+                  <FieldLabel>URL do logo (manual)</FieldLabel>
+                  <div className="flex gap-2">
+                    <Input
+                      value={manualLogoUrl}
+                      onChange={(e) => setManualLogoUrl(e.target.value)}
+                      placeholder="https://exemplo.com/logo.png"
+                      error={manualLogoError ?? undefined}
+                      className="h-[46px] flex-1 px-4"
+                    />
+                    <Button
+                      onClick={handleSaveManualLogoUrl}
+                      isLoading={updateLogoMutation.isPending}
+                      className="h-[46px] rounded-xl border-0 bg-brand/20 px-6 text-[10px] font-bold uppercase text-brand hover:bg-brand hover:text-white"
+                    >
+                      Salvar
+                    </Button>
+                  </div>
+                  <FieldError message={manualLogoError ?? undefined} />
                 </div>
-                <FieldError message={manualLogoError ?? undefined} />
-              </div>
+              )}
             </>
           )}
         </Card>
 
-        <Card className="overflow-hidden">
-          <div className="flex items-center justify-between border-b border-panel-border px-6 py-4">
-            <p className="text-sm font-semibold uppercase tracking-wide text-slate-200">Gerenciar acessos</p>
-            <Button
-              onClick={userDialog.open}
-              className="h-auto gap-2 rounded-xl border-0 bg-brand/10 px-4 py-2 text-[10px] font-black uppercase tracking-wide text-brand hover:bg-brand hover:text-white"
-            >
-              <UserPlus className="h-3.5 w-3.5" /> Novo acesso
-            </Button>
-          </div>
-          <div className="space-y-3 p-4">
-            {usersQuery.isLoading &&
-              Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
+        {canManage && (
+          <Card className="overflow-hidden">
+            <div className="flex items-center justify-between border-b border-panel-border px-6 py-4">
+              <p className="text-sm font-semibold uppercase tracking-wide text-slate-200">Gerenciar acessos</p>
+              <Button
+                onClick={userDialog.open}
+                className="h-auto gap-2 rounded-xl border-0 bg-brand/10 px-4 py-2 text-[10px] font-black uppercase tracking-wide text-brand hover:bg-brand hover:text-white"
+              >
+                <UserPlus className="h-3.5 w-3.5" /> Novo acesso
+              </Button>
+            </div>
+            <div className="space-y-3 p-4">
+              {usersQuery.isLoading &&
+                Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
 
-            {usersQuery.isSuccess &&
-              usersQuery.data.map((u) => (
-                <div
-                  key={u.id}
-                  className="group flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-panel-border bg-white/[0.03] p-4 transition-all hover:border-brand/50 hover:bg-white/5"
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-xs font-bold text-brand">
-                      {u.avatarInitials}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="flex items-center gap-2 truncate text-sm font-semibold text-slate-100">
-                        {u.name}
-                        <span className="rounded bg-white/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white/50">
-                          {userRoleLabels[u.role]}
-                        </span>
-                        {u.status === UserStatus.INACTIVE && (
-                          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white/50">
-                            Inativo
-                          </span>
-                        )}
-                      </p>
-                      <p className="truncate text-xs text-muted">{u.email}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setRemovingUser(u);
-                      removeDialog.open();
-                    }}
-                    className="shrink-0 rounded-lg bg-white/5 p-2 text-muted opacity-0 transition-colors hover:bg-danger/10 hover:text-danger-light group-hover:opacity-100"
-                    aria-label={`Remover ${u.name}`}
+              {usersQuery.isSuccess &&
+                usersQuery.data.map((u) => (
+                  <div
+                    key={u.id}
+                    className="group flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-panel-border bg-white/[0.03] p-4 transition-all hover:border-brand/50 hover:bg-white/5"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-          </div>
-        </Card>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-xs font-bold text-brand">
+                        {u.avatarInitials}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-2 truncate text-sm font-semibold text-slate-100">
+                          {u.name}
+                          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white/50">
+                            {userRoleLabels[u.role]}
+                          </span>
+                          {u.status === UserStatus.INACTIVE && (
+                            <span className="rounded bg-white/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white/50">
+                              Inativo
+                            </span>
+                          )}
+                        </p>
+                        <p className="truncate text-xs text-muted">{u.email}</p>
+                      </div>
+                    </div>
+                    {/* Ninguem remove o proprio acesso, e Admin nao remove Master. */}
+                    {u.id !== user?.id && assignableRoles(user?.role).includes(u.role) && (
+                      <button
+                        onClick={() => {
+                          setRemovingUser(u);
+                          removeDialog.open();
+                        }}
+                        className="shrink-0 rounded-lg bg-white/5 p-2 text-muted opacity-0 transition-colors hover:bg-danger/10 hover:text-danger-light group-hover:opacity-100"
+                        aria-label={`Remover ${u.name}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+            </div>
+          </Card>
+        )}
       </div>
 
       <Card className="p-6">
