@@ -26,6 +26,19 @@ export function variableOptionsForMachine(machine: Machine): { value: MachineVar
   ];
 }
 
+/**
+ * Marca como indisponiveis as variaveis ja escolhidas em outra posicao do mesmo grupo,
+ * para a mesma variavel nao aparecer duas vezes no card.
+ */
+export function disableTakenOptions<T extends { value: string }>(
+  options: T[],
+  selectedKeys: readonly string[],
+  index: number,
+): (T & { disabled: boolean })[] {
+  const taken = new Set(selectedKeys.filter((_, i) => i !== index));
+  return options.map((option) => ({ ...option, disabled: taken.has(option.value) }));
+}
+
 export function resolveVariableDisplay(machine: Machine, key: MachineVariableKey): VariableDisplay | null {
   switch (key) {
     case "horimeter":

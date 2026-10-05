@@ -3,7 +3,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { builtinVariableOptions } from "@/features/dashboard/machine-variables";
+import { builtinVariableOptions, disableTakenOptions } from "@/features/dashboard/machine-variables";
 import type { MachineCardSettings, MachineVariableKey } from "@/domain/entities/machine";
 
 const DEFAULT_CARD_SETTINGS: MachineCardSettings = {
@@ -115,7 +115,7 @@ export function DefaultCardSettingsDialog({
                 <label className="label-caps block">Variável {i + 1}</label>
                 <div className="flex items-center gap-2">
                   <SearchableSelect
-                    options={options}
+                    options={disableTakenOptions(options, settings.topVariableKeys, i)}
                     value={settings.topVariableKeys[i]}
                     onChange={(v) => setTop(i as 0 | 1 | 2, v)}
                     className="flex-1"
@@ -145,7 +145,7 @@ export function DefaultCardSettingsDialog({
                 <label className="label-caps block">Card inferior {i + 1}</label>
                 <div className="flex items-center gap-2">
                   <SearchableSelect
-                    options={options}
+                    options={disableTakenOptions(options, settings.bottomVariableKeys, i)}
                     value={settings.bottomVariableKeys[i]}
                     onChange={(v) => setBottom(i as 0 | 1, v)}
                     className="flex-1"
