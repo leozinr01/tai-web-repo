@@ -20,8 +20,6 @@ import { AppointmentDetailsDialog } from "@/features/appointments/components/app
 import { AppointmentQuickEditDialog } from "@/features/appointments/components/appointment-quick-edit-dialog";
 import { toast } from "@/hooks/use-toast";
 import { toCsv, downloadCsv } from "@/lib/csv";
-import { appointmentAreaLabels, affectedSegmentsByArea } from "@/lib/labels";
-import type { AppointmentArea } from "@/domain/types/enums";
 import { formatDuration } from "@/domain/appointment-time";
 import type { AppointmentFormValues } from "@/domain/schemas/appointment.schema";
 import type { Appointment } from "@/domain/entities/appointment";
@@ -29,8 +27,6 @@ import { repositories } from "@/data/repositories";
 import { useQuery } from "@tanstack/react-query";
 
 const ALL_ITEMS_PAGE_SIZE = 100000;
-
-const areaOptions = Object.entries(appointmentAreaLabels).map(([value, label]) => ({ value, label }));
 
 export function AppointmentsPage() {
   const { user } = useAuth();
@@ -44,8 +40,6 @@ export function AppointmentsPage() {
   const [sectorId, setSectorId] = useState("");
   const [machineId, setMachineId] = useState("");
   const [authorId, setAuthorId] = useState("");
-  const [area, setArea] = useState<AppointmentArea | "">("");
-  const [segment, setSegment] = useState("");
 
   const [formOpen, setFormOpen] = useState(false);
   const [viewing, setViewing] = useState<Appointment | null>(null);
@@ -64,8 +58,6 @@ export function AppointmentsPage() {
     sectorId: sectorId || undefined,
     machineId: machineId || undefined,
     authorId: authorId || undefined,
-    area: area || undefined,
-    affectedSegment: segment || undefined,
     page: 1,
     pageSize: ALL_ITEMS_PAGE_SIZE,
   };
@@ -86,17 +78,6 @@ export function AppointmentsPage() {
     () => (usersQuery.data ?? []).map((u) => ({ value: u.id, label: u.name })),
     [usersQuery.data],
   );
-  // Seguimentos da area escolhida (ou de todas), mais os antigos que aparecem nos registros
-  // carregados e nao estao na lista atual (ex.: "Quebra de Máquina"), para tambem poderem ser filtrados.
-  const loadedItems = appointmentsQuery.data?.items;
-  const segmentOptions = useMemo(() => {
-    const segments = area ? affectedSegmentsByArea[area] : Object.values(affectedSegmentsByArea).flat();
-    const legacy = (loadedItems ?? [])
-      .filter((a) => a.affectedSegment && (!area || a.area === area))
-      .map((a) => a.affectedSegment)
-      .sort((a, b) => a.localeCompare(b, "pt-BR"));
-    return [...new Set([...segments, ...legacy, ...(segment ? [segment] : [])])].map((s) => ({ value: s, label: s }));
-  }, [area, loadedItems, segment]);
   const machineById = useMemo(() => {
     const map = new Map<string, string>();
     (machinesQuery.data ?? []).forEach((m) => map.set(m.id, m.name));
@@ -114,8 +95,6 @@ export function AppointmentsPage() {
     setSectorId("");
     setMachineId("");
     setAuthorId("");
-    setArea("");
-    setSegment("");
   };
 
   const handleCreate = async (values: AppointmentFormValues) => {
@@ -194,8 +173,8 @@ export function AppointmentsPage() {
         </Button>
       </div>
 
-      <Card className="p-4">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
+      <Card className="overflow-hidden p-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 p-4">
           <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white">
             <Filter className="h-4 w-4 text-brand-light" /> Filtrar apontamentos
           </p>
@@ -206,7 +185,7 @@ export function AppointmentsPage() {
             Limpar filtros
           </button>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <FilterField label="Data início">
             <Input
               ref={dateFromRef}
@@ -215,7 +194,7 @@ export function AppointmentsPage() {
               onIconClick={() => dateFromRef.current?.showPicker?.()}
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
+              className="h-9 border-white/20 bg-white/10 text-xs font-bold"
             />
           </FilterField>
           <FilterField label="Data fim">
@@ -226,7 +205,7 @@ export function AppointmentsPage() {
               onIconClick={() => dateToRef.current?.showPicker?.()}
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
+              className="h-9 border-white/20 bg-white/10 text-xs font-bold"
             />
           </FilterField>
           <FilterField label="Setor">
@@ -236,7 +215,7 @@ export function AppointmentsPage() {
               value={sectorId}
               onChange={setSectorId}
               placeholder="Todos os Setores"
-              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
+              className="h-9 border-white/20 bg-white/10 text-xs font-bold"
             />
           </FilterField>
           <FilterField label="Máquina">
@@ -246,7 +225,7 @@ export function AppointmentsPage() {
               value={machineId}
               onChange={setMachineId}
               placeholder="Todas as Máquinas"
-              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
+              className="h-9 border-white/20 bg-white/10 text-xs font-bold"
             />
           </FilterField>
           <FilterField label="Lançador">
@@ -256,35 +235,12 @@ export function AppointmentsPage() {
               value={authorId}
               onChange={setAuthorId}
               placeholder="Todos os Lançadores"
-              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
-            />
-          </FilterField>
-          <FilterField label="Área">
-            <SearchableSelect
-              options={[{ value: "", label: "Todas as Áreas" }, ...areaOptions]}
-              value={area}
-              onChange={(v) => {
-                setArea(v as AppointmentArea | "");
-                // O seguimento depende da area; limpa se nao pertencer a nova.
-                if (v && !affectedSegmentsByArea[v as AppointmentArea]?.includes(segment)) setSegment("");
-              }}
-              placeholder="Todas as Áreas"
-              searchable={false}
-              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
-            />
-          </FilterField>
-          <FilterField label="Seguimento">
-            <SearchableSelect
-              options={[{ value: "", label: "Todos os Seguimentos" }, ...segmentOptions]}
-              value={segment}
-              onChange={setSegment}
-              placeholder="Todos os Seguimentos"
-              className="h-11 border-white/20 bg-white/10 text-sm font-bold"
+              className="h-9 border-white/20 bg-white/10 text-xs font-bold"
             />
           </FilterField>
           {canWrite && (
             <div className="flex items-end">
-              <Button onClick={() => setFormOpen(true)} className="h-11 w-full">
+              <Button onClick={() => setFormOpen(true)} className="h-9 w-full">
                 <Plus className="h-4 w-4" /> Novo
               </Button>
             </div>
