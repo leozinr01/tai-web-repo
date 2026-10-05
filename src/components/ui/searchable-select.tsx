@@ -7,6 +7,8 @@ export interface SelectOption {
   value: string;
   label: string;
   description?: string;
+  /** Aparece esmaecida na lista e nao pode ser escolhida. */
+  disabled?: boolean;
 }
 
 interface SearchableSelectProps {
@@ -125,6 +127,7 @@ export function SearchableSelect({
               <button
                 key={opt.value}
                 type="button"
+                disabled={opt.disabled}
                 onClick={() => {
                   onChange(opt.value);
                   setOpen(false);
@@ -132,6 +135,7 @@ export function SearchableSelect({
                 }}
                 className={cn(
                   "flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-white/10",
+                  "disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent",
                   opt.value === value && "bg-brand/15 text-brand-light",
                 )}
                 role="option"
