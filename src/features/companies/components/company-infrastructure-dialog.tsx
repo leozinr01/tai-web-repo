@@ -159,7 +159,7 @@ export function CompanyInfrastructureDialog({
               </p>
               <button
                 onClick={openCreateSector}
-                className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-[10px] font-black text-white shadow-lg shadow-brand/20 hover:bg-brand-hover"
+                className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-xs font-black text-white shadow-lg shadow-brand/20 hover:bg-brand-hover"
               >
                 <Plus className="h-3.5 w-3.5" /> ADICIONAR
               </button>
@@ -202,7 +202,7 @@ export function CompanyInfrastructureDialog({
               </p>
               <button
                 onClick={openCreateMachine}
-                className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-[10px] font-black text-white shadow-lg shadow-brand/20 hover:bg-brand-hover"
+                className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-xs font-black text-white shadow-lg shadow-brand/20 hover:bg-brand-hover"
               >
                 <Plus className="h-3.5 w-3.5" /> ADICIONAR
               </button>
@@ -218,7 +218,7 @@ export function CompanyInfrastructureDialog({
                 >
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-white">{machine.name}</span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted">
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-muted">
                       {sectorNameById.get(machine.sectorId) ?? "-"}
                     </span>
                   </div>

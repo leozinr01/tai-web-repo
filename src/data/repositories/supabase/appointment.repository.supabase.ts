@@ -148,7 +148,7 @@ export class SupabaseAppointmentRepository implements AppointmentRepository {
       .eq("id", Number(id))
       .maybeSingle();
     if (fetchError) throw new Error(fetchError.message);
-    if (!current) throw new Error("Apontamento nao encontrado.");
+    if (!current) throw new Error("Apontamento não encontrado.");
     const row = current as ApontamentoRow;
     const companyId = row.idRef;
 

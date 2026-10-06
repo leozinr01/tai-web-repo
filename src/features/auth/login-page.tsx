@@ -2,16 +2,19 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, useLocation } from "react-router-dom";
-import { User, PenTool, Loader2 } from "lucide-react";
+import { User, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { loginSchema, type LoginFormValues } from "@/domain/schemas/auth.schema";
 import { useAuth } from "@/features/auth/use-auth";
 import { FieldError } from "@/components/ui/input";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export function LoginPage() {
+  usePageTitle("Entrar");
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -29,7 +32,7 @@ export function LoginPage() {
       const from = (location.state as { from?: string } | null)?.from ?? "/dashboard";
       navigate(from, { replace: true });
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : "Nao foi possivel entrar.");
+      setServerError(err instanceof Error ? err.message : "Não foi possível entrar.");
     }
   };
 
@@ -69,15 +72,24 @@ export function LoginPage() {
                 Senha
               </label>
               <div className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-4 transition-all focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
-                <PenTool className="h-4 w-4 shrink-0 text-muted transition-colors group-focus-within:text-brand-light" />
+                <Lock className="h-4 w-4 shrink-0 text-muted transition-colors group-focus-within:text-brand-light" />
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="********"
                   autoComplete="current-password"
                   className="w-full bg-transparent text-sm text-white focus:outline-none"
                   {...register("password")}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="shrink-0 rounded-md text-muted transition-colors hover:text-white"
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
               <FieldError message={errors.password?.message} />
             </div>
@@ -100,7 +112,7 @@ export function LoginPage() {
             </button>
           </form>
         </div>
-        <p className="mt-8 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-muted/40">
+        <p className="mt-8 text-center text-[11px] font-bold uppercase tracking-[0.2em] text-muted/40">
           Powered by Tai Industrial Platform v3.0
         </p>
       </div>

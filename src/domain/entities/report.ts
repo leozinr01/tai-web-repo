@@ -15,4 +15,6 @@ export interface ReportRow {
   production: number;
   productionUnit: string;
   additionalVariablesCount: number;
+  /** Todas as variaveis gravadas no registro, com o nome original e o valor ja formatado para exibicao. */
+  additionalVariables: { label: string; value: string }[];
 }

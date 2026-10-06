@@ -11,6 +11,9 @@ import { FilterField } from "@/components/ui/filter-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
+import { Pagination } from "@/components/ui/pagination";
+import { useClientPagination } from "@/hooks/use-client-pagination";
+import { useUrlFilters } from "@/hooks/use-url-filters";
 import { useAuth } from "@/features/auth/use-auth";
 import { canWriteRecords } from "@/domain/permissions";
 import { useSectors, useMachines } from "@/features/dashboard/queries";
@@ -25,21 +28,28 @@ import type { AppointmentFormValues } from "@/domain/schemas/appointment.schema"
 import type { Appointment } from "@/domain/entities/appointment";
 import { repositories } from "@/data/repositories";
 import { useQuery } from "@tanstack/react-query";
+import { usePageTitle } from "@/hooks/use-page-title";
 
+// A consulta traz a lista filtrada inteira (a exportacao usa tudo); a tabela mostra uma pagina por vez.
 const ALL_ITEMS_PAGE_SIZE = 100000;
+const PAGE_SIZE = 50;
+const FILTER_KEYS = ["de", "ate", "setor", "maquina", "lancador"] as const;
 
 export function AppointmentsPage() {
+  usePageTitle("Apontamentos");
   const { user } = useAuth();
   const companyId = user?.companyId ?? "";
   const canWrite = canWriteRecords(user?.role);
 
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const { values: urlFilters, setFilter, clearFilters } = useUrlFilters(FILTER_KEYS);
+  const { de: dateFrom, ate: dateTo, setor: sectorId, maquina: machineId, lancador: authorId } = urlFilters;
+  const setDateFrom = (value: string) => setFilter("de", value);
+  const setDateTo = (value: string) => setFilter("ate", value);
+  const setSectorId = (value: string) => setFilter("setor", value);
+  const setMachineId = (value: string) => setFilter("maquina", value);
+  const setAuthorId = (value: string) => setFilter("lancador", value);
   const dateFromRef = useRef<HTMLInputElement>(null);
   const dateToRef = useRef<HTMLInputElement>(null);
-  const [sectorId, setSectorId] = useState("");
-  const [machineId, setMachineId] = useState("");
-  const [authorId, setAuthorId] = useState("");
 
   const [formOpen, setFormOpen] = useState(false);
   const [viewing, setViewing] = useState<Appointment | null>(null);
@@ -62,6 +72,11 @@ export function AppointmentsPage() {
     pageSize: ALL_ITEMS_PAGE_SIZE,
   };
   const appointmentsQuery = useAppointments(companyId, filters);
+  const { page, pageItems, setPage } = useClientPagination(
+    appointmentsQuery.data?.items ?? [],
+    PAGE_SIZE,
+    JSON.stringify(filters),
+  );
 
   const createMutation = useCreateAppointment();
   const updateMutation = useUpdateAppointment();
@@ -89,14 +104,6 @@ export function AppointmentsPage() {
     return map;
   }, [sectorsQuery.data]);
 
-  const clearFilters = () => {
-    setDateFrom("");
-    setDateTo("");
-    setSectorId("");
-    setMachineId("");
-    setAuthorId("");
-  };
-
   const handleCreate = async (values: AppointmentFormValues) => {
     try {
       await createMutation.mutateAsync(values);
@@ -104,7 +111,7 @@ export function AppointmentsPage() {
       setFormOpen(false);
     } catch (err) {
       toast({
-        title: "Nao foi possivel salvar o apontamento.",
+        title: "Não foi possível salvar o apontamento.",
         description: err instanceof Error ? err.message : undefined,
         variant: "error",
       });
@@ -119,7 +126,7 @@ export function AppointmentsPage() {
       setEditing(null);
     } catch (err) {
       toast({
-        title: "Nao foi possivel salvar o apontamento.",
+        title: "Não foi possível salvar o apontamento.",
         description: err instanceof Error ? err.message : undefined,
         variant: "error",
       });
@@ -175,12 +182,12 @@ export function AppointmentsPage() {
 
       <Card className="overflow-hidden p-0">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 p-4">
-          <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white">
+          <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-white">
             <Filter className="h-4 w-4 text-brand-light" /> Filtrar apontamentos
           </p>
           <button
             onClick={clearFilters}
-            className="text-[10px] font-bold uppercase tracking-widest text-muted transition-colors hover:text-white"
+            className="text-[11px] font-bold uppercase tracking-widest text-muted transition-colors hover:text-white"
           >
             Limpar filtros
           </button>
@@ -193,6 +200,7 @@ export function AppointmentsPage() {
               leftIcon={<Calendar className="h-4 w-4" />}
               onIconClick={() => dateFromRef.current?.showPicker?.()}
               value={dateFrom}
+              max={dateTo || undefined}
               onChange={(e) => setDateFrom(e.target.value)}
               className="h-9 border-white/20 bg-white/10 text-xs font-bold"
             />
@@ -204,6 +212,7 @@ export function AppointmentsPage() {
               leftIcon={<Calendar className="h-4 w-4" />}
               onIconClick={() => dateToRef.current?.showPicker?.()}
               value={dateTo}
+              min={dateFrom || undefined}
               onChange={(e) => setDateTo(e.target.value)}
               className="h-9 border-white/20 bg-white/10 text-xs font-bold"
             />
@@ -293,11 +302,11 @@ export function AppointmentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {appointmentsQuery.data.items.map((appt) => (
+                {pageItems.map((appt) => (
                   <tr key={appt.id} className="group border-b border-panel-border last:border-0 hover:bg-navy-800/50">
                     <td className="px-4 py-3">
                       <p className="text-xs font-bold text-white">{formatDate(appt.date)}</p>
-                      <p className="text-[10px] text-muted">{appt.time}</p>
+                      <p className="text-xs text-muted">{appt.time}</p>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -309,7 +318,7 @@ export function AppointmentsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-xs font-bold text-white">{machineById.get(appt.machineId) ?? "-"}</p>
-                      <p className="text-[10px] text-muted">{sectorById.get(appt.sectorId) ?? "-"}</p>
+                      <p className="text-xs text-muted">{sectorById.get(appt.sectorId) ?? "-"}</p>
                     </td>
                     <td className="max-w-[240px] truncate px-4 py-3 text-xs text-muted transition-colors group-hover:text-white">
                       {appt.description}
@@ -334,6 +343,15 @@ export function AppointmentsPage() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {appointmentsQuery.isSuccess && appointmentsQuery.data.items.length > 0 && (
+          <Pagination
+            page={page}
+            pageSize={PAGE_SIZE}
+            total={appointmentsQuery.data.items.length}
+            onPageChange={setPage}
+          />
         )}
       </Card>
 

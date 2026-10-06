@@ -1,5 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Filter } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { useUrlFilters } from "@/hooks/use-url-filters";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,10 +26,13 @@ import { toast } from "@/hooks/use-toast";
 import { MachineStatus, UserRole } from "@/domain/types/enums";
 import type { MachineCardSettings } from "@/domain/entities/machine";
 import { machineStatusLabels } from "@/lib/labels";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 const statusOptions = Object.entries(machineStatusLabels).map(([value, label]) => ({ value, label }));
+const FILTER_KEYS = ["setor", "maquina", "status"] as const;
 
 export function DashboardPage() {
+  usePageTitle("Dashboard");
   const { user } = useAuth();
   const companyId = user?.companyId ?? "";
   const isMaster = user?.role === UserRole.MASTER;
@@ -34,9 +40,11 @@ export function DashboardPage() {
   // Master enxerga todas as empresas (sem filtro de idRef); demais papeis ficam presos a propria empresa.
   const scopeCompanyId = isMaster ? undefined : companyId;
 
-  const [sectorId, setSectorId] = useState<string>("");
-  const [machineId, setMachineId] = useState<string>("");
-  const [status, setStatus] = useState<string>("");
+  const { values: urlFilters, setFilter, clearFilters } = useUrlFilters(FILTER_KEYS);
+  const { setor: sectorId, maquina: machineId, status } = urlFilters;
+  const setSectorId = (value: string) => setFilter("setor", value);
+  const setMachineId = (value: string) => setFilter("maquina", value);
+  const setStatus = (value: string) => setFilter("status", value);
   const defaultSettingsDialog = useDisclosure();
   const updateAllCardSettingsMutation = useUpdateAllMachinesCardSettings();
 
@@ -67,13 +75,12 @@ export function DashboardPage() {
     return map;
   }, [sectorsQuery.data]);
 
-  const clearFilters = () => {
-    setSectorId("");
-    setMachineId("");
-    setStatus("");
-  };
-
   const hasFilters = !!sectorId || !!machineId || !!status;
+
+  // Com a atualizacao automatica falhando, os cards continuam na tela com o ultimo dado bom e o aviso de horario.
+  const machines = machinesQuery.data;
+  const isStale = (machinesQuery.isError || indicatorsQuery.isError) && machinesQuery.dataUpdatedAt > 0;
+  const lastUpdate = machinesQuery.dataUpdatedAt > 0 ? format(machinesQuery.dataUpdatedAt, "HH:mm:ss") : null;
 
   const handleSaveDefaultCardSettings = async (cardSettings: MachineCardSettings) => {
     try {
@@ -96,6 +103,15 @@ export function DashboardPage() {
         <h1 className="font-display mt-1 text-2xl font-bold text-white sm:text-3xl">
           Dashboard
         </h1>
+        {lastUpdate && (
+          <p
+            role="status"
+            className={cn("mt-1 flex items-center gap-1.5 text-xs", isStale ? "font-semibold text-warning-light" : "text-muted")}
+          >
+            <span className={cn("h-1.5 w-1.5 rounded-full", isStale ? "bg-warning" : "bg-success")} />
+            {isStale ? `Sem atualização — exibindo dados das ${lastUpdate}` : `Atualizado às ${lastUpdate}`}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -105,6 +121,7 @@ export function DashboardPage() {
           history={indicatorsQuery.data?.oeeHistory}
           color="#21c1b3"
           isLoading={indicatorsQuery.isLoading}
+          isError={indicatorsQuery.isError}
         />
         <IndicatorCard
           label="Disponibilidade"
@@ -112,6 +129,7 @@ export function DashboardPage() {
           history={indicatorsQuery.data?.availabilityHistory}
           color="#3b4fe6"
           isLoading={indicatorsQuery.isLoading}
+          isError={indicatorsQuery.isError}
         />
         <IndicatorCard
           label="Produtividade"
@@ -119,6 +137,7 @@ export function DashboardPage() {
           history={indicatorsQuery.data?.productivityHistory}
           color="#1bb58f"
           isLoading={indicatorsQuery.isLoading}
+          isError={indicatorsQuery.isError}
         />
         <IndicatorCard
           label="Qualidade"
@@ -126,6 +145,7 @@ export function DashboardPage() {
           history={indicatorsQuery.data?.qualityHistory}
           color="#2f6de2"
           isLoading={indicatorsQuery.isLoading}
+          isError={indicatorsQuery.isError}
         />
       </div>
 
@@ -133,13 +153,13 @@ export function DashboardPage() {
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 p-4">
           <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-200">
             <Filter className="h-4 w-4 text-brand-light" />
-            Filtros de operacao
+            Filtros de operação
           </p>
           <div className="flex items-center gap-3">
             {canManage && (
               <button
                 onClick={defaultSettingsDialog.open}
-                className="text-[10px] font-semibold uppercase tracking-wide text-brand hover:underline"
+                className="text-[11px] font-semibold uppercase tracking-wide text-brand hover:underline"
               >
                 Cards (todos)
               </button>
@@ -147,7 +167,7 @@ export function DashboardPage() {
             <button
               onClick={clearFilters}
               disabled={!hasFilters}
-              className="text-[10px] font-semibold uppercase tracking-wide text-slate-300 hover:text-white hover:underline disabled:cursor-default disabled:text-muted disabled:hover:no-underline"
+              className="text-[11px] font-semibold uppercase tracking-wide text-slate-300 hover:text-white hover:underline disabled:cursor-default disabled:text-muted disabled:hover:no-underline"
             >
               Limpar todos
             </button>
@@ -156,8 +176,9 @@ export function DashboardPage() {
 
         <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <label className="label-caps mb-1.5 block">Setor</label>
+            <label htmlFor="dashboard-filtro-setor" className="label-caps mb-1.5 block">Setor</label>
             <SearchableSelect
+              id="dashboard-filtro-setor"
               options={[{ value: "", label: "Todos os Setores" }, ...sectorOptions]}
               value={sectorId}
               onChange={setSectorId}
@@ -166,8 +187,9 @@ export function DashboardPage() {
             />
           </div>
           <div>
-            <label className="label-caps mb-1.5 block">Máquina</label>
+            <label htmlFor="dashboard-filtro-maquina" className="label-caps mb-1.5 block">Máquina</label>
             <SearchableSelect
+              id="dashboard-filtro-maquina"
               options={[{ value: "", label: "Todas as Máquinas" }, ...machineOptions]}
               value={machineId}
               onChange={setMachineId}
@@ -176,8 +198,9 @@ export function DashboardPage() {
             />
           </div>
           <div>
-            <label className="label-caps mb-1.5 block">Status</label>
+            <label htmlFor="dashboard-filtro-status" className="label-caps mb-1.5 block">Status</label>
             <SearchableSelect
+              id="dashboard-filtro-status"
               options={[{ value: "", label: "Todos os Status" }, ...statusOptions]}
               value={status}
               onChange={setStatus}
@@ -199,28 +222,29 @@ export function DashboardPage() {
         </div>
       )}
 
-      {machinesQuery.isError && (
+      {machinesQuery.isError && !machines && (
         <ErrorState
           message={(machinesQuery.error as Error)?.message ?? "Erro desconhecido."}
           onRetry={() => machinesQuery.refetch()}
         />
       )}
 
-      {machinesQuery.isSuccess && machinesQuery.data.length === 0 && (
+      {machines && machines.length === 0 && (
         <EmptyState
-          title="Nenhuma maquina encontrada"
-          description="Ajuste os filtros de operacao para ver os cards de maquinas."
+          title="Nenhuma máquina encontrada"
+          description="Ajuste os filtros de operação para ver os cards de máquinas."
         />
       )}
 
-      {machinesQuery.isSuccess && machinesQuery.data.length > 0 && (
+      {machines && machines.length > 0 && (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {machinesQuery.data.map((machine) => (
+          {machines.map((machine) => (
             <MachineCard
               key={machine.id}
               machine={machine}
               sectorName={sectorNameById.get(machine.sectorId)}
               sectors={sectorsQuery.data ?? []}
+              updatedAt={machinesQuery.dataUpdatedAt}
             />
           ))}
         </div>

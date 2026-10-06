@@ -69,7 +69,7 @@ export function WorkOrderQuickEditDialog({ order, onOpenChange, onSubmit, isSubm
     >
       <form id="work-order-quick-edit-form" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
         <div>
-          <FieldLabel required className="text-[10px] tracking-widest pl-1">
+          <FieldLabel required className="text-[11px] tracking-widest pl-1">
             Status
           </FieldLabel>
           <Controller
@@ -89,7 +89,7 @@ export function WorkOrderQuickEditDialog({ order, onOpenChange, onSubmit, isSubm
         </div>
 
         <div>
-          <FieldLabel required className="text-[10px] tracking-widest pl-1">
+          <FieldLabel required className="text-[11px] tracking-widest pl-1">
             Serviço
           </FieldLabel>
           <textarea
@@ -101,7 +101,7 @@ export function WorkOrderQuickEditDialog({ order, onOpenChange, onSubmit, isSubm
         </div>
 
         <div>
-          <FieldLabel required className="text-[10px] tracking-widest pl-1">
+          <FieldLabel required className="text-[11px] tracking-widest pl-1">
             Executor
           </FieldLabel>
           <Input error={errors.executorName?.message} className="h-auto rounded-xl px-4 py-3 text-sm" {...register("executorName")} />

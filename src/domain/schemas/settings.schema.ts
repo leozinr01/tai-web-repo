@@ -5,7 +5,7 @@ export const companyProfileSchema = z.object({
   name: z.string().min(2, "Informe o nome da empresa."),
   logoUrl: z
     .string()
-    .url("Informe uma URL valida.")
+    .url("Informe uma URL válida.")
     .optional()
     .or(z.literal("")),
 });
@@ -16,7 +16,7 @@ export const ACCEPTED_LOGO_TYPES = ["image/png", "image/jpeg", "image/svg+xml"];
 
 export const userAccessSchema = z.object({
   name: z.string().min(2, "Informe o nome."),
-  email: z.string().email("Informe um e-mail valido."),
+  email: z.string().email("Informe um e-mail válido."),
   role: z.nativeEnum(UserRole, {
     errorMap: () => ({ message: "Selecione um perfil." }),
   }),

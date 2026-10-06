@@ -16,10 +16,10 @@ import type {
   MachineVariableType,
 } from "@/domain/entities/machine";
 
-const optionalNumber = z.coerce.number().min(0, "Informe um valor valido.").optional();
+const optionalNumber = z.coerce.number().min(0, "Informe um valor válido.").optional();
 
 const machineFormSchema = z.object({
-  name: z.string().min(2, "Informe o nome da maquina."),
+  name: z.string().min(2, "Informe o nome da máquina."),
   sectorId: z.string().min(1, "Selecione um setor."),
   shiftHours: optionalNumber,
   dailyProductionHours: optionalNumber,
@@ -179,7 +179,7 @@ export function MachineFormDialog({
             )}
           />
           <FieldError message={errors.sectorId?.message} />
-          <p className="mt-1.5 text-[10px] italic text-muted">
+          <p className="mt-1.5 text-xs italic text-muted">
             A máquina deve ser vinculada a um setor existente para esta empresa.
           </p>
         </div>
@@ -289,14 +289,14 @@ export function MachineFormDialog({
             <button
               type="button"
               onClick={addVariable}
-              className="rounded-full bg-brand/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-brand-light hover:bg-brand/20"
+              className="rounded-full bg-brand/10 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-brand-light hover:bg-brand/20"
             >
               Adicionar
             </button>
           </div>
 
           {customVariables.length === 0 ? (
-            <p className="mt-2 text-[10px] italic text-muted">Nenhuma variável adicional cadastrada.</p>
+            <p className="mt-2 text-xs italic text-muted">Nenhuma variável adicional cadastrada.</p>
           ) : (
             <div className="mt-2 space-y-2">
               {customVariables.map((v) => (
@@ -354,7 +354,7 @@ export function MachineFormDialog({
                     <button
                       type="button"
                       onClick={() => removeVariable(v.id)}
-                      className="h-9 shrink-0 rounded-lg border border-danger/40 bg-danger/10 px-2.5 text-[10px] font-black uppercase tracking-wide text-danger-light hover:bg-danger/20"
+                      className="h-9 shrink-0 rounded-lg border border-danger/40 bg-danger/10 px-2.5 text-[11px] font-black uppercase tracking-wide text-danger-light hover:bg-danger/20"
                     >
                       Remover
                     </button>
@@ -364,7 +364,7 @@ export function MachineFormDialog({
                       type="button"
                       onClick={() => updateVariable(v.id, { visible: !v.visible })}
                       className={cn(
-                        "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide",
+                        "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-black uppercase tracking-wide",
                         v.visible
                           ? "border-success/40 bg-success/10 text-success-light hover:bg-success/20"
                           : "border-white/10 bg-white/5 text-muted hover:bg-white/10",
@@ -379,7 +379,7 @@ export function MachineFormDialog({
             </div>
           )}
 
-          <p className="mt-2 text-[10px] italic text-muted">
+          <p className="mt-2 text-xs italic text-muted">
             {initial
               ? "Essas variáveis ficam vinculadas a esta máquina e também aparecem como opções nos cards do dashboard."
               : "Configure variáveis do tipo INT, FLOAT ou BOOL já no cadastro da máquina."}

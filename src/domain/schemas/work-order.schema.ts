@@ -3,13 +3,13 @@ import { WorkOrderPeriodicity, WorkOrderStatus } from "@/domain/types/enums";
 
 export const workOrderSchema = z.object({
   sectorId: z.string().min(1, "Selecione o setor."),
-  machineId: z.string().min(1, "Selecione a maquina."),
+  machineId: z.string().min(1, "Selecione a máquina."),
   executorId: z.string().min(1, "Selecione o executor."),
   description: z
     .string()
-    .min(3, "Descreva o servico com ao menos 3 caracteres.")
+    .min(3, "Descreva o serviço com ao menos 3 caracteres.")
     .max(500, "Limite de 500 caracteres."),
-  date: z.string().min(1, "Informe a proxima execucao."),
+  date: z.string().min(1, "Informe a próxima execução."),
   periodicity: z.nativeEnum(WorkOrderPeriodicity, {
     errorMap: () => ({ message: "Selecione a periodicidade." }),
   }),
@@ -24,7 +24,7 @@ export const workOrderQuickEditSchema = z.object({
   executorName: z.string().min(2, "Informe o nome do executor."),
   description: z
     .string()
-    .min(3, "Descreva o servico com ao menos 3 caracteres.")
+    .min(3, "Descreva o serviço com ao menos 3 caracteres.")
     .max(500, "Limite de 500 caracteres."),
 });
 

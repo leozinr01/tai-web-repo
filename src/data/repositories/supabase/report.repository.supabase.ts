@@ -37,7 +37,16 @@ function findVariableUnit(variables: Record<string, unknown> | null | undefined,
   return "";
 }
 
+function formatVariableValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "-";
+  if (typeof value === "boolean") return value ? "Sim" : "Não";
+  if (typeof value === "number") return Number.isInteger(value) ? String(value) : value.toFixed(2);
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
 function toReportRow(row: RelatorioRow): ReportRow {
+  const variables = Object.entries(row.variables ?? {});
   const time = (row.hora ?? "00:00").padStart(5, "0");
   // `hora` vem do equipamento como texto; se vier fora do padrao usa created_at (toISOString lancaria erro).
   const local = row.date ? new Date(`${row.date}T${time}:00`) : null;
@@ -58,7 +67,8 @@ function toReportRow(row: RelatorioRow): ReportRow {
     temperatureMax: findVariableValue(row.variables, ["temperatura"]),
     production: findVariableValue(row.variables, ["produção", "producao", "produc"]),
     productionUnit: findVariableUnit(row.variables, ["produção", "producao", "produc"]),
-    additionalVariablesCount: row.variables ? Object.keys(row.variables).length : 0,
+    additionalVariablesCount: variables.length,
+    additionalVariables: variables.map(([label, value]) => ({ label, value: formatVariableValue(value) })),
   };
 }
 

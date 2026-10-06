@@ -9,6 +9,9 @@ import { FilterField } from "@/components/ui/filter-field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
+import { Pagination } from "@/components/ui/pagination";
+import { useClientPagination } from "@/hooks/use-client-pagination";
+import { useUrlFilters } from "@/hooks/use-url-filters";
 import { useAuth } from "@/features/auth/use-auth";
 import { canWriteRecords } from "@/domain/permissions";
 import { useSectors, useMachines } from "@/features/dashboard/queries";
@@ -24,8 +27,12 @@ import { WorkOrderStatus } from "@/domain/types/enums";
 import { workOrderStatusLabels } from "@/lib/labels";
 import { repositories } from "@/data/repositories";
 import { useQuery } from "@tanstack/react-query";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 const statusOptions = Object.entries(workOrderStatusLabels).map(([value, label]) => ({ value, label }));
+
+const PAGE_SIZE = 20;
+const FILTER_KEYS = ["de", "ate", "status", "setor", "maquina"] as const;
 
 const statusBorder: Record<WorkOrderStatus, string> = {
   [WorkOrderStatus.LANCADA]: "border-l-brand",
@@ -35,15 +42,19 @@ const statusBorder: Record<WorkOrderStatus, string> = {
 };
 
 export function WorkOrdersPage() {
+  usePageTitle("Ordem de Serviço");
   const { user } = useAuth();
   const companyId = user?.companyId ?? "";
   const canWrite = canWriteRecords(user?.role);
 
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [status, setStatus] = useState("");
-  const [sectorId, setSectorId] = useState("");
-  const [machineId, setMachineId] = useState("");
+  const { values: urlFilters, setFilter, clearFilters: clearUrlFilters } = useUrlFilters(FILTER_KEYS);
+  const { de: dateFrom, ate: dateTo, status, setor: sectorId, maquina: machineId } = urlFilters;
+  const setDateFrom = (value: string) => setFilter("de", value);
+  const setDateTo = (value: string) => setFilter("ate", value);
+  const setStatus = (value: string) => setFilter("status", value);
+  const setSectorId = (value: string) => setFilter("setor", value);
+  const setMachineId = (value: string) => setFilter("maquina", value);
+  // A busca fica fora da URL: e digitada tecla a tecla e nao deve navegar a cada caractere.
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
   const dateFromRef = useRef<HTMLInputElement>(null);
@@ -69,6 +80,8 @@ export function WorkOrdersPage() {
     search: debouncedSearch || undefined,
   };
   const ordersQuery = useWorkOrders(companyId, filters);
+  // A consulta traz a lista filtrada inteira; a tela mostra uma pagina por vez.
+  const { page, pageItems, setPage } = useClientPagination(ordersQuery.data ?? [], PAGE_SIZE, JSON.stringify(filters));
 
   const createMutation = useCreateWorkOrder();
   const updateMutation = useUpdateWorkOrder();
@@ -87,11 +100,7 @@ export function WorkOrdersPage() {
   }, [sectorsQuery.data]);
 
   const clearFilters = () => {
-    setDateFrom("");
-    setDateTo("");
-    setStatus("");
-    setSectorId("");
-    setMachineId("");
+    clearUrlFilters();
     setSearch("");
   };
 
@@ -133,12 +142,12 @@ export function WorkOrdersPage() {
 
       <Card className="p-4">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
-          <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white">
+          <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-white">
             <Filter className="h-4 w-4 text-brand-light" /> Filtrar ordens de serviço
           </p>
           <button
             onClick={clearFilters}
-            className="text-[10px] font-bold uppercase tracking-widest text-muted transition-colors hover:text-white"
+            className="text-[11px] font-bold uppercase tracking-widest text-muted transition-colors hover:text-white"
           >
             Limpar todos
           </button>
@@ -151,6 +160,7 @@ export function WorkOrdersPage() {
               leftIcon={<Calendar className="h-4 w-4" />}
               onIconClick={() => dateFromRef.current?.showPicker?.()}
               value={dateFrom}
+              max={dateTo || undefined}
               onChange={(e) => setDateFrom(e.target.value)}
               className="h-11 border-white/20 bg-white/10 text-sm font-bold"
             />
@@ -162,6 +172,7 @@ export function WorkOrdersPage() {
               leftIcon={<Calendar className="h-4 w-4" />}
               onIconClick={() => dateToRef.current?.showPicker?.()}
               value={dateTo}
+              min={dateFrom || undefined}
               onChange={(e) => setDateTo(e.target.value)}
               className="h-11 border-white/20 bg-white/10 text-sm font-bold"
             />
@@ -248,7 +259,7 @@ export function WorkOrdersPage() {
 
       {ordersQuery.isSuccess && ordersQuery.data.length > 0 && (
         <div className="grid gap-6">
-          {ordersQuery.data.map((order) => (
+          {pageItems.map((order) => (
             <div
               key={order.id}
               className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/10 border-l-4 ${statusBorder[order.status]}`}
@@ -269,7 +280,7 @@ export function WorkOrdersPage() {
                 <div className="min-w-0 flex flex-col gap-1">
                   <p className="label-caps">Executor</p>
                   <div className="flex items-center gap-2">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-[8px] font-bold text-white">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-[11px] font-bold text-white">
                       {order.executorName.slice(0, 2).toUpperCase()}
                     </div>
                     <span className="truncate text-sm font-bold text-white">{order.executorName}</span>
@@ -294,6 +305,7 @@ export function WorkOrdersPage() {
               </div>
             </div>
           ))}
+          <Pagination page={page} pageSize={PAGE_SIZE} total={ordersQuery.data.length} onPageChange={setPage} />
         </div>
       )}
 

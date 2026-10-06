@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import { ShieldAlert } from "lucide-react";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export function ForbiddenPage() {
+  usePageTitle("Acesso negado");
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-navy-950 bg-tai px-4 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-danger/15 text-danger">
@@ -13,8 +15,8 @@ export function ForbiddenPage() {
           Acesso negado
         </p>
         <p className="mt-1 max-w-sm text-sm text-muted">
-          Voce nao tem permissao para acessar esta area da plataforma. Fale com um administrador
-          se acredita que isso e um engano.
+          Você não tem permissão para acessar esta área da plataforma. Fale com um administrador
+          se acredita que isso é um engano.
         </p>
       </div>
       <Link

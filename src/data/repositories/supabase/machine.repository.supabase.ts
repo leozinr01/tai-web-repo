@@ -433,7 +433,7 @@ async function registerMachineLoss(
   minutesToAdd: number,
 ): Promise<void> {
   const column = LOSS_COLUMN_BY_METRIC_CATEGORY[metric]?.[categoryKey];
-  if (!column) throw new Error("Categoria de perda invalida.");
+  if (!column) throw new Error("Categoria de perda inválida.");
 
   const { data, error } = await supabase
     .from("Maquinas")
@@ -443,7 +443,7 @@ async function registerMachineLoss(
     .eq("id", machineId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!data) throw new Error("Maquina nao encontrada.");
+  if (!data) throw new Error("Máquina não encontrada.");
   const current = data as unknown as MaquinaRow;
 
   const updatedMinutes = hhmmToMinutes(current[column] as string | null) + Math.max(0, Math.round(minutesToAdd));
@@ -561,7 +561,7 @@ export class SupabaseMachineRepository implements MachineRepository {
       .eq("id", numericId)
       .maybeSingle();
     if (fetchError) throw new Error(fetchError.message);
-    if (!currentRow) throw new Error("Maquina nao encontrada.");
+    if (!currentRow) throw new Error("Máquina não encontrada.");
 
     const patch: Record<string, unknown> = {};
     if (data.name !== undefined) patch.maquina = data.name;
@@ -588,7 +588,7 @@ export class SupabaseMachineRepository implements MachineRepository {
     }
 
     const updated = await this.getById(id);
-    if (!updated) throw new Error("Maquina nao encontrada.");
+    if (!updated) throw new Error("Máquina não encontrada.");
     return updated;
   }
 
@@ -604,7 +604,7 @@ export class SupabaseMachineRepository implements MachineRepository {
     const numericId = Number(machineId);
     await registerMachineLoss(numericId, metric, categoryKey, minutes);
     const updated = await this.getById(machineId);
-    if (!updated) throw new Error("Maquina nao encontrada.");
+    if (!updated) throw new Error("Máquina não encontrada.");
     return updated;
   }
 }

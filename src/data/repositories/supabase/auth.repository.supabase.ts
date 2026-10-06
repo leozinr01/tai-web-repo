@@ -16,7 +16,7 @@ interface UserRow {
 }
 
 function toDomainUser(row: UserRow): User {
-  const name = row.nomeUser || row.email || "Usuario";
+  const name = row.nomeUser || row.email || "Usuário";
   return {
     id: row.idRef,
     companyId: row.idEmpresa ?? "",
@@ -44,17 +44,17 @@ export class SupabaseAuthRepository implements AuthRepository {
   async login(email: string, password: string): Promise<AuthSession> {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.session || !data.user) {
-      throw new Error("Credenciais invalidas. Verifique o e-mail e a senha.");
+      throw new Error("Credenciais inválidas. Verifique o e-mail e a senha.");
     }
 
     const profile = await loadProfile(data.user.id);
     if (!profile) {
       await supabase.auth.signOut();
-      throw new Error("Usuario autenticado, mas sem cadastro vinculado. Contate um administrador.");
+      throw new Error("Usuário autenticado, mas sem cadastro vinculado. Contate um administrador.");
     }
     if (profile.status === UserStatus.INACTIVE) {
       await supabase.auth.signOut();
-      throw new Error("Este usuario esta desativado. Contate um administrador.");
+      throw new Error("Este usuário está desativado. Contate um administrador.");
     }
 
     return {
