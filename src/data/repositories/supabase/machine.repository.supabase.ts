@@ -315,7 +315,7 @@ function toMachine(row: MaquinaRow, extras: Extras): Machine {
       vibrationMm: row.Vibração ?? 0,
       temperatureC: row.Temperatura ?? 0,
       speed: row.VelocidadeAtual ?? 0,
-      speedUnit: "un/min",
+      speedUnit: "m/s",
       productionAmount: row.ProdAtual ?? 0,
       productionUnit: row.unidProducao ?? row.OEE_Config_Unid_Med ?? "un",
     },
