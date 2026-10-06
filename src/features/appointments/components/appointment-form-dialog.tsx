@@ -57,7 +57,7 @@ const areaOptions = Object.entries(appointmentAreaLabels).map(([value, label]) =
 // Comeca vazio para obrigar a escolha do pilar (o schema rejeita "").
 const EMPTY_AREA = "" as AppointmentArea;
 
-const fieldLabelCls = "text-[10px] tracking-widest pl-1";
+const fieldLabelCls = "text-[11px] tracking-widest pl-1";
 const selectFieldCls = "h-auto rounded-lg px-3 py-2 text-sm font-bold";
 const inputFieldCls = "h-auto rounded-lg px-3 py-2 text-sm";
 

@@ -65,8 +65,8 @@ export function MachineCardSettingsDialog({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
-      title={`Variaveis do card - ${machine.name}`}
-      description="Configure as variaveis exibidas na area superior e nos 2 cards inferiores do dashboard."
+      title={`Variáveis do card - ${machine.name}`}
+      description="Configure as variáveis exibidas na área superior e nos 2 cards inferiores do dashboard."
       size="lg"
       footer={
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -87,7 +87,7 @@ export function MachineCardSettingsDialog({
     >
       <div className="space-y-5">
         <div className="space-y-3 rounded-xl border border-panel-border bg-white/5 px-4 py-4">
-          <p className="label-caps">Bloco esquerdo (OEE / mini grafico)</p>
+          <p className="label-caps">Bloco esquerdo (OEE / mini gráfico)</p>
           <label className="flex items-center gap-2 text-sm text-slate-200">
             <input
               type="checkbox"
@@ -99,7 +99,7 @@ export function MachineCardSettingsDialog({
           </label>
           {!settings.showOeeCircle && (
             <div className="space-y-2">
-              <label className="label-caps block">Variavel do grafico</label>
+              <label className="label-caps block">Variável do gráfico</label>
               <SearchableSelect
                 options={options}
                 value={settings.graphVariableKey ?? settings.topVariableKeys[0]}
@@ -111,12 +111,12 @@ export function MachineCardSettingsDialog({
 
         <div className="space-y-3">
           <div className="rounded-xl border border-panel-border bg-white/5 px-4 py-3">
-            <p className="label-caps">Area superior do card (3 variaveis)</p>
+            <p className="label-caps">Área superior do card (3 variáveis)</p>
           </div>
           <div className="space-y-3">
             {[0, 1, 2].map((i) => (
               <div key={i} className="space-y-2">
-                <label className="label-caps block">Variavel {i + 1}</label>
+                <label className="label-caps block">Variável {i + 1}</label>
                 <div className="flex items-center gap-2">
                   <SearchableSelect
                     options={disableTakenOptions(options, settings.topVariableKeys, i)}
@@ -140,8 +140,8 @@ export function MachineCardSettingsDialog({
 
         <div className="space-y-3">
           <div className="space-y-1 rounded-xl border border-panel-border bg-white/5 px-4 py-3">
-            <p className="label-caps">Cards inferiores (2 variaveis)</p>
-            <p className="text-xs text-muted">A barra de progresso so aparece para Velocidade Atual e Producao Atual.</p>
+            <p className="label-caps">Cards inferiores (2 variáveis)</p>
+            <p className="text-xs text-muted">A barra de progresso só aparece para Velocidade Atual e Produção Atual.</p>
           </div>
           <div className="space-y-3">
             {[0, 1].map((i) => (

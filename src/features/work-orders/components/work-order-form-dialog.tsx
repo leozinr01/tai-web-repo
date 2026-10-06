@@ -96,7 +96,7 @@ export function WorkOrderFormDialog({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Nova ordem de servico"
+      title="Nova ordem de serviço"
       description="Preencha os campos para registrar a operação"
       size="lg"
       titleClassName="uppercase tracking-tight"
@@ -127,7 +127,7 @@ export function WorkOrderFormDialog({
       <form id="work-order-form" onSubmit={handleSubmit(handleFormSubmit)} noValidate className="space-y-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <FieldLabel required className="text-[10px] tracking-widest pl-1">
+            <FieldLabel required className="text-[11px] tracking-widest pl-1">
               Setor
             </FieldLabel>
             <Controller
@@ -150,7 +150,7 @@ export function WorkOrderFormDialog({
             <FieldError message={errors.sectorId?.message} />
           </div>
           <div>
-            <FieldLabel required className="text-[10px] tracking-widest pl-1">
+            <FieldLabel required className="text-[11px] tracking-widest pl-1">
               Máquina
             </FieldLabel>
             <Controller
@@ -173,7 +173,7 @@ export function WorkOrderFormDialog({
         </div>
 
         <div>
-          <FieldLabel required className="text-[10px] tracking-widest pl-1">
+          <FieldLabel required className="text-[11px] tracking-widest pl-1">
             Executor responsável
           </FieldLabel>
           <div className="flex items-start gap-2">
@@ -210,7 +210,7 @@ export function WorkOrderFormDialog({
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <FieldLabel required className="text-[10px] tracking-widest pl-1">
+            <FieldLabel required className="text-[11px] tracking-widest pl-1">
               Periodicidade
             </FieldLabel>
             <Controller
@@ -230,7 +230,7 @@ export function WorkOrderFormDialog({
             <FieldError message={errors.periodicity?.message} />
           </div>
           <div>
-            <FieldLabel required className="text-[10px] tracking-widest pl-1">
+            <FieldLabel required className="text-[11px] tracking-widest pl-1">
               Próxima execução
             </FieldLabel>
             <Input type="date" error={errors.date?.message} className="h-auto rounded-lg px-4 py-2.5 text-sm" {...register("date")} />
@@ -239,7 +239,7 @@ export function WorkOrderFormDialog({
         </div>
 
         <div>
-          <FieldLabel required className="text-[10px] tracking-widest pl-1">
+          <FieldLabel required className="text-[11px] tracking-widest pl-1">
             Descrição do serviço
           </FieldLabel>
           <textarea

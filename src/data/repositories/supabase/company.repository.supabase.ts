@@ -106,7 +106,7 @@ export class SupabaseCompanyRepository implements CompanyRepository {
       if (error) throw new Error(error.message);
     }
     const current = await this.getById(id);
-    if (!current) throw new Error("Empresa nao encontrada.");
+    if (!current) throw new Error("Empresa não encontrada.");
     return { ...current, ...data };
   }
 
@@ -114,7 +114,7 @@ export class SupabaseCompanyRepository implements CompanyRepository {
     const { error } = await supabase.from("Empresas").delete().eq("idEmpresa", id);
     if (error) {
       throw new Error(
-        "Nao foi possivel excluir a empresa. Verifique se ainda existem setores, maquinas ou usuarios vinculados.",
+        "Não foi possível excluir a empresa. Verifique se ainda existem setores, máquinas ou usuários vinculados.",
       );
     }
   }

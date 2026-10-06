@@ -23,7 +23,7 @@ export function WorkOrderStatusBadge({ status }: { status: WorkOrder["status"] }
   const Icon = statusIcon[status];
   return (
     <span
-      className={`flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${statusColor[status]}`}
+      className={`flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${statusColor[status]}`}
     >
       <Icon className="h-3 w-3" />
       {workOrderStatusLabels[status]}

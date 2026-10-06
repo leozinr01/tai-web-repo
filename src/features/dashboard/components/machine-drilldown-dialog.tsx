@@ -203,7 +203,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
                     <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-center sm:gap-8 sm:text-left">
                       <ProgressRing percent={machine.oeePercent} color="#21c1b3" size={160} strokeWidth={14} textClassName="text-2xl sm:text-4xl" />
                       <div className="flex flex-col items-center gap-1 sm:items-start">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Indicador OEE</span>
+                        <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/50">Indicador OEE</span>
                         <p className="text-lg font-bold text-white">{machine.name}</p>
                       </div>
                     </div>
@@ -218,7 +218,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
                       className="relative flex flex-col items-center rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-xl shadow-black/5 backdrop-blur-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                     >
                       <div className="w-full text-left">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">{metricLabels[metric]}</span>
+                        <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/80">{metricLabels[metric]}</span>
                       </div>
                       <div className="py-4">
                         <ProgressRing
@@ -237,7 +237,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
                   <button
                     type="button"
                     onClick={() => handleClose(false)}
-                    className="text-[10px] font-black uppercase tracking-widest text-white/30 transition-colors hover:text-white/60"
+                    className="text-[11px] font-black uppercase tracking-widest text-white/30 transition-colors hover:text-white/60"
                   >
                     Clique fora para fechar
                   </button>
@@ -319,21 +319,22 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
                     <>
                       <div className="flex w-full items-end gap-3">
                         <div className="group relative flex-1">
-                          <label className="absolute -top-2 left-3 z-10 bg-navy-950 px-1 text-[10px] uppercase tracking-wider text-muted">
-                            Data inicio
+                          <label className="absolute -top-2 left-3 z-10 bg-navy-950 px-1 text-[11px] uppercase tracking-wider text-muted">
+                            Data início
                           </label>
                           <div className="flex items-center gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-bold text-white transition-all group-focus-within:border-brand group-focus-within:ring-1 group-focus-within:ring-brand">
                             <Calendar className="h-4 w-4 shrink-0 text-muted" />
                             <input
                               type="date"
                               value={dateFrom}
+                              max={dateTo || undefined}
                               onChange={(e) => setDateFrom(e.target.value)}
                               className="w-full bg-transparent text-sm font-bold text-white focus:outline-none [color-scheme:dark]"
                             />
                           </div>
                         </div>
                         <div className="group relative flex-1">
-                          <label className="absolute -top-2 left-3 z-10 bg-navy-950 px-1 text-[10px] uppercase tracking-wider text-muted">
+                          <label className="absolute -top-2 left-3 z-10 bg-navy-950 px-1 text-[11px] uppercase tracking-wider text-muted">
                             Data fim
                           </label>
                           <div className="flex items-center gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-bold text-white transition-all group-focus-within:border-brand group-focus-within:ring-1 group-focus-within:ring-brand">
@@ -341,6 +342,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
                             <input
                               type="date"
                               value={dateTo}
+                              min={dateFrom || undefined}
                               onChange={(e) => setDateTo(e.target.value)}
                               className="w-full bg-transparent text-sm font-bold text-white focus:outline-none [color-scheme:dark]"
                             />

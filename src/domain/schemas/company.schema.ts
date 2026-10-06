@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const companySchema = z.object({
   name: z.string().min(2, "Informe o nome da empresa."),
-  email: z.string().email("Informe um e-mail valido."),
+  email: z.string().email("Informe um e-mail válido."),
   phone: z.string().optional(),
   state: z.string().optional(),
   city: z.string().optional(),

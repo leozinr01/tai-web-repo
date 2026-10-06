@@ -4,7 +4,7 @@ import type { MachineFilters } from "@/data/contracts/machine.repository";
 import type { Machine, MachineCardSettings, MachineLossMetric } from "@/domain/entities/machine";
 
 // Intervalo de atualizacao automatica do dashboard (dados das maquinas mudam em tempo real).
-export const DASHBOARD_REFRESH_MS = 10_000;
+export const DASHBOARD_REFRESH_MS = 5_000;
 
 export function useDashboardIndicators(companyId: string) {
   return useQuery({

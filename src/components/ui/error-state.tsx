@@ -9,7 +9,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
       </div>
       <div>
         <p className="font-display text-base font-bold text-white">
-          Nao foi possivel carregar os dados
+          Não foi possível carregar os dados
         </p>
         <p className="mt-1 max-w-sm text-sm text-muted">{message}</p>
       </div>

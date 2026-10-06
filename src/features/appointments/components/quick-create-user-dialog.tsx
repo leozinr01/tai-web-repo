@@ -90,14 +90,14 @@ export function QuickCreateUserDialog({
     >
       <form id="quick-create-user-form" onSubmit={handleSubmit(handleFormSubmit)} noValidate className="space-y-4">
         <div>
-          <FieldLabel required className="text-[10px] tracking-widest pl-1">
+          <FieldLabel required className="text-[11px] tracking-widest pl-1">
             Nome do usuário
           </FieldLabel>
           <Input placeholder="Nome Completo" error={errors.name?.message} className="h-auto rounded-xl px-4 py-3 text-sm" {...register("name")} />
           <FieldError message={errors.name?.message} />
         </div>
         <div>
-          <FieldLabel required className="text-[10px] tracking-widest pl-1">
+          <FieldLabel required className="text-[11px] tracking-widest pl-1">
             E-mail
           </FieldLabel>
           <Input
@@ -110,7 +110,7 @@ export function QuickCreateUserDialog({
           <FieldError message={errors.email?.message} />
         </div>
         <div>
-          <FieldLabel required className="text-[10px] tracking-widest pl-1">
+          <FieldLabel required className="text-[11px] tracking-widest pl-1">
             Senha inicial
           </FieldLabel>
           <Input
@@ -122,7 +122,7 @@ export function QuickCreateUserDialog({
           <FieldError message={errors.password?.message} />
         </div>
         <div>
-          <FieldLabel required className="text-[10px] tracking-widest pl-1">
+          <FieldLabel required className="text-[11px] tracking-widest pl-1">
             Tipo de usuário (nível)
           </FieldLabel>
           <Controller

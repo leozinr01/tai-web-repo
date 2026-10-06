@@ -18,8 +18,10 @@ import { CompanyInfrastructureDialog } from "@/features/companies/components/com
 import type { CompanyFormValues } from "@/domain/schemas/company.schema";
 import type { Company } from "@/domain/entities/company";
 import { CompanyStatus } from "@/domain/types/enums";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export function CompaniesPage() {
+  usePageTitle("Painel Master");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
 
@@ -55,7 +57,7 @@ export function CompaniesPage() {
       }
       formDialog.close();
     } catch (err) {
-      toast({ title: "Nao foi possivel salvar a empresa.", description: err instanceof Error ? err.message : undefined, variant: "error" });
+      toast({ title: "Não foi possível salvar a empresa.", description: err instanceof Error ? err.message : undefined, variant: "error" });
     }
   };
 
@@ -63,10 +65,10 @@ export function CompaniesPage() {
     if (!toDelete) return;
     try {
       await deleteMutation.mutateAsync(toDelete.id);
-      toast({ title: "Empresa excluida.", variant: "success" });
+      toast({ title: "Empresa excluída.", variant: "success" });
       deleteDialog.close();
     } catch (err) {
-      toast({ title: "Nao foi possivel excluir a empresa.", description: err instanceof Error ? err.message : undefined, variant: "error" });
+      toast({ title: "Não foi possível excluir a empresa.", description: err instanceof Error ? err.message : undefined, variant: "error" });
     }
   };
 
@@ -82,7 +84,7 @@ export function CompaniesPage() {
       <Card className="overflow-hidden">
         <div className="flex items-center gap-2 border-b border-white/5 p-4">
           <Filter className="h-4 w-4 text-brand-light" />
-          <p className="text-[10px] font-bold uppercase tracking-widest text-white">Filtrar empresas</p>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-white">Filtrar empresas</p>
         </div>
         <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-4">
           <div className="lg:col-span-3">
@@ -105,7 +107,7 @@ export function CompaniesPage() {
       <Card className="overflow-hidden">
         <div className="flex items-center gap-2 border-b border-white/5 p-4">
           <Building2 className="h-4 w-4 text-brand-light" />
-          <p className="text-[10px] font-bold uppercase tracking-widest text-white">Empresas cadastradas</p>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-white">Empresas cadastradas</p>
         </div>
 
         {companiesQuery.isLoading && (
@@ -140,7 +142,7 @@ export function CompaniesPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
-                <tr className="border-b border-panel-border text-left text-[10px] font-bold uppercase tracking-widest text-muted">
+                <tr className="border-b border-panel-border text-left text-[11px] font-bold uppercase tracking-widest text-muted">
                   <th className="px-4 py-3">Empresa</th>
                   <th className="px-4 py-3 text-center">Setores</th>
                   <th className="px-4 py-3 text-center">Máquinas</th>
@@ -172,7 +174,7 @@ export function CompaniesPage() {
                       <div className="flex justify-end gap-1.5">
                         <button
                           onClick={() => setManaging(company)}
-                          className="flex items-center gap-2 rounded-lg bg-brand/10 px-3 py-1.5 text-[10px] font-bold text-brand-light transition-all hover:bg-brand hover:text-white"
+                          className="flex items-center gap-2 rounded-lg bg-brand/10 px-3 py-1.5 text-xs font-bold text-brand-light transition-all hover:bg-brand hover:text-white"
                         >
                           <Settings className="h-3.5 w-3.5" /> GERENCIAR
                         </button>
@@ -200,7 +202,7 @@ export function CompaniesPage() {
         )}
       </Card>
 
-      <p className="text-center text-[10px] font-bold uppercase tracking-widest text-muted">
+      <p className="text-center text-[11px] font-bold uppercase tracking-widest text-muted">
         Criado por <span className="text-brand-light">Tai Project</span>
       </p>
 
@@ -218,7 +220,7 @@ export function CompaniesPage() {
         open={deleteDialog.isOpen}
         onOpenChange={deleteDialog.close}
         title="Excluir empresa"
-        description={`Tem certeza que deseja excluir a empresa "${toDelete?.name}"? Esta acao nao pode ser desfeita.`}
+        description={`Tem certeza que deseja excluir a empresa "${toDelete?.name}"? Esta ação não pode ser desfeita.`}
         onConfirm={handleDelete}
         isLoading={deleteMutation.isPending}
         confirmLabel="Excluir"

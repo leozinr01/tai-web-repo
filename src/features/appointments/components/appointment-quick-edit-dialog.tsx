@@ -85,14 +85,14 @@ export function AppointmentQuickEditDialog({
     >
       <form id="appointment-quick-edit-form" onSubmit={handleSubmit(handleFormSubmit)} noValidate className="space-y-4">
         <div>
-          <FieldLabel required className="text-[10px] tracking-widest pl-1">
+          <FieldLabel required className="text-[11px] tracking-widest pl-1">
             Duração (tempo)
           </FieldLabel>
           <Input error={errors.duration?.message} className="h-auto rounded-xl px-4 py-3 text-sm" {...register("duration")} />
           <FieldError message={errors.duration?.message} />
         </div>
         <div>
-          <FieldLabel required className="text-[10px] tracking-widest pl-1">
+          <FieldLabel required className="text-[11px] tracking-widest pl-1">
             Descrição
           </FieldLabel>
           <textarea

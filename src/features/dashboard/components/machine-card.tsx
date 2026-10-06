@@ -23,6 +23,7 @@ import { useDisclosure } from "@/hooks/use-disclosure";
 import { machineStatusLabels } from "@/lib/labels";
 import { MachineStatus } from "@/domain/types/enums";
 import { resolveVariableDisplay } from "@/features/dashboard/machine-variables";
+import { useLiveHistory } from "@/features/dashboard/live-history";
 import { useUpdateMachine } from "@/features/dashboard/queries";
 import { useAuth } from "@/features/auth/use-auth";
 import { canManageCompany } from "@/domain/permissions";
@@ -64,17 +65,6 @@ function bottomBarPercent(machine: Machine, key: MachineVariableKey): number {
   if (key === "speed") return Math.max(0, Math.min((machine.variables.speed / MAX_SPEED) * 100, 100));
   if (key === "production") return Math.max(0, Math.min((machine.variables.productionAmount / MAX_PRODUCTION) * 100, 100));
   return 100;
-}
-
-// Mesma formula do sistema antigo: sem historico, desenha uma onda decorativa em torno do valor atual,
-// com formato fixo por maquina/variavel (a semente e a soma dos codigos dos caracteres).
-function decorativeWave(value: number, seed: string): number[] {
-  const amplitude = Math.max(Math.abs(value) * 0.08, 1);
-  const offset = [...seed].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
-  return Array.from({ length: 12 }, (_, i) => {
-    const step = i + 1 + offset;
-    return value + (Math.sin(step * 0.67) * 0.6 + Math.cos(step * 0.23) * 0.4) * amplitude;
-  });
 }
 
 // Anima do valor exibido atualmente ate o novo alvo, para que a atualizacao automatica nao reinicie do zero.
@@ -148,10 +138,13 @@ export function MachineCard({
   machine,
   sectorName,
   sectors = [],
+  updatedAt,
 }: {
   machine: Machine;
   sectorName?: string;
   sectors?: Sector[];
+  /** Momento da ultima atualizacao dos dados do dashboard; cada novo valor vira um ponto no grafico ao vivo. */
+  updatedAt: number;
 }) {
   const drilldown = useDisclosure();
   const settingsDialog = useDisclosure();
@@ -163,17 +156,25 @@ export function MachineCard({
   const [complementaresOpen, setComplementaresOpen] = useState(false);
   const graphKey = machine.cardSettings.graphVariableKey ?? machine.cardSettings.topVariableKeys[0];
   const graphVariable = resolveVariableDisplay(machine, graphKey);
-  const currentGraphValue = parseFloat(graphVariable?.value ?? "") || 0;
   const graphUnit = graphVariable?.value.match(NUMERIC_VALUE_PATTERN)?.[2]?.trim() ?? "";
   const formatGraphValue = (value: number) =>
     `${Number.isInteger(value) ? value : value.toFixed(2)}${graphUnit ? ` ${graphUnit}` : ""}`;
   const [hoveredGraphValue, setHoveredGraphValue] = useState<number | null>(null);
-  // Com relatorios que variam, usa o historico real; senao a onda e so visual e o hover mostra o valor atual.
-  const hasGraphHistory =
-    machine.graphHistory.length > 1 && Math.max(...machine.graphHistory) !== Math.min(...machine.graphHistory);
-  const graphHistoryData = (
-    hasGraphHistory ? machine.graphHistory : decorativeWave(currentGraphValue, `${machine.id}-${graphKey}`)
-  ).map((value) => ({ value, shown: hasGraphHistory ? value : currentGraphValue }));
+  // O grafico so desenha leituras reais: o historico dos relatorios quando existe, senao o que foi lido ao vivo.
+  // Sem relatorios gravados, usa as leituras reais acumuladas a cada atualizacao do dashboard.
+  const liveHistory = useLiveHistory(`${machine.id}:${graphKey}`, updatedAt, parseFloat(graphVariable?.value ?? ""));
+  const graphHistory = machine.graphHistory.length > 1 ? machine.graphHistory : liveHistory;
+  // Com uma unica leitura ainda nao ha linha: repete o ponto para mostrar o valor atual como reta.
+  const graphHistoryData = (graphHistory.length === 1 ? [graphHistory[0]!, graphHistory[0]!] : graphHistory).map(
+    (value) => ({ value }),
+  );
+  const hasGraphHistory = graphHistoryData.length > 1;
+  // O eixo acompanha a faixa das leituras (com uma folga), em vez de partir do zero: assim a variacao real
+  // aparece no desenho. Leituras todas iguais ficam como reta no meio do grafico.
+  const graphMin = Math.min(...graphHistory);
+  const graphMax = Math.max(...graphHistory);
+  const graphPadding = graphMax > graphMin ? (graphMax - graphMin) * 0.15 : Math.max(Math.abs(graphMax) * 0.05, 1);
+  const graphDomain: [number, number] = hasGraphHistory ? [graphMin - graphPadding, graphMax + graphPadding] : [0, 1];
 
   const top = machine.cardSettings.topVariableKeys
     .map((key, i) => ({ display: resolveVariableDisplay(machine, key), visible: machine.cardSettings.topVariableVisible[i] }))
@@ -188,23 +189,23 @@ export function MachineCard({
       toast({ title: "Card atualizado com sucesso.", variant: "success" });
       settingsDialog.close();
     } catch (err) {
-      toast({ title: "Nao foi possivel atualizar o card.", description: err instanceof Error ? err.message : undefined, variant: "error" });
+      toast({ title: "Não foi possível atualizar o card.", description: err instanceof Error ? err.message : undefined, variant: "error" });
     }
   };
 
   const handleSaveEdit = async (data: { name: string; sectorId: string; customVariables: MachineCustomVariable[] }) => {
     try {
       await updateMutation.mutateAsync({ id: machine.id, data });
-      toast({ title: "Maquina atualizada com sucesso.", variant: "success" });
+      toast({ title: "Máquina atualizada com sucesso.", variant: "success" });
       editDialog.close();
     } catch (err) {
-      toast({ title: "Nao foi possivel atualizar a maquina.", description: err instanceof Error ? err.message : undefined, variant: "error" });
+      toast({ title: "Não foi possível atualizar a máquina.", description: err instanceof Error ? err.message : undefined, variant: "error" });
     }
   };
 
   return (
     <>
-      <Card className="cursor-pointer p-5 transition-colors duration-300 hover:border-white/20 hover:bg-white/10">
+      <Card className="p-5 transition-colors duration-300 hover:border-white/20 hover:bg-white/10">
         <div className="flex items-start justify-between gap-2">
           <button
             type="button"
@@ -287,12 +288,17 @@ export function MachineCard({
                   {hoveredGraphValue !== null ? formatGraphValue(hoveredGraphValue) : (graphVariable?.value ?? "-")}
                 </p>
               </div>
-              <div className="mt-2 h-24 w-full">
+              <div className="relative mt-2 h-24 w-full">
+                {!hasGraphHistory && (
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-md border border-dashed border-panel-border text-[11px] text-muted">
+                    Sem histórico
+                  </div>
+                )}
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     data={graphHistoryData}
                     onMouseMove={(state) => {
-                      const value = state?.activePayload?.[0]?.payload?.shown;
+                      const value = state?.activePayload?.[0]?.payload?.value;
                       setHoveredGraphValue(typeof value === "number" ? value : null);
                     }}
                     onMouseLeave={() => setHoveredGraphValue(null)}
@@ -303,15 +309,14 @@ export function MachineCard({
                         <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.05} />
                       </linearGradient>
                     </defs>
-                    {/* Valores zerados geram onda abaixo de 0; o eixo desce junto para ela nao ser cortada. */}
-                    <YAxis hide domain={[(min: number) => Math.min(0, min), "auto"]} />
+                    <YAxis hide domain={graphDomain} />
                     <Tooltip
                       cursor={false}
                       isAnimationActive={false}
                       position={{ y: 0 }}
                       wrapperStyle={{ zIndex: 50, outline: "none" }}
                       content={({ active, payload }) => {
-                        const value = payload?.[0]?.payload?.shown;
+                        const value = payload?.[0]?.payload?.value;
                         if (!active || typeof value !== "number") return null;
                         return (
                           <div className="rounded-md border border-panel-border bg-[#0a1a2f] px-2 py-1 text-xs font-semibold text-slate-100 shadow-lg">
@@ -369,7 +374,7 @@ export function MachineCard({
             <button
               type="button"
               onClick={() => setComplementaresOpen((prev) => !prev)}
-              className="inline-flex items-center gap-1 rounded-full border border-brand/30 bg-brand/5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-light hover:bg-brand/10"
+              className="inline-flex items-center gap-1 rounded-full border border-brand/30 bg-brand/5 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brand-light hover:bg-brand/10"
             >
               Complementares ({machine.customVariables.length})
             </button>
@@ -377,7 +382,7 @@ export function MachineCard({
             {complementaresOpen && (
               <div className="rounded-lg border border-panel-border bg-white/5 p-3">
                 {machine.customVariables.length === 0 ? (
-                  <p className="text-xs text-muted">Sem variaveis complementares.</p>
+                  <p className="text-xs text-muted">Sem variáveis complementares.</p>
                 ) : (
                   <div className="space-y-2">
                     {machine.customVariables.map((v) => (

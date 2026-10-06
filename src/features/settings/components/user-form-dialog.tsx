@@ -130,7 +130,7 @@ export function UserFormDialog({
             )}
           />
           <FieldError message={errors.role?.message} />
-          <p className="mt-1.5 text-[10px] text-muted">Somente Master/Admin podem editar cards do dashboard.</p>
+          <p className="mt-1.5 text-xs text-muted">Somente Master/Admin podem editar cards do dashboard.</p>
         </div>
       </form>
     </Dialog>

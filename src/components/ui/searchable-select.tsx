@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,8 @@ interface SearchableSelectProps {
   options: SelectOption[];
   value: string | undefined;
   onChange: (value: string) => void;
+  /** Vai no botao que abre a lista, para um `<label htmlFor>` apontar para o campo. */
+  id?: string;
   placeholder?: string;
   icon?: React.ReactNode;
   disabled?: boolean;
@@ -36,6 +38,7 @@ export function SearchableSelect({
   options,
   value,
   onChange,
+  id,
   placeholder = "Selecione...",
   icon,
   disabled,
@@ -47,6 +50,9 @@ export function SearchableSelect({
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  // Opcao destacada pelo teclado (setas) ou pelo mouse; Enter escolhe ela.
+  const [activeIndex, setActiveIndex] = useState(0);
+  const listId = useId();
 
   const selected = options.find((o) => o.value === value);
   const filtered = useMemo(() => {
@@ -55,6 +61,53 @@ export function SearchableSelect({
     return options.filter((o) => o.label.toLowerCase().includes(q));
   }, [options, query]);
 
+  const optionId = (index: number) => `${listId}-${index}`;
+  const activeOptionId = filtered[activeIndex] ? optionId(activeIndex) : undefined;
+
+  useEffect(() => {
+    if (open && activeOptionId) document.getElementById(activeOptionId)?.scrollIntoView?.({ block: "nearest" });
+  }, [open, activeOptionId]);
+
+  const close = () => {
+    setOpen(false);
+    setQuery("");
+  };
+
+  const choose = (option: SelectOption | undefined) => {
+    if (!option || option.disabled) return;
+    onChange(option.value);
+    close();
+  };
+
+  // Anda a partir de `from` no sentido de `step`, pulando opcoes desabilitadas; fica onde esta se nao houver outra.
+  const moveActive = (from: number, step: 1 | -1) => {
+    for (let i = from + step; i >= 0 && i < filtered.length; i += step) {
+      if (!filtered[i]?.disabled) {
+        setActiveIndex(i);
+        return;
+      }
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      moveActive(activeIndex, 1);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      moveActive(activeIndex, -1);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      moveActive(-1, 1);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      moveActive(filtered.length, -1);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      choose(filtered[activeIndex]);
+    }
+  };
+
   return (
     <Popover.Root
       // modal: o conteudo vai para um portal fora do Dialog, e o bloqueio de scroll do Dialog
@@ -62,12 +115,15 @@ export function SearchableSelect({
       modal
       open={open}
       onOpenChange={(next) => {
-        setOpen(next);
-        if (!next) setQuery("");
+        if (!next) return close();
+        // Abre com a opcao atual destacada, para as setas partirem dela.
+        setActiveIndex(Math.max(0, options.findIndex((o) => o.value === value)));
+        setOpen(true);
       }}
     >
       <Popover.Trigger asChild>
         <button
+          id={id}
           type="button"
           disabled={disabled}
           className={cn(
@@ -92,7 +148,7 @@ export function SearchableSelect({
                 onChange("");
               }}
               className="text-muted hover:text-slate-200"
-              aria-label="Limpar selecao"
+              aria-label="Limpar seleção"
             >
               <X className="h-3.5 w-3.5" />
             </span>
@@ -105,6 +161,7 @@ export function SearchableSelect({
           align="start"
           sideOffset={6}
           collisionPadding={12}
+          onKeyDown={handleKeyDown}
           className="z-50 w-[--radix-popover-trigger-width] overflow-hidden rounded-xl border border-white/10 bg-navy-900/95 shadow-2xl backdrop-blur-xl"
         >
           {searchable && (
@@ -113,30 +170,45 @@ export function SearchableSelect({
               <input
                 autoFocus
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setActiveIndex(0);
+                }}
                 placeholder="Buscar..."
+                role="combobox"
+                aria-expanded
+                aria-controls={listId}
+                aria-activedescendant={activeOptionId}
+                aria-autocomplete="list"
                 className="h-6 w-full bg-transparent text-sm text-slate-100 placeholder:text-muted focus:outline-none"
               />
             </div>
           )}
-          <div className="max-h-64 overflow-y-auto py-1">
+          {/* Sem campo de busca, a propria lista recebe o foco e as teclas. */}
+          <div
+            id={listId}
+            role="listbox"
+            tabIndex={searchable ? -1 : 0}
+            aria-activedescendant={searchable ? undefined : activeOptionId}
+            className="max-h-64 overflow-y-auto py-1 focus:outline-none"
+          >
             {filtered.length === 0 && (
               <p className="px-3 py-3 text-sm text-muted">{emptyMessage}</p>
             )}
-            {filtered.map((opt) => (
+            {filtered.map((opt, index) => (
               <button
                 key={opt.value}
+                id={optionId(index)}
                 type="button"
+                tabIndex={-1}
                 disabled={opt.disabled}
-                onClick={() => {
-                  onChange(opt.value);
-                  setOpen(false);
-                  setQuery("");
-                }}
+                onClick={() => choose(opt)}
+                onMouseMove={() => setActiveIndex(index)}
                 className={cn(
-                  "flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-white/10",
-                  "disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent",
+                  "flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm",
+                  "disabled:cursor-not-allowed disabled:opacity-30",
                   opt.value === value && "bg-brand/15 text-brand-light",
+                  index === activeIndex && !opt.disabled && "bg-white/10",
                 )}
                 role="option"
                 aria-selected={opt.value === value}

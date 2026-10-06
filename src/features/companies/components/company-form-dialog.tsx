@@ -80,7 +80,7 @@ export function CompanyFormDialog({
         </div>
 
         {initial ? (
-          <p className="text-[10px] italic text-muted">
+          <p className="text-xs italic text-muted">
             Nota: Alterar o e-mail do administrador deve ser feito via painel de usuários.
           </p>
         ) : (

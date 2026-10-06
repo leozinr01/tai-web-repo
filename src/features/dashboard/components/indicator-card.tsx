@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp } from "lucide-react";
+import { AlertTriangle, TrendingUp } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { AreaChart, Area, ResponsiveContainer, Tooltip, YAxis } from "recharts";
 import type { IndicatorPoint } from "@/domain/entities/indicator";
 
@@ -10,12 +11,14 @@ export function IndicatorCard({
   history,
   color,
   isLoading,
+  isError,
 }: {
   label: string;
-  value?: number;
+  value?: number | null;
   history?: IndicatorPoint[];
   color: string;
   isLoading?: boolean;
+  isError?: boolean;
 }) {
   if (isLoading) {
     return (
@@ -26,16 +29,34 @@ export function IndicatorCard({
     );
   }
 
+  // Sem leitura (ou com falha na consulta) mostra "—": 0% seria lido como indicador zerado.
+  const hasValue = typeof value === "number";
+  const errorMessage = hasValue ? "Falha ao atualizar" : "Falha ao carregar";
+  const statusMessage = isError ? errorMessage : hasValue ? null : "Sem dados";
+
   return (
     <Card className="flex flex-col gap-4 p-4">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">{label}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">{label}</p>
         <div className="rounded-lg bg-white/5 p-1.5">
-          <TrendingUp className="h-3.5 w-3.5" style={{ color }} />
+          {isError ? (
+            <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+          ) : (
+            <TrendingUp className="h-3.5 w-3.5" style={{ color }} />
+          )}
         </div>
       </div>
       <div className="flex items-end justify-between">
-        <span className="text-2xl font-bold text-white">{value ?? 0}%</span>
+        <div>
+          <span className={cn("text-2xl font-bold", hasValue ? "text-white" : "text-muted")}>
+            {hasValue ? `${value}%` : "—"}
+          </span>
+          {statusMessage && (
+            <p className={cn("text-[11px]", isError ? "font-semibold text-warning-light" : "text-muted")}>
+              {statusMessage}
+            </p>
+          )}
+        </div>
         <div className="h-10 w-20">
           {history && history.length > 1 ? (
             <ResponsiveContainer width="100%" height="100%">

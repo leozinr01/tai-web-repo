@@ -30,8 +30,10 @@ import { UserStatus } from "@/domain/types/enums";
 import { userRoleLabels } from "@/lib/labels";
 import { assignableRoles, canManageCompany } from "@/domain/permissions";
 import type { User } from "@/domain/entities/user";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export function SettingsPage() {
+  usePageTitle("Configurações");
   const { user } = useAuth();
   const companyId = user?.companyId ?? "";
   const canManage = canManageCompany(user?.role);
@@ -69,11 +71,11 @@ export function SettingsPage() {
     setLogoError(null);
 
     if (!ACCEPTED_LOGO_TYPES.includes(file.type)) {
-      setLogoError("Formato invalido. Use PNG, JPG ou SVG.");
+      setLogoError("Formato inválido. Use PNG, JPG ou SVG.");
       return;
     }
     if (file.size > MAX_LOGO_SIZE_BYTES) {
-      setLogoError("Arquivo muito grande. Tamanho maximo: 2MB.");
+      setLogoError("Arquivo muito grande. Tamanho máximo: 2MB.");
       return;
     }
 
@@ -85,7 +87,7 @@ export function SettingsPage() {
         await updateLogoMutation.mutateAsync({ id: companyId, logoUrl: dataUrl });
         toast({ title: "Logotipo atualizado com sucesso.", variant: "success" });
       } catch (err) {
-        toast({ title: "Nao foi possivel atualizar o logotipo.", description: err instanceof Error ? err.message : undefined, variant: "error" });
+        toast({ title: "Não foi possível atualizar o logotipo.", description: err instanceof Error ? err.message : undefined, variant: "error" });
       }
     };
     reader.readAsDataURL(file);
@@ -94,7 +96,7 @@ export function SettingsPage() {
   const handleSaveManualLogoUrl = async () => {
     const result = companyProfileSchema.shape.logoUrl.safeParse(manualLogoUrl);
     if (!result.success) {
-      setManualLogoError(result.error.issues[0]?.message ?? "URL invalida.");
+      setManualLogoError(result.error.issues[0]?.message ?? "URL inválida.");
       return;
     }
     setManualLogoError(null);
@@ -103,7 +105,7 @@ export function SettingsPage() {
       await updateLogoMutation.mutateAsync({ id: companyId, logoUrl: manualLogoUrl });
       toast({ title: "Logotipo atualizado com sucesso.", variant: "success" });
     } catch (err) {
-      toast({ title: "Nao foi possivel atualizar o logotipo.", description: err instanceof Error ? err.message : undefined, variant: "error" });
+      toast({ title: "Não foi possível atualizar o logotipo.", description: err instanceof Error ? err.message : undefined, variant: "error" });
     }
   };
 
@@ -113,7 +115,7 @@ export function SettingsPage() {
       toast({ title: "Novo acesso criado.", variant: "success" });
       userDialog.close();
     } catch (err) {
-      toast({ title: "Nao foi possivel salvar o acesso.", description: err instanceof Error ? err.message : undefined, variant: "error" });
+      toast({ title: "Não foi possível salvar o acesso.", description: err instanceof Error ? err.message : undefined, variant: "error" });
     }
   };
 
@@ -124,7 +126,7 @@ export function SettingsPage() {
       toast({ title: "Acesso removido.", variant: "success" });
       removeDialog.close();
     } catch (err) {
-      toast({ title: "Nao foi possivel remover o acesso.", description: err instanceof Error ? err.message : undefined, variant: "error" });
+      toast({ title: "Não foi possível remover o acesso.", description: err instanceof Error ? err.message : undefined, variant: "error" });
     }
   };
 
@@ -134,7 +136,7 @@ export function SettingsPage() {
       toast({ title: "Senha atualizada com sucesso.", variant: "success" });
       passwordDialog.close();
     } catch (err) {
-      toast({ title: "Nao foi possivel atualizar a senha.", description: err instanceof Error ? err.message : undefined, variant: "error" });
+      toast({ title: "Não foi possível atualizar a senha.", description: err instanceof Error ? err.message : undefined, variant: "error" });
     }
   };
 
@@ -144,9 +146,9 @@ export function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Breadcrumb current="Configuracoes" />
+        <Breadcrumb current="Configurações" />
         <h1 className="font-display mt-1 text-2xl font-bold text-white sm:text-3xl">
-          Configuracoes
+          Configurações
         </h1>
       </div>
 
@@ -172,7 +174,7 @@ export function SettingsPage() {
                 )}
                 <div>
                   <p className="text-sm font-semibold text-slate-200">Logo da empresa</p>
-                  <p className="text-xs text-muted">PNG, JPG ou SVG (Max. 2MB)</p>
+                  <p className="text-xs text-muted">PNG, JPG ou SVG (Máx. 2MB)</p>
                 </div>
                 {canManage && (
                   <>
@@ -188,7 +190,7 @@ export function SettingsPage() {
                       size="sm"
                       onClick={() => fileInputRef.current?.click()}
                       isLoading={updateLogoMutation.isPending}
-                      className="h-auto border-0 bg-brand/10 px-6 py-2.5 text-[10px] font-black uppercase tracking-widest text-brand hover:bg-brand hover:text-white"
+                      className="h-auto border-0 bg-brand/10 px-6 py-2.5 text-[11px] font-black uppercase tracking-widest text-brand hover:bg-brand hover:text-white"
                     >
                       <Upload className="h-3.5 w-3.5" /> Fazer upload
                     </Button>
@@ -211,7 +213,7 @@ export function SettingsPage() {
                     <Button
                       onClick={handleSaveManualLogoUrl}
                       isLoading={updateLogoMutation.isPending}
-                      className="h-[46px] rounded-xl border-0 bg-brand/20 px-6 text-[10px] font-bold uppercase text-brand hover:bg-brand hover:text-white"
+                      className="h-[46px] rounded-xl border-0 bg-brand/20 px-6 text-[11px] font-bold uppercase text-brand hover:bg-brand hover:text-white"
                     >
                       Salvar
                     </Button>
@@ -229,7 +231,7 @@ export function SettingsPage() {
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-200">Gerenciar acessos</p>
               <Button
                 onClick={userDialog.open}
-                className="h-auto gap-2 rounded-xl border-0 bg-brand/10 px-4 py-2 text-[10px] font-black uppercase tracking-wide text-brand hover:bg-brand hover:text-white"
+                className="h-auto gap-2 rounded-xl border-0 bg-brand/10 px-4 py-2 text-[11px] font-black uppercase tracking-wide text-brand hover:bg-brand hover:text-white"
               >
                 <UserPlus className="h-3.5 w-3.5" /> Novo acesso
               </Button>
@@ -242,7 +244,7 @@ export function SettingsPage() {
                 usersQuery.data.map((u) => (
                   <div
                     key={u.id}
-                    className="group flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-panel-border bg-white/[0.03] p-4 transition-all hover:border-brand/50 hover:bg-white/5"
+                    className="group flex items-center justify-between gap-3 rounded-2xl border border-panel-border bg-white/[0.03] p-4 transition-all hover:border-brand/50 hover:bg-white/5"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-xs font-bold text-brand">
@@ -251,11 +253,11 @@ export function SettingsPage() {
                       <div className="min-w-0">
                         <p className="flex items-center gap-2 truncate text-sm font-semibold text-slate-100">
                           {u.name}
-                          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white/50">
+                          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white/50">
                             {userRoleLabels[u.role]}
                           </span>
                           {u.status === UserStatus.INACTIVE && (
-                            <span className="rounded bg-white/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white/50">
+                            <span className="rounded bg-white/10 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white/50">
                               Inativo
                             </span>
                           )}
@@ -263,14 +265,15 @@ export function SettingsPage() {
                         <p className="truncate text-xs text-muted">{u.email}</p>
                       </div>
                     </div>
-                    {/* Ninguem remove o proprio acesso, e Admin nao remove Master. */}
+                    {/* Ninguem remove o proprio acesso, e Admin nao remove Master.
+                        O botao so se esconde onde existe hover (mouse); em touch fica sempre visivel e no teclado aparece com o foco. */}
                     {u.id !== user?.id && assignableRoles(user?.role).includes(u.role) && (
                       <button
                         onClick={() => {
                           setRemovingUser(u);
                           removeDialog.open();
                         }}
-                        className="shrink-0 rounded-lg bg-white/5 p-2 text-muted opacity-0 transition-colors hover:bg-danger/10 hover:text-danger-light group-hover:opacity-100"
+                        className="shrink-0 rounded-lg bg-white/5 p-2 text-muted transition-colors hover:bg-danger/10 hover:text-danger-light focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:hover)]:opacity-0"
                         aria-label={`Remover ${u.name}`}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -305,7 +308,7 @@ export function SettingsPage() {
         open={removeDialog.isOpen}
         onOpenChange={removeDialog.close}
         title="Remover acesso"
-        description={`Tem certeza que deseja remover o acesso de ${removingUser?.name}? Essa acao nao pode ser desfeita.`}
+        description={`Tem certeza que deseja remover o acesso de ${removingUser?.name}? Essa ação não pode ser desfeita.`}
         onConfirm={handleRemoveUser}
         isLoading={removeUserMutation.isPending}
         confirmLabel="Remover"

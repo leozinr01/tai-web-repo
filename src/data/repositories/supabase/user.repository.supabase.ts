@@ -17,7 +17,7 @@ interface UserRow {
 const USER_COLUMNS = "idRef, nomeUser, email, tipo, Status, idEmpresa, created_at";
 
 function toUser(row: UserRow): User {
-  const name = row.nomeUser || row.email || "Usuario";
+  const name = row.nomeUser || row.email || "Usuário";
   return {
     id: row.idRef,
     companyId: row.idEmpresa ?? "",
@@ -43,7 +43,7 @@ export class SupabaseUserRepository implements UserRepository {
     });
     if (fnError) throw new Error(fnError.message);
     if (!fnResult || (fnResult as { error?: string }).error) {
-      throw new Error((fnResult as { error?: string })?.error ?? "Nao foi possivel criar o acesso.");
+      throw new Error((fnResult as { error?: string })?.error ?? "Não foi possível criar o acesso.");
     }
     const authUserId = (fnResult as { id: string }).id;
 
@@ -74,7 +74,7 @@ export class SupabaseUserRepository implements UserRepository {
       if (error) throw new Error(error.message);
     }
     const { data: row, error } = await supabase.from("User").select(USER_COLUMNS).eq("idRef", id).single();
-    if (error) throw new Error("Usuario nao encontrado.");
+    if (error) throw new Error("Usuário não encontrado.");
     return toUser(row as UserRow);
   }
 

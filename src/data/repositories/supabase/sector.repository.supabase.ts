@@ -31,14 +31,14 @@ export class SupabaseSectorRepository implements SectorRepository {
       .insert({ sala: data.name, idRef: data.companyId })
       .select("sala, idRef")
       .single();
-    if (error) throw new Error("Nao foi possivel criar o setor. O nome ja pode estar em uso.");
+    if (error) throw new Error("Não foi possível criar o setor. O nome já pode estar em uso.");
     return toSector(row as SalaRow);
   }
 
   async update(id: string, data: Partial<Pick<Sector, "name">>): Promise<Sector> {
     if (!data.name) {
       const { data: row, error } = await supabase.from("Sala").select("sala, idRef").eq("sala", id).single();
-      if (error) throw new Error("Setor nao encontrado.");
+      if (error) throw new Error("Setor não encontrado.");
       return toSector(row as SalaRow);
     }
     const { data: row, error } = await supabase
@@ -47,7 +47,7 @@ export class SupabaseSectorRepository implements SectorRepository {
       .eq("sala", id)
       .select("sala, idRef")
       .single();
-    if (error) throw new Error("Nao foi possivel renomear o setor. O nome ja pode estar em uso.");
+    if (error) throw new Error("Não foi possível renomear o setor. O nome já pode estar em uso.");
     return toSector(row as SalaRow);
   }
 

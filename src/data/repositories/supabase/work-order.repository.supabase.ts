@@ -143,7 +143,7 @@ export class SupabaseWorkOrderRepository implements WorkOrderRepository {
       .eq("id", Number(id))
       .maybeSingle();
     if (fetchError) throw new Error(fetchError.message);
-    if (!current) throw new Error("Ordem de servico nao encontrada.");
+    if (!current) throw new Error("Ordem de serviço não encontrada.");
     const row = current as OsRow;
     const companyId = row.idRef;
 
