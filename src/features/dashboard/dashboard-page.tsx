@@ -120,6 +120,7 @@ export function DashboardPage() {
           value={indicatorsQuery.data?.oee}
           history={indicatorsQuery.data?.oeeHistory}
           color="#21c1b3"
+          fillColor="#000000"
           isLoading={indicatorsQuery.isLoading}
           isError={indicatorsQuery.isError}
         />
