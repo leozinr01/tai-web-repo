@@ -26,6 +26,7 @@ import { toCsv, downloadCsv } from "@/lib/csv";
 import { formatDuration } from "@/domain/appointment-time";
 import type { AppointmentFormValues } from "@/domain/schemas/appointment.schema";
 import type { Appointment } from "@/domain/entities/appointment";
+import { UserRole } from "@/domain/types/enums";
 import { repositories } from "@/data/repositories";
 import { useQuery } from "@tanstack/react-query";
 import { usePageTitle } from "@/hooks/use-page-title";
@@ -40,6 +41,8 @@ export function AppointmentsPage() {
   const { user } = useAuth();
   const companyId = user?.companyId ?? "";
   const canWrite = canWriteRecords(user?.role);
+  // Master enxerga todas as empresas na lista e nos filtros; o formulario de criacao continua na propria empresa.
+  const scopeCompanyId = user?.role === UserRole.MASTER ? undefined : companyId;
 
   const { values: urlFilters, setFilter, clearFilters } = useUrlFilters(FILTER_KEYS);
   const { de: dateFrom, ate: dateTo, setor: sectorId, maquina: machineId, lancador: authorId } = urlFilters;
@@ -55,9 +58,15 @@ export function AppointmentsPage() {
   const [viewing, setViewing] = useState<Appointment | null>(null);
   const [editing, setEditing] = useState<Appointment | null>(null);
 
-  const sectorsQuery = useSectors(companyId);
-  const machinesQuery = useMachines(companyId, {});
+  const sectorsQuery = useSectors(scopeCompanyId);
+  const machinesQuery = useMachines(scopeCompanyId, {});
   const usersQuery = useQuery({
+    queryKey: ["users", scopeCompanyId],
+    queryFn: () => repositories.users.listByCompany(scopeCompanyId),
+  });
+  const ownSectorsQuery = useSectors(companyId);
+  const ownMachinesQuery = useMachines(companyId, {});
+  const ownUsersQuery = useQuery({
     queryKey: ["users", companyId],
     queryFn: () => repositories.users.listByCompany(companyId),
   });
@@ -71,7 +80,7 @@ export function AppointmentsPage() {
     page: 1,
     pageSize: ALL_ITEMS_PAGE_SIZE,
   };
-  const appointmentsQuery = useAppointments(companyId, filters);
+  const appointmentsQuery = useAppointments(scopeCompanyId, filters);
   const { page, pageItems, setPage } = useClientPagination(
     appointmentsQuery.data?.items ?? [],
     PAGE_SIZE,
@@ -318,7 +327,7 @@ export function AppointmentsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-xs font-bold text-white">{machineById.get(appt.machineId) ?? "-"}</p>
-                      <p className="text-xs text-muted">{sectorById.get(appt.sectorId) ?? "-"}</p>
+                      <p className="text-xs text-muted">{sectorById.get(appt.sectorId) ?? (appt.sectorId || "-")}</p>
                     </td>
                     <td className="max-w-[240px] truncate px-4 py-3 text-xs text-muted transition-colors group-hover:text-white">
                       {appt.description}
@@ -361,9 +370,9 @@ export function AppointmentsPage() {
         onSubmit={handleCreate}
         isSubmitting={createMutation.isPending}
         companyId={companyId}
-        sectors={sectorsQuery.data ?? []}
-        machines={machinesQuery.data ?? []}
-        users={usersQuery.data ?? []}
+        sectors={ownSectorsQuery.data ?? []}
+        machines={ownMachinesQuery.data ?? []}
+        users={ownUsersQuery.data ?? []}
         initial={null}
       />
 

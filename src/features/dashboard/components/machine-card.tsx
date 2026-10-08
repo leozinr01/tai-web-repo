@@ -58,12 +58,19 @@ const OEE_STROKE = 4;
 const OEE_RADIUS = (OEE_SIZE - OEE_STROKE) / 2;
 const OEE_CIRCUMFERENCE = 2 * Math.PI * OEE_RADIUS;
 
-const MAX_SPEED = 100;
-const MAX_PRODUCTION = 5000;
+// Usados so quando a maquina ainda nao tem velocidade maxima ou producao esperada no cadastro.
+const DEFAULT_MAX_SPEED = 100;
+const DEFAULT_MAX_PRODUCTION = 5000;
 
+const percentOf = (value: number, max: number) => Math.max(0, Math.min((value / max) * 100, 100));
+
+// A barra enche em relacao ao cadastro da propria maquina: velocidade maxima e producao esperada no periodo.
 function bottomBarPercent(machine: Machine, key: MachineVariableKey): number {
-  if (key === "speed") return Math.max(0, Math.min((machine.variables.speed / MAX_SPEED) * 100, 100));
-  if (key === "production") return Math.max(0, Math.min((machine.variables.productionAmount / MAX_PRODUCTION) * 100, 100));
+  const { maxSpeed, producedQuantity } = machine.productionConfig;
+  if (key === "speed") return percentOf(machine.variables.speed, maxSpeed > 0 ? maxSpeed : DEFAULT_MAX_SPEED);
+  if (key === "production") {
+    return percentOf(machine.variables.productionAmount, producedQuantity > 0 ? producedQuantity : DEFAULT_MAX_PRODUCTION);
+  }
   return 100;
 }
 
@@ -121,14 +128,14 @@ function AnimatedBottomStat({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-lg border border-panel-border bg-white/5 p-3",
+        "relative overflow-hidden rounded-xl bg-white/10 p-3 ring-1 ring-white/10",
         disabled && "opacity-40 grayscale",
       )}
     >
       <p className="label-caps">{label}</p>
       <p className="mt-1 text-sm font-bold text-slate-100">{animatedValue}</p>
-      <div className="absolute inset-x-0 bottom-0 h-1 bg-white/10">
-        <div className={cn(barClassName, "h-1")} style={{ width: `${animatedPercent}%` }} />
+      <div className="absolute inset-x-0 bottom-0 h-1.5 bg-white/5">
+        <div className={cn(barClassName, "h-1.5")} style={{ width: `${animatedPercent}%` }} />
       </div>
     </div>
   );
@@ -409,7 +416,11 @@ export function MachineCard({
                 label={display.label}
                 value={display.value}
                 percent={bottomBarPercent(machine, display.key)}
-                barClassName={display.key === "production" ? "bg-success" : "bg-brand"}
+                barClassName={
+                  display.key === "production"
+                    ? "bg-[#1bb58f] shadow-[0_0_10px_rgba(27,181,143,0.5)]"
+                    : "bg-[#2f6de2] shadow-[0_0_10px_rgba(33,193,179,0.5)]"
+                }
                 disabled={!visible}
               />
             ))}

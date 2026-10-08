@@ -21,6 +21,7 @@ import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/hooks/use-url-filters";
 import type { ReportRow } from "@/domain/entities/report";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { UserRole } from "@/domain/types/enums";
 
 const PAGE_SIZE = 50;
 const FILTER_KEYS = ["de", "ate", "setor", "maquina"] as const;
@@ -29,6 +30,8 @@ export function ReportsPage() {
   usePageTitle("Relatórios");
   const { user } = useAuth();
   const companyId = user?.companyId ?? "";
+  // Master enxerga os relatorios de todas as empresas (sem filtro de idRef), como no dashboard.
+  const scopeCompanyId = user?.role === UserRole.MASTER ? undefined : companyId;
 
   const { values: urlFilters, setFilter, clearFilters } = useUrlFilters(FILTER_KEYS);
   const { de: from, ate: to, setor: sectorId, maquina: machineId } = urlFilters;
@@ -39,8 +42,8 @@ export function ReportsPage() {
   const fromRef = useRef<HTMLInputElement>(null);
   const toRef = useRef<HTMLInputElement>(null);
 
-  const sectorsQuery = useSectors(companyId);
-  const machinesQuery = useMachines(companyId, {});
+  const sectorsQuery = useSectors(scopeCompanyId);
+  const machinesQuery = useMachines(scopeCompanyId, {});
 
   const filters = { from: from || undefined, to: to || undefined, sectorId: sectorId || undefined, machineId: machineId || undefined };
   // A pagina volta para 1 sempre que algum filtro muda.
@@ -51,8 +54,8 @@ export function ReportsPage() {
   const [isExporting, setIsExporting] = useState(false);
 
   const reportsQuery = useQuery({
-    queryKey: ["reports", companyId, filters, page],
-    queryFn: () => repositories.reports.list(companyId, filters, page, PAGE_SIZE),
+    queryKey: ["reports", scopeCompanyId, filters, page],
+    queryFn: () => repositories.reports.list(scopeCompanyId, filters, page, PAGE_SIZE),
     placeholderData: keepPreviousData,
   });
   const rows = reportsQuery.data?.items ?? [];
@@ -65,7 +68,7 @@ export function ReportsPage() {
     setIsExporting(true);
     let allRows: ReportRow[];
     try {
-      allRows = await repositories.reports.listAll(companyId, filters);
+      allRows = await repositories.reports.listAll(scopeCompanyId, filters);
     } catch (err) {
       toast({ title: "Não foi possível exportar.", description: err instanceof Error ? err.message : undefined, variant: "error" });
       return;

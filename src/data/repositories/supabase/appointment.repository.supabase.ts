@@ -7,7 +7,7 @@ import type { Appointment } from "@/domain/entities/appointment";
 import { AppointmentArea } from "@/domain/types/enums";
 import { supabase } from "@/lib/supabase-client";
 import { fetchAllRows, formatBrDate, hhmmToMinutes, minutesToHHMM, padTime, parseBrDate } from "@/data/repositories/supabase/helpers";
-import { getMachineNameMaps, getUserNameToId } from "@/data/repositories/supabase/company-lookups";
+import { getMachineNameMaps, getNameMapsByCompany, getUserNameToId } from "@/data/repositories/supabase/company-lookups";
 import { watchCompanyTable } from "@/data/repositories/supabase/realtime";
 
 interface ApontamentoRow {
@@ -58,20 +58,21 @@ function toAppointment(
 }
 
 export class SupabaseAppointmentRepository implements AppointmentRepository {
-  async list(companyId: string, filters?: AppointmentFilters): Promise<PagedResult<Appointment>> {
+  async list(companyId: string | undefined, filters?: AppointmentFilters): Promise<PagedResult<Appointment>> {
     // Data fica como texto dd/mm/aaaa no banco, entao o filtro de periodo e a paginacao sao feitos aqui.
     const rows = await fetchAllRows<ApontamentoRow>((from, to) => {
-      let query = supabase.from("Apontamentos").select(APONTAMENTO_COLUMNS).eq("idRef", companyId);
+      let query = supabase.from("Apontamentos").select(APONTAMENTO_COLUMNS);
+      if (companyId) query = query.eq("idRef", companyId);
       if (filters?.sectorId) query = query.eq("Setor", filters.sectorId);
       return query.order("id").range(from, to);
     });
 
-    const [{ nameToId }, userNameToId] = await Promise.all([
-      getMachineNameMaps(companyId),
-      getUserNameToId(companyId),
-    ]);
+    const mapsFor = await getNameMapsByCompany(companyId);
 
-    let items = rows.map((row) => toAppointment(row, nameToId, userNameToId));
+    let items = rows.map((row) => {
+      const { machineIdByName, userIdByName } = mapsFor(row.idRef);
+      return toAppointment(row, machineIdByName, userIdByName);
+    });
     if (filters?.dateFrom) items = items.filter((a) => a.date >= filters.dateFrom!);
     if (filters?.dateTo) items = items.filter((a) => a.date <= filters.dateTo!);
     if (filters?.machineId) items = items.filter((a) => a.machineId === filters.machineId);
@@ -188,7 +189,7 @@ export class SupabaseAppointmentRepository implements AppointmentRepository {
     if (error) throw new Error(error.message);
   }
 
-  watch(companyId: string, onChange: () => void): () => void {
+  watch(companyId: string | undefined, onChange: () => void): () => void {
     return watchCompanyTable("Apontamentos", companyId, onChange);
   }
 }

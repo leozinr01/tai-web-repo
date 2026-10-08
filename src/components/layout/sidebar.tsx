@@ -34,7 +34,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
   return (
     <aside
       className={cn(
-        "relative flex h-full flex-col border-r border-white/10 bg-navy-950/95 backdrop-blur-xl transition-[width] duration-200 will-change-transform",
+        "relative flex h-full flex-col border-r border-white/10 bg-navy-950/95 backdrop-blur-2xl transition-[width] duration-200 will-change-transform",
         collapsed ? "w-[100px]" : "w-64",
       )}
     >
@@ -72,7 +72,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
                     "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-colors",
                     collapsed && "justify-center",
                     isActive
-                      ? "bg-brand text-white shadow-soft"
+                      ? "bg-brand text-white shadow-xl shadow-brand/40"
                       : "text-muted hover:bg-white/10 hover:text-white",
                   )
                 }
@@ -93,7 +93,7 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
                     "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-colors",
                     collapsed && "justify-center",
                     isActive
-                      ? "bg-brand text-white shadow-soft"
+                      ? "bg-brand text-white shadow-xl shadow-brand/40"
                       : "text-muted hover:bg-white/10 hover:text-white",
                   )
                 }
