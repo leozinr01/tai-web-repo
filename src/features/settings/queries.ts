@@ -30,7 +30,8 @@ export function useCreateUser() {
   return useMutation({
     mutationFn: (data: Omit<User, "id" | "createdAt" | "avatarInitials"> & { password: string }) =>
       repositories.users.create(data),
-    onSuccess: (user: User) => qc.invalidateQueries({ queryKey: ["users", user.companyId] }),
+    // Recarrega todas as listas de usuarios, inclusive a do Master (sem empresa).
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   });
 }
 
@@ -38,7 +39,7 @@ export function useRemoveUser() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id }: { id: string; companyId: string }) => repositories.users.remove(id),
-    onSuccess: (_data, variables) => qc.invalidateQueries({ queryKey: ["users", variables.companyId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   });
 }
 

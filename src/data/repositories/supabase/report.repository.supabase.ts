@@ -72,11 +72,9 @@ function toReportRow(row: RelatorioRow): ReportRow {
   };
 }
 
-function reportQuery(companyId: string, filters: ReportFilters, count?: "exact") {
-  let query = supabase
-    .from("Relatório")
-    .select(COLUMNS, count ? { count } : undefined)
-    .eq("idRef", companyId);
+function reportQuery(companyId: string | undefined, filters: ReportFilters, count?: "exact") {
+  let query = supabase.from("Relatório").select(COLUMNS, count ? { count } : undefined);
+  if (companyId) query = query.eq("idRef", companyId);
   if (filters.sectorId) query = query.eq("IDsala", filters.sectorId);
   if (filters.machineId) query = query.eq("maquina_id", Number(filters.machineId));
   if (filters.from) query = query.gte("date", filters.from);
@@ -86,7 +84,7 @@ function reportQuery(companyId: string, filters: ReportFilters, count?: "exact")
 }
 
 export class SupabaseReportRepository implements ReportRepository {
-  async list(companyId: string, filters: ReportFilters, page: number, pageSize: number): Promise<PagedResult<ReportRow>> {
+  async list(companyId: string | undefined, filters: ReportFilters, page: number, pageSize: number): Promise<PagedResult<ReportRow>> {
     const start = (page - 1) * pageSize;
     const { data, error, count } = await reportQuery(companyId, filters, "exact").range(start, start + pageSize - 1);
     if (error?.code === RANGE_NOT_SATISFIABLE) {
@@ -99,7 +97,7 @@ export class SupabaseReportRepository implements ReportRepository {
     return { items: ((data ?? []) as RelatorioRow[]).map(toReportRow), total: count ?? 0, page, pageSize };
   }
 
-  async listAll(companyId: string, filters: ReportFilters): Promise<ReportRow[]> {
+  async listAll(companyId: string | undefined, filters: ReportFilters): Promise<ReportRow[]> {
     const rows = await fetchAllRows<RelatorioRow>((from, to) => reportQuery(companyId, filters).range(from, to));
     return rows.map(toReportRow);
   }

@@ -10,7 +10,8 @@ export interface ReportFilters {
 
 export interface ReportRepository {
   /** Uma pagina dos registros, mais recentes primeiro, com o total real para a paginacao. */
-  list(companyId: string, filters: ReportFilters, page: number, pageSize: number): Promise<PagedResult<ReportRow>>;
+  /** `companyId` undefined = sem filtro por empresa (visao "todas as empresas", usada pelo Master). */
+  list(companyId: string | undefined, filters: ReportFilters, page: number, pageSize: number): Promise<PagedResult<ReportRow>>;
   /** Todos os registros do filtro, para exportar. */
-  listAll(companyId: string, filters: ReportFilters): Promise<ReportRow[]>;
+  listAll(companyId: string | undefined, filters: ReportFilters): Promise<ReportRow[]>;
 }

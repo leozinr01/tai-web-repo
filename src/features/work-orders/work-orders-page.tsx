@@ -23,7 +23,7 @@ import { toast } from "@/hooks/use-toast";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import type { WorkOrderFormValues, WorkOrderQuickEditValues } from "@/domain/schemas/work-order.schema";
 import type { WorkOrder } from "@/domain/entities/work-order";
-import { WorkOrderStatus } from "@/domain/types/enums";
+import { UserRole, WorkOrderStatus } from "@/domain/types/enums";
 import { workOrderStatusLabels } from "@/lib/labels";
 import { repositories } from "@/data/repositories";
 import { useQuery } from "@tanstack/react-query";
@@ -46,6 +46,8 @@ export function WorkOrdersPage() {
   const { user } = useAuth();
   const companyId = user?.companyId ?? "";
   const canWrite = canWriteRecords(user?.role);
+  // Master enxerga todas as empresas na lista e nos filtros; o formulario de criacao continua na propria empresa.
+  const scopeCompanyId = user?.role === UserRole.MASTER ? undefined : companyId;
 
   const { values: urlFilters, setFilter, clearFilters: clearUrlFilters } = useUrlFilters(FILTER_KEYS);
   const { de: dateFrom, ate: dateTo, status, setor: sectorId, maquina: machineId } = urlFilters;
@@ -64,9 +66,11 @@ export function WorkOrdersPage() {
   const [viewing, setViewing] = useState<WorkOrder | null>(null);
   const [editing, setEditing] = useState<WorkOrder | null>(null);
 
-  const sectorsQuery = useSectors(companyId);
-  const machinesQuery = useMachines(companyId, {});
-  const usersQuery = useQuery({
+  const sectorsQuery = useSectors(scopeCompanyId);
+  const machinesQuery = useMachines(scopeCompanyId, {});
+  const ownSectorsQuery = useSectors(companyId);
+  const ownMachinesQuery = useMachines(companyId, {});
+  const ownUsersQuery = useQuery({
     queryKey: ["users", companyId],
     queryFn: () => repositories.users.listByCompany(companyId),
   });
@@ -79,7 +83,7 @@ export function WorkOrdersPage() {
     machineId: machineId || undefined,
     search: debouncedSearch || undefined,
   };
-  const ordersQuery = useWorkOrders(companyId, filters);
+  const ordersQuery = useWorkOrders(scopeCompanyId, filters);
   // A consulta traz a lista filtrada inteira; a tela mostra uma pagina por vez.
   const { page, pageItems, setPage } = useClientPagination(ordersQuery.data ?? [], PAGE_SIZE, JSON.stringify(filters));
 
@@ -315,9 +319,9 @@ export function WorkOrdersPage() {
         onSubmit={handleCreate}
         isSubmitting={createMutation.isPending}
         companyId={companyId}
-        sectors={sectorsQuery.data ?? []}
-        machines={machinesQuery.data ?? []}
-        users={usersQuery.data ?? []}
+        sectors={ownSectorsQuery.data ?? []}
+        machines={ownMachinesQuery.data ?? []}
+        users={ownUsersQuery.data ?? []}
       />
 
       <WorkOrderDetailsDialog

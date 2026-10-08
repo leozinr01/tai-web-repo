@@ -6,10 +6,10 @@ import type { Appointment } from "@/domain/entities/appointment";
 
 const KEY = "appointments";
 
-const watchAppointments = (companyId: string, onChange: () => void) =>
+const watchAppointments = (companyId: string | undefined, onChange: () => void) =>
   repositories.appointments.watch(companyId, onChange);
 
-export function useAppointments(companyId: string, filters: AppointmentFilters) {
+export function useAppointments(companyId: string | undefined, filters: AppointmentFilters) {
   useLiveInvalidation(watchAppointments, KEY, companyId);
   return useQuery({
     queryKey: [KEY, companyId, filters],

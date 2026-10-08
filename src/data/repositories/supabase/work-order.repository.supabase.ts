@@ -4,7 +4,7 @@ import type { WorkOrder } from "@/domain/entities/work-order";
 import { WorkOrderPeriodicity, WorkOrderStatus } from "@/domain/types/enums";
 import { supabase } from "@/lib/supabase-client";
 import { workOrderPeriodicityLabels, workOrderStatusLabels } from "@/lib/labels";
-import { getMachineNameMaps, getUserNameToId } from "@/data/repositories/supabase/company-lookups";
+import { getMachineNameMaps, getNameMapsByCompany, getUserNameToId } from "@/data/repositories/supabase/company-lookups";
 import { fetchAllRows } from "@/data/repositories/supabase/helpers";
 import { watchCompanyTable } from "@/data/repositories/supabase/realtime";
 
@@ -62,17 +62,19 @@ function toWorkOrder(row: OsRow, machineIdByName: Map<string, string>, userIdByN
 }
 
 export class SupabaseWorkOrderRepository implements WorkOrderRepository {
-  async list(companyId: string, filters?: WorkOrderFilters): Promise<WorkOrder[]> {
-    const rows = await fetchAllRows<OsRow>((from, to) =>
-      supabase.from(TABLE).select(OS_COLUMNS).eq("idRef", companyId).order("id").range(from, to),
-    );
+  async list(companyId: string | undefined, filters?: WorkOrderFilters): Promise<WorkOrder[]> {
+    const rows = await fetchAllRows<OsRow>((from, to) => {
+      let query = supabase.from(TABLE).select(OS_COLUMNS);
+      if (companyId) query = query.eq("idRef", companyId);
+      return query.order("id").range(from, to);
+    });
 
-    const [{ nameToId }, userNameToId] = await Promise.all([
-      getMachineNameMaps(companyId),
-      getUserNameToId(companyId),
-    ]);
+    const mapsFor = await getNameMapsByCompany(companyId);
 
-    let items = rows.map((row) => toWorkOrder(row, nameToId, userNameToId));
+    let items = rows.map((row) => {
+      const { machineIdByName, userIdByName } = mapsFor(row.idRef);
+      return toWorkOrder(row, machineIdByName, userIdByName);
+    });
     if (filters?.dateFrom) items = items.filter((w) => w.date >= filters.dateFrom!);
     if (filters?.dateTo) items = items.filter((w) => w.date <= filters.dateTo!);
     if (filters?.status) items = items.filter((w) => w.status === filters.status);
@@ -186,7 +188,7 @@ export class SupabaseWorkOrderRepository implements WorkOrderRepository {
     if (error) throw new Error(error.message);
   }
 
-  watch(companyId: string, onChange: () => void): () => void {
+  watch(companyId: string | undefined, onChange: () => void): () => void {
     return watchCompanyTable(TABLE, companyId, onChange);
   }
 }

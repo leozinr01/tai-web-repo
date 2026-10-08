@@ -6,10 +6,10 @@ import type { WorkOrder } from "@/domain/entities/work-order";
 
 const KEY = "work-orders";
 
-const watchWorkOrders = (companyId: string, onChange: () => void) =>
+const watchWorkOrders = (companyId: string | undefined, onChange: () => void) =>
   repositories.workOrders.watch(companyId, onChange);
 
-export function useWorkOrders(companyId: string, filters: WorkOrderFilters) {
+export function useWorkOrders(companyId: string | undefined, filters: WorkOrderFilters) {
   useLiveInvalidation(watchWorkOrders, KEY, companyId);
   return useQuery({
     queryKey: [KEY, companyId, filters],

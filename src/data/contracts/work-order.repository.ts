@@ -10,11 +10,12 @@ export interface WorkOrderFilters {
 }
 
 export interface WorkOrderRepository {
-  list(companyId: string, filters?: WorkOrderFilters): Promise<WorkOrder[]>;
+  /** `companyId` undefined = sem filtro por empresa (visao "todas as empresas", usada pelo Master). */
+  list(companyId: string | undefined, filters?: WorkOrderFilters): Promise<WorkOrder[]>;
   getById(id: string): Promise<WorkOrder | null>;
   create(data: Omit<WorkOrder, "id" | "number" | "createdAt" | "updatedAt" | "companyId" | "executorName">): Promise<WorkOrder>;
   update(id: string, data: Partial<WorkOrder>): Promise<WorkOrder>;
   remove(id: string): Promise<void>;
   /** Chama `onChange` quando alguma O.S. da empresa muda. Devolve a funcao para parar. */
-  watch(companyId: string, onChange: () => void): () => void;
+  watch(companyId: string | undefined, onChange: () => void): () => void;
 }

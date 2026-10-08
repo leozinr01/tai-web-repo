@@ -31,8 +31,10 @@ function toUser(row: UserRow): User {
 }
 
 export class SupabaseUserRepository implements UserRepository {
-  async listByCompany(companyId: string): Promise<User[]> {
-    const { data, error } = await supabase.from("User").select(USER_COLUMNS).eq("idEmpresa", companyId);
+  async listByCompany(companyId: string | undefined): Promise<User[]> {
+    let query = supabase.from("User").select(USER_COLUMNS);
+    if (companyId) query = query.eq("idEmpresa", companyId);
+    const { data, error } = await query;
     if (error) throw new Error(error.message);
     return ((data ?? []) as UserRow[]).map(toUser).sort((a, b) => a.name.localeCompare(b.name));
   }

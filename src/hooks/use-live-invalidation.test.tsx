@@ -4,12 +4,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useLiveInvalidation } from "@/hooks/use-live-invalidation";
 
-function setup(companyId: string) {
+function setup(companyId: string | undefined) {
   const qc = new QueryClient();
   const invalidate = vi.spyOn(qc, "invalidateQueries");
   const stop = vi.fn();
   let notify = () => {};
-  const watch = vi.fn((_companyId: string, onChange: () => void) => {
+  const watch = vi.fn((_companyId: string | undefined, onChange: () => void) => {
     notify = onChange;
     return stop;
   });
@@ -48,5 +48,14 @@ describe("useLiveInvalidation", () => {
   it("nao se inscreve sem empresa", () => {
     const { watch } = setup("");
     expect(watch).not.toHaveBeenCalled();
+  });
+
+  it("ouve todas as empresas quando a empresa e undefined (Master)", () => {
+    const { watch, invalidate, notify } = setup(undefined);
+    expect(watch).toHaveBeenCalledWith(undefined, expect.any(Function));
+
+    notify();
+    vi.advanceTimersByTime(500);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["appointments", undefined] });
   });
 });

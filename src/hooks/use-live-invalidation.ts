@@ -7,16 +7,17 @@ const DEBOUNCE_MS = 500;
 /**
  * Recarrega as consultas `[queryKey, companyId, ...]` quando o repositorio avisar
  * que algo mudou no banco, inclusive mudancas feitas por outros usuarios.
+ * `companyId` undefined ouve todas as empresas (visao do Master); vazio ainda nao tem empresa e nao ouve nada.
  */
 export function useLiveInvalidation(
-  watch: (companyId: string, onChange: () => void) => () => void,
+  watch: (companyId: string | undefined, onChange: () => void) => () => void,
   queryKey: string,
-  companyId: string,
+  companyId: string | undefined,
 ) {
   const qc = useQueryClient();
 
   useEffect(() => {
-    if (!companyId) return;
+    if (companyId === "") return;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const stop = watch(companyId, () => {
       clearTimeout(timer);
