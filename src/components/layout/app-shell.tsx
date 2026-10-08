@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { MobileDrawer } from "@/components/layout/mobile-drawer";
 import { Toaster } from "@/components/ui/toaster";
 import { storage } from "@/lib/storage";
+import { cn } from "@/lib/utils";
 
 const COLLAPSE_KEY = "tai:sidebar_collapsed";
 
@@ -21,7 +22,12 @@ export function AppShell() {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-navy-950 bg-tai">
+    <div
+      className={cn(
+        "flex h-screen w-screen overflow-hidden bg-navy-950 [--sidebar-w:0px]",
+        collapsed ? "md:[--sidebar-w:100px]" : "md:[--sidebar-w:256px]",
+      )}
+    >
       <div className="hidden md:block">
         <Sidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
       </div>
@@ -39,7 +45,7 @@ export function AppShell() {
           <img src="/logo-tai-project.png" alt="Tai Project" className="h-6 w-auto object-contain" />
         </header>
 
-        <main className="scroll-darken min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-3 pb-6 pt-4 sm:p-5 md:p-8">
+        <main className="bg-tai-scroll min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-3 pb-6 pt-4 sm:p-5 md:p-8">
           <div className="mx-auto w-full max-w-[1600px]">
             <Outlet />
           </div>
