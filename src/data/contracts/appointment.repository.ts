@@ -24,7 +24,7 @@ export interface AppointmentRepository {
   /** `companyId` undefined = sem filtro por empresa (visao "todas as empresas", usada pelo Master). */
   list(companyId: string | undefined, filters?: AppointmentFilters): Promise<PagedResult<Appointment>>;
   getById(id: string): Promise<Appointment | null>;
-  create(data: Omit<Appointment, "id" | "createdAt" | "companyId" | "authorName">): Promise<Appointment>;
+  create(data: Omit<Appointment, "id" | "createdAt" | "companyId" | "authorName" | "completedAt">): Promise<Appointment>;
   update(id: string, data: Partial<Appointment>): Promise<Appointment>;
   remove(id: string): Promise<void>;
   /** Chama `onChange` quando algum apontamento da empresa muda. Devolve a funcao para parar. */

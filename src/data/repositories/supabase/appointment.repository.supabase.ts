@@ -23,10 +23,11 @@ interface ApontamentoRow {
   OEE: string | null;
   seguimento_OEE: string | null;
   Setor: string | null;
+  concluido_em: string | null;
 }
 
 const APONTAMENTO_COLUMNS =
-  'id, created_at, "idMaquina", data_lancamento, hora_lancamento, "lançador", apontamento, "idRef", tempo_parada, "OEE", "seguimento_OEE", "Setor"';
+  'id, created_at, "idMaquina", data_lancamento, hora_lancamento, "lançador", apontamento, "idRef", tempo_parada, "OEE", "seguimento_OEE", "Setor", concluido_em';
 
 const AREA_VALUES = Object.values(AppointmentArea) as string[];
 
@@ -54,6 +55,7 @@ function toAppointment(
     authorName: row.lançador ?? "",
     description: row.apontamento ?? "",
     createdAt: row.created_at,
+    completedAt: row.concluido_em,
   };
 }
 
@@ -105,7 +107,7 @@ export class SupabaseAppointmentRepository implements AppointmentRepository {
     return toAppointment(row, nameToId, userNameToId);
   }
 
-  async create(data: Omit<Appointment, "id" | "createdAt" | "companyId" | "authorName">): Promise<Appointment> {
+  async create(data: Omit<Appointment, "id" | "createdAt" | "companyId" | "authorName" | "completedAt">): Promise<Appointment> {
     const { data: authorRow, error: authorError } = await supabase
       .from("User")
       .select("idRef, nomeUser, idEmpresa")
@@ -161,6 +163,7 @@ export class SupabaseAppointmentRepository implements AppointmentRepository {
     if (data.area !== undefined) patch.OEE = data.area;
     if (data.affectedSegment !== undefined) patch.seguimento_OEE = data.affectedSegment;
     if (data.sectorId !== undefined) patch.Setor = data.sectorId;
+    if (data.completedAt !== undefined) patch.concluido_em = data.completedAt;
     if (data.machineId !== undefined) {
       const { idToName } = await getMachineNameMaps(companyId);
       patch.idMaquina = idToName.get(data.machineId) ?? row.idMaquina;

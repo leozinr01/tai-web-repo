@@ -1,7 +1,9 @@
-import { formatDate } from "@/lib/utils";
-import { Clock } from "lucide-react";
+import { format } from "date-fns";
+import { cn, formatDate } from "@/lib/utils";
+import { CheckCircle2, Clock, RotateCcw } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import type { Appointment } from "@/domain/entities/appointment";
 import { formatDuration } from "@/domain/appointment-time";
 
@@ -11,6 +13,9 @@ interface AppointmentDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
   /** Sem onEdit, o botao Editar nao aparece (perfil sem permissao). */
   onEdit?: () => void;
+  /** Marca como concluido ou reabre; sem ele o botao nao aparece (perfil sem permissao). */
+  onToggleCompleted?: () => void;
+  isTogglingCompleted?: boolean;
   machineName?: string;
   sectorName?: string;
 }
@@ -19,9 +24,12 @@ export function AppointmentDetailsDialog({
   appointment,
   onOpenChange,
   onEdit,
+  onToggleCompleted,
+  isTogglingCompleted,
   machineName,
   sectorName,
 }: AppointmentDetailsDialogProps) {
+  const isCompleted = !!appointment?.completedAt;
   return (
     <Dialog
       open={!!appointment}
@@ -34,7 +42,28 @@ export function AppointmentDetailsDialog({
       closeButtonClassName="rounded-xl border border-white/5 bg-white/5 p-2.5"
       footer={
         appointment && (
-          <div className="flex gap-4 pt-2">
+          <div className="flex flex-wrap gap-4 pt-2">
+            {onToggleCompleted && (
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full rounded-2xl bg-white/5 py-5 text-sm font-black uppercase active:scale-95",
+                  isCompleted ? "border-white/10" : "border-success/40 text-success-light",
+                )}
+                onClick={onToggleCompleted}
+                disabled={isTogglingCompleted}
+              >
+                {isCompleted ? (
+                  <>
+                    <RotateCcw className="h-4 w-4" /> Reabrir
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" /> Marcar como concluído
+                  </>
+                )}
+              </Button>
+            )}
             {onEdit && (
               <Button
                 variant="outline"
@@ -57,6 +86,13 @@ export function AppointmentDetailsDialog({
     >
       {appointment && (
         <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone={isCompleted ? "success" : "warning"}>{isCompleted ? "Concluído" : "Em aberto"}</Badge>
+            {appointment.completedAt && (
+              <span className="text-xs text-muted">em {format(new Date(appointment.completedAt), "dd/MM/yyyy 'às' HH:mm")}</span>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="rounded-xl border border-white/10 bg-white/5 p-3">
               <p className="label-caps">Data / Hora</p>

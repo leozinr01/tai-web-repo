@@ -6,6 +6,7 @@ import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { FilterField } from "@/components/ui/filter-field";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -142,6 +143,25 @@ export function AppointmentsPage() {
     }
   };
 
+  const handleToggleCompleted = async () => {
+    if (!viewing) return;
+    const completedAt = viewing.completedAt ? null : new Date().toISOString();
+    try {
+      const updated = await updateMutation.mutateAsync({ id: viewing.id, data: { completedAt } });
+      toast({
+        title: completedAt ? "Apontamento marcado como concluído." : "Apontamento reaberto.",
+        variant: "success",
+      });
+      setViewing(updated);
+    } catch (err) {
+      toast({
+        title: "Não foi possível atualizar o apontamento.",
+        description: err instanceof Error ? err.message : undefined,
+        variant: "error",
+      });
+    }
+  };
+
   // Exporta o que esta filtrado na tela (a lista ja vem inteira, sem paginacao no banco).
   const handleExport = () => {
     const items = appointmentsQuery.data?.items ?? [];
@@ -160,6 +180,7 @@ export function AppointmentsPage() {
       durationMinutes: a.durationMinutes,
       author: a.authorName,
       description: a.description,
+      status: a.completedAt ? "Concluído" : "Em aberto",
     }));
     const csv = toCsv(rows, [
       { key: "date", label: "Data" },
@@ -172,6 +193,7 @@ export function AppointmentsPage() {
       { key: "durationMinutes", label: "Tempo parado (min)" },
       { key: "author", label: "Lançador" },
       { key: "description", label: "Apontamento" },
+      { key: "status", label: "Status" },
     ]);
     downloadCsv(`apontamentos-tai-project-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, csv);
     toast({ title: `${items.length} apontamentos exportados.`, variant: "success" });
@@ -299,7 +321,7 @@ export function AppointmentsPage() {
 
         {appointmentsQuery.isSuccess && appointmentsQuery.data.items.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-sm">
+            <table className="w-full min-w-[860px] text-sm">
               <thead>
                 <tr className="border-b border-panel-border text-left text-xs uppercase tracking-wide text-muted">
                   <th className="px-4 py-3 font-semibold">Lançamento</th>
@@ -307,6 +329,7 @@ export function AppointmentsPage() {
                   <th className="px-4 py-3 font-semibold">Máquina / Setor</th>
                   <th className="px-4 py-3 font-semibold">Apontamento</th>
                   <th className="px-4 py-3 font-semibold">Duração</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -337,6 +360,11 @@ export function AppointmentsPage() {
                         <Clock className="h-3.5 w-3.5 text-brand" />
                         {formatDuration(appt.durationMinutes)}
                       </span>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <Badge tone={appt.completedAt ? "success" : "warning"}>
+                        {appt.completedAt ? "Concluído" : "Em aberto"}
+                      </Badge>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button
@@ -387,6 +415,8 @@ export function AppointmentsPage() {
               }
             : undefined
         }
+        onToggleCompleted={canWrite ? handleToggleCompleted : undefined}
+        isTogglingCompleted={updateMutation.isPending}
         machineName={viewing ? machineById.get(viewing.machineId) : undefined}
         sectorName={viewing ? sectorById.get(viewing.sectorId) : undefined}
       />
