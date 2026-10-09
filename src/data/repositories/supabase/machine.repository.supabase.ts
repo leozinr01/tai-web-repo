@@ -401,6 +401,8 @@ async function upsertCardSettings(companyId: string, machineId: number, cardSett
   }
 }
 
+const DEFAULT_DAILY_PRODUCTION_HOURS = 8;
+
 /** Coluna hhmm (texto) de cada categoria de perda, agrupadas pelo pilar de OEE que elas afetam. */
 const LOSS_COLUMN_BY_METRIC_CATEGORY: Record<MachineLossMetric, Record<string, keyof MaquinaRow>> = {
   availability: {
@@ -533,6 +535,8 @@ export class SupabaseMachineRepository implements MachineRepository {
         OEE_disponibilidade: 0,
         OEE_produtividade: 0,
         OEE_qualidade: 0,
+        // Sempre gravado: um valor que nao seja hh:mm aqui derruba o reset diario de OEE de todas as maquinas.
+        OEE_Config_horas_Prod_prog: numberToHoursText(DEFAULT_DAILY_PRODUCTION_HOURS),
       })
       .select(MAQUINA_COLUMNS)
       .single();
