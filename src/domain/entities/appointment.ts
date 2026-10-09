@@ -14,4 +14,6 @@ export interface Appointment {
   authorName: string;
   description: string;
   createdAt: string;
+  /** Quando foi marcado como concluido (ISO); null = em aberto. */
+  completedAt: string | null;
 }

@@ -20,7 +20,7 @@ export function useAppointments(companyId: string | undefined, filters: Appointm
 export function useCreateAppointment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Omit<Appointment, "id" | "createdAt" | "companyId" | "authorName">) =>
+    mutationFn: (data: Omit<Appointment, "id" | "createdAt" | "companyId" | "authorName" | "completedAt">) =>
       repositories.appointments.create(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
   });

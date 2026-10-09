@@ -54,8 +54,10 @@
   .label-caps {
     @apply text-[11px] font-semibold uppercase tracking-wider text-muted;
   }
+  /* Sem backdrop-blur: o fundo e um degrade liso (o desfoque nao muda nada) e, com varios cards na area rolavel,
+     o Chrome deixava uma faixa vertical clara na tela ao repintar um card (ex.: mouse no mini-grafico). */
   .panel {
-    @apply bg-panel border border-panel-border rounded-2xl backdrop-blur-xl;
+    @apply bg-panel border border-panel-border rounded-2xl;
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
