@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Pencil,
   Settings,
@@ -75,12 +75,21 @@ function bottomBarPercent(machine: Machine, key: MachineVariableKey): number {
 }
 
 // Anima do valor exibido atualmente ate o novo alvo, para que a atualizacao automatica nao reinicie do zero.
-function useAnimatedNumber(target: number, duration = 1000) {
-  const [value, setValue] = useState(0);
+// Cada quadro vai direto para o DOM por `apply`, sem estado: com um card por maquina, redesenhar pelo React
+// a cada quadro travava a tela.
+function useAnimatedNumber(target: number, apply: (value: number) => void, duration = 1000) {
   const currentRef = useRef(0);
+  const applyRef = useRef(apply);
+  applyRef.current = apply;
+
+  // Reaplica a cada render: o texto pode mudar (unidade, casas decimais) sem o alvo mudar.
+  useLayoutEffect(() => {
+    applyRef.current(currentRef.current);
+  });
 
   useEffect(() => {
     const from = currentRef.current;
+    if (from === target) return;
     let raf = 0;
     const start = performance.now();
 
@@ -89,20 +98,64 @@ function useAnimatedNumber(target: number, duration = 1000) {
       const eased = 1 - Math.pow(1 - t, 3);
       const next = from + (target - from) * eased;
       currentRef.current = next;
-      setValue(next);
+      applyRef.current(next);
       if (t < 1) raf = requestAnimationFrame(tick);
     };
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [target, duration]);
-
-  return value;
 }
+
+// So escreve quando o texto muda: varios quadros seguidos da animacao arredondam para o mesmo valor.
+function setText(element: HTMLElement | null, text: string) {
+  if (element && element.textContent !== text) element.textContent = text;
+}
+
+const NO_SECTORS: Sector[] = [];
 
 const NUMERIC_VALUE_PATTERN = /^(-?\d+(?:\.\d+)?)(.*)$/;
 
-function AnimatedBottomStat({
+const OeeRing = memo(function OeeRing({ percent }: { percent: number }) {
+  const arcRef = useRef<SVGCircleElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+
+  useAnimatedNumber(percent, (value) => {
+    arcRef.current?.setAttribute("stroke-dashoffset", String(OEE_CIRCUMFERENCE * (1 - value / 100)));
+    setText(textRef.current, `${Math.round(value)}%`);
+  });
+
+  return (
+    <div className="relative flex h-16 w-16 items-center justify-center">
+      <svg viewBox={`0 0 ${OEE_SIZE} ${OEE_SIZE}`} className="absolute inset-0 h-16 w-16 -rotate-90">
+        <circle
+          cx={OEE_SIZE / 2}
+          cy={OEE_SIZE / 2}
+          r={OEE_RADIUS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={OEE_STROKE}
+          className="text-panel-border"
+        />
+        <circle
+          ref={arcRef}
+          cx={OEE_SIZE / 2}
+          cy={OEE_SIZE / 2}
+          r={OEE_RADIUS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={OEE_STROKE}
+          strokeLinecap="round"
+          className="text-brand"
+          strokeDasharray={OEE_CIRCUMFERENCE}
+        />
+      </svg>
+      <span ref={textRef} className="text-sm font-bold text-slate-100" />
+    </div>
+  );
+});
+
+const AnimatedBottomStat = memo(function AnimatedBottomStat({
   label,
   value,
   percent,
@@ -120,10 +173,23 @@ function AnimatedBottomStat({
   const suffix = match?.[2] ?? "";
   const decimals = numStr.split(".")[1]?.length ?? 0;
   const targetNum = parseFloat(numStr);
+  const textRef = useRef<HTMLParagraphElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
 
-  const animatedNum = useAnimatedNumber(targetNum, 1200);
-  const animatedValue = match ? `${animatedNum.toFixed(decimals)}${suffix}` : value;
-  const animatedPercent = useAnimatedNumber(percent, 1200);
+  useAnimatedNumber(
+    targetNum,
+    (num) => {
+      setText(textRef.current, match ? `${num.toFixed(decimals)}${suffix}` : value);
+    },
+    1200,
+  );
+  useAnimatedNumber(
+    percent,
+    (width) => {
+      if (barRef.current) barRef.current.style.width = `${width}%`;
+    },
+    1200,
+  );
 
   return (
     <div
@@ -133,18 +199,18 @@ function AnimatedBottomStat({
       )}
     >
       <p className="label-caps">{label}</p>
-      <p className="mt-1 text-sm font-bold text-slate-100">{animatedValue}</p>
+      <p ref={textRef} className="mt-1 text-sm font-bold text-slate-100" />
       <div className="absolute inset-x-0 bottom-0 h-1.5 bg-white/5">
-        <div className={cn(barClassName, "h-1.5")} style={{ width: `${animatedPercent}%` }} />
+        <div ref={barRef} className={cn(barClassName, "h-1.5")} />
       </div>
     </div>
   );
-}
+});
 
-export function MachineCard({
+export const MachineCard = memo(function MachineCard({
   machine,
   sectorName,
-  sectors = [],
+  sectors = NO_SECTORS,
   updatedAt,
 }: {
   machine: Machine;
@@ -159,7 +225,6 @@ export function MachineCard({
   const updateMutation = useUpdateMachine();
   const { user } = useAuth();
   const canManage = canManageCompany(user?.role);
-  const animatedOee = useAnimatedNumber(machine.oeePercent);
   const [complementaresOpen, setComplementaresOpen] = useState(false);
   const graphKey = machine.cardSettings.graphVariableKey ?? machine.cardSettings.topVariableKeys[0];
   const graphVariable = resolveVariableDisplay(machine, graphKey);
@@ -172,8 +237,10 @@ export function MachineCard({
   const liveHistory = useLiveHistory(`${machine.id}:${graphKey}`, updatedAt, parseFloat(graphVariable?.value ?? ""));
   const graphHistory = machine.graphHistory.length > 1 ? machine.graphHistory : liveHistory;
   // Com uma unica leitura ainda nao ha linha: repete o ponto para mostrar o valor atual como reta.
-  const graphHistoryData = (graphHistory.length === 1 ? [graphHistory[0]!, graphHistory[0]!] : graphHistory).map(
-    (value) => ({ value }),
+  // Mesma referencia enquanto as leituras nao mudam: uma lista nova a cada render reiniciava a animacao do grafico.
+  const graphHistoryData = useMemo(
+    () => (graphHistory.length === 1 ? [graphHistory[0]!, graphHistory[0]!] : graphHistory).map((value) => ({ value })),
+    [graphHistory],
   );
   const hasGraphHistory = graphHistoryData.length > 1;
   // O eixo acompanha a faixa das leituras (com uma folga), em vez de partir do zero: assim a variacao real
@@ -255,32 +322,7 @@ export function MachineCard({
               onClick={drilldown.open}
               className="flex flex-col items-center justify-center rounded-lg border border-panel-border bg-white/5 py-4 hover:border-brand"
             >
-              <div className="relative flex h-16 w-16 items-center justify-center">
-                <svg viewBox={`0 0 ${OEE_SIZE} ${OEE_SIZE}`} className="absolute inset-0 h-16 w-16 -rotate-90">
-                  <circle
-                    cx={OEE_SIZE / 2}
-                    cy={OEE_SIZE / 2}
-                    r={OEE_RADIUS}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={OEE_STROKE}
-                    className="text-panel-border"
-                  />
-                  <circle
-                    cx={OEE_SIZE / 2}
-                    cy={OEE_SIZE / 2}
-                    r={OEE_RADIUS}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={OEE_STROKE}
-                    strokeLinecap="round"
-                    className="text-brand"
-                    strokeDasharray={OEE_CIRCUMFERENCE}
-                    strokeDashoffset={OEE_CIRCUMFERENCE * (1 - animatedOee / 100)}
-                  />
-                </svg>
-                <span className="text-sm font-bold text-slate-100">{Math.round(animatedOee)}%</span>
-              </div>
+              <OeeRing percent={machine.oeePercent} />
               <p className="label-caps mt-2">OEE</p>
             </button>
           ) : (
@@ -428,22 +470,27 @@ export function MachineCard({
         )}
       </Card>
 
-      <MachineDrilldownDialog open={drilldown.isOpen} onOpenChange={drilldown.close} machine={machine} />
-      <MachineCardSettingsDialog
-        open={settingsDialog.isOpen}
-        onOpenChange={settingsDialog.close}
-        machine={machine}
-        onSubmit={handleSaveSettings}
-        isSubmitting={updateMutation.isPending}
-      />
-      <MachineFormDialog
-        open={editDialog.isOpen}
-        onOpenChange={editDialog.close}
-        initial={machine}
-        sectors={sectors}
-        onSubmit={handleSaveEdit}
-        isSubmitting={updateMutation.isPending}
-      />
+      {/* Montados so quando abertos: cada dialogo traz consultas e formulario proprios, e o dashboard tem um card por maquina. */}
+      {drilldown.isOpen && <MachineDrilldownDialog open onOpenChange={drilldown.close} machine={machine} />}
+      {settingsDialog.isOpen && (
+        <MachineCardSettingsDialog
+          open
+          onOpenChange={settingsDialog.close}
+          machine={machine}
+          onSubmit={handleSaveSettings}
+          isSubmitting={updateMutation.isPending}
+        />
+      )}
+      {editDialog.isOpen && (
+        <MachineFormDialog
+          open
+          onOpenChange={editDialog.close}
+          initial={machine}
+          sectors={sectors}
+          onSubmit={handleSaveEdit}
+          isSubmitting={updateMutation.isPending}
+        />
+      )}
     </>
   );
-}
+});

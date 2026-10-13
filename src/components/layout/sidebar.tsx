@@ -34,7 +34,9 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
   return (
     <aside
       className={cn(
-        "relative flex h-full flex-col border-r border-white/10 bg-navy-950/95 backdrop-blur-2xl transition-[width] duration-200 will-change-transform",
+        // Sem transicao de largura nem desfoque: animar a largura refazia o layout da pagina inteira a cada quadro,
+        // e o desfoque nao aparece sobre o fundo liso.
+        "relative flex h-full flex-col border-r border-white/10 bg-navy-950/95",
         collapsed ? "w-[100px]" : "w-64",
       )}
     >

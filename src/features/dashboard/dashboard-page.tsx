@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import { Filter } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,8 @@ import { usePageTitle } from "@/hooks/use-page-title";
 
 const statusOptions = Object.entries(machineStatusLabels).map(([value, label]) => ({ value, label }));
 const FILTER_KEYS = ["setor", "maquina", "status"] as const;
+// Cards desenhados de imediato (os que cabem na primeira tela); o restante entra logo depois, sem travar a abertura.
+const INITIAL_CARDS = 9;
 
 export function DashboardPage() {
   usePageTitle("Dashboard");
@@ -79,6 +81,11 @@ export function DashboardPage() {
 
   // Com a atualizacao automatica falhando, os cards continuam na tela com o ultimo dado bom e o aviso de horario.
   const machines = machinesQuery.data;
+  const [showAllCards, setShowAllCards] = useState(false);
+  useEffect(() => {
+    if (machines) startTransition(() => setShowAllCards(true));
+  }, [machines]);
+  const visibleMachines = showAllCards ? machines : machines?.slice(0, INITIAL_CARDS);
   const isStale = (machinesQuery.isError || indicatorsQuery.isError) && machinesQuery.dataUpdatedAt > 0;
   const lastUpdate = machinesQuery.dataUpdatedAt > 0 ? format(machinesQuery.dataUpdatedAt, "HH:mm:ss") : null;
 
@@ -237,14 +244,14 @@ export function DashboardPage() {
         />
       )}
 
-      {machines && machines.length > 0 && (
+      {visibleMachines && visibleMachines.length > 0 && (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {machines.map((machine) => (
+          {visibleMachines.map((machine) => (
             <MachineCard
               key={machine.id}
               machine={machine}
               sectorName={sectorNameById.get(machine.sectorId)}
-              sectors={sectorsQuery.data ?? []}
+              sectors={sectorsQuery.data}
               updatedAt={machinesQuery.dataUpdatedAt}
             />
           ))}
