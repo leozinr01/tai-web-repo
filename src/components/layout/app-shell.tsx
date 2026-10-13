@@ -34,7 +34,7 @@ export function AppShell() {
       <MobileDrawer open={drawerOpen} onOpenChange={setDrawerOpen} />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex items-center gap-3 border-b border-white/10 bg-navy-950/95 backdrop-blur-xl px-4 py-3 md:hidden">
+        <header className="flex items-center gap-3 border-b border-white/10 bg-navy-950/95 px-4 py-3 md:hidden">
           <button
             onClick={() => setDrawerOpen(true)}
             className="rounded-md p-2 text-slate-200 hover:bg-white/10"
