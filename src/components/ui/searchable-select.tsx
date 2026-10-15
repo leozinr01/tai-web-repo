@@ -128,7 +128,7 @@ export function SearchableSelect({
           disabled={disabled}
           className={cn(
             "flex h-10 w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 text-left text-xs font-normal",
-            "focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand transition-colors disabled:opacity-50",
+            "focus:border-brand focus:outline-hidden focus:ring-1 focus:ring-brand transition-colors disabled:opacity-50",
             error && "border-danger",
             className,
           )}
@@ -180,7 +180,7 @@ export function SearchableSelect({
                 aria-controls={listId}
                 aria-activedescendant={activeOptionId}
                 aria-autocomplete="list"
-                className="h-6 w-full bg-transparent text-sm text-slate-100 placeholder:text-muted focus:outline-none"
+                className="h-6 w-full bg-transparent text-sm text-slate-100 placeholder:text-muted focus:outline-hidden"
               />
             </div>
           )}
@@ -190,7 +190,7 @@ export function SearchableSelect({
             role="listbox"
             tabIndex={searchable ? -1 : 0}
             aria-activedescendant={searchable ? undefined : activeOptionId}
-            className="max-h-64 overflow-y-auto py-1 focus:outline-none"
+            className="max-h-64 overflow-y-auto py-1 focus:outline-hidden"
           >
             {filtered.length === 0 && (
               <p className="px-3 py-3 text-sm text-muted">{emptyMessage}</p>

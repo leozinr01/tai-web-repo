@@ -245,7 +245,7 @@ export function WorkOrderFormDialog({
           <textarea
             rows={4}
             placeholder="O que precisa ser feito?"
-            className="h-24 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-muted focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+            className="h-24 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-muted focus:border-brand focus:outline-hidden focus:ring-1 focus:ring-brand"
             {...register("description")}
           />
           <FieldError message={errors.description?.message} />

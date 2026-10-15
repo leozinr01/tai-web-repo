@@ -194,8 +194,8 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
       {nav.level === "root" ? (
         <RadixDialog.Root open={open && !appointmentDialog.isOpen} onOpenChange={handleClose}>
           <RadixDialog.Portal>
-            <RadixDialog.Overlay className="fixed inset-0 z-40 bg-navy-950/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in" />
-            <RadixDialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[92vw] max-w-4xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto outline-none">
+            <RadixDialog.Overlay className="fixed inset-0 z-40 bg-navy-950/80 backdrop-blur-xs data-[state=open]:animate-in data-[state=open]:fade-in" />
+            <RadixDialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[92vw] max-w-4xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto outline-hidden">
               <RadixDialog.Title className="sr-only">{machine.name}</RadixDialog.Title>
               <Card className="w-full p-8 shadow-2xl">
                 <div className="flex flex-col items-center gap-6">
@@ -249,10 +249,10 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
       ) : (
         <RadixDialog.Root open={open && !appointmentDialog.isOpen} onOpenChange={handleClose}>
           <RadixDialog.Portal>
-            <RadixDialog.Overlay className="fixed inset-0 z-40 bg-navy-950/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in" />
+            <RadixDialog.Overlay className="fixed inset-0 z-40 bg-navy-950/80 backdrop-blur-xs data-[state=open]:animate-in data-[state=open]:fade-in" />
             <RadixDialog.Content
               className={cn(
-                "fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[92vw] -translate-x-1/2 -translate-y-1/2 overflow-y-auto outline-none",
+                "fixed left-1/2 top-1/2 z-50 max-h-[92vh] w-[92vw] -translate-x-1/2 -translate-y-1/2 overflow-y-auto outline-hidden",
                 nav.level === "category" ? "max-w-4xl" : "max-w-lg",
               )}
             >
@@ -284,7 +284,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
                               className="group flex w-full items-center justify-between rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-xl shadow-black/5 ring-1 ring-white/10 backdrop-blur-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                             >
                               <div className="flex items-center gap-6">
-                                <div className="rounded-2xl border border-white/5 bg-white/5 p-4 shadow-sm">
+                                <div className="rounded-2xl border border-white/5 bg-white/5 p-4 shadow-xs">
                                   <Icon className="h-8 w-8" style={{ color }} />
                                 </div>
                                 <div className="flex flex-col items-start">
@@ -329,7 +329,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
                               value={dateFrom}
                               max={dateTo || undefined}
                               onChange={(e) => setDateFrom(e.target.value)}
-                              className="w-full bg-transparent text-sm font-bold text-white focus:outline-none [color-scheme:dark]"
+                              className="w-full bg-transparent text-sm font-bold text-white focus:outline-hidden [color-scheme:dark]"
                             />
                           </div>
                         </div>
@@ -344,7 +344,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
                               value={dateTo}
                               min={dateFrom || undefined}
                               onChange={(e) => setDateTo(e.target.value)}
-                              className="w-full bg-transparent text-sm font-bold text-white focus:outline-none [color-scheme:dark]"
+                              className="w-full bg-transparent text-sm font-bold text-white focus:outline-hidden [color-scheme:dark]"
                             />
                           </div>
                         </div>
