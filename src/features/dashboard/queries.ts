@@ -28,6 +28,14 @@ export function useMachines(
   });
 }
 
+/** Lista leve de maquinas para selects e mapas id -> nome. */
+export function useMachineOptions(companyId: string | undefined) {
+  return useQuery({
+    queryKey: ["machines", "options", companyId],
+    queryFn: () => repositories.machines.listOptions(companyId),
+  });
+}
+
 export function useSectors(companyId: string | undefined) {
   return useQuery({
     queryKey: ["sectors", companyId],

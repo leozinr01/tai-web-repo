@@ -2,6 +2,7 @@ import type { CompanyRepository, ListCompaniesParams } from "@/data/contracts/co
 import type { Company } from "@/domain/entities/company";
 import { CompanyStatus } from "@/domain/types/enums";
 import { supabase } from "@/lib/supabase-client";
+import { fetchAllRows } from "@/data/repositories/supabase/helpers";
 
 interface EmpresaRow {
   idEmpresa: string;
@@ -12,44 +13,83 @@ interface EmpresaRow {
 
 const EMPRESA_COLUMNS = "idEmpresa, nome, logo_url, created_at";
 
+interface CompanyStats {
+  email: string;
+  sectorsCount: number;
+  machinesCount: number;
+}
+
+interface StatsUserRow {
+  idEmpresa: string | null;
+  email: string | null;
+  tipo: string | null;
+}
+
+interface CompanyRefRow {
+  idRef: string | null;
+}
+
 /**
  * `Empresas` nao possui colunas de email/status (schema legado, nao alterado
  * pelo painel). O e-mail e derivado do usuario Master/Admin vinculado; o
  * status e sempre "ativo", ja que nao ha onde persistir uma desativacao.
+ *
+ * Busca usuarios, setores e maquinas de uma vez (3 consultas no total, nao 3 por empresa)
+ * e agrupa por empresa aqui. `companyId` undefined carrega todas.
  */
-async function deriveEmail(companyId: string): Promise<string> {
-  const { data, error } = await supabase.from("User").select("email, tipo").eq("idEmpresa", companyId);
-  if (error) throw new Error(error.message);
-  const rows = data ?? [];
-  if (rows.length === 0) return "";
-  const pick =
-    rows.find((u) => u.tipo === "Master") ?? rows.find((u) => u.tipo === "Admin") ?? rows[0];
-  return pick?.email ?? "";
-}
-
-async function countRows(table: "Sala" | "Maquinas", companyId: string): Promise<number> {
-  const { count, error } = await supabase
-    .from(table)
-    .select("*", { count: "exact", head: true })
-    .eq("idRef", companyId);
-  if (error) throw new Error(error.message);
-  return count ?? 0;
-}
-
-async function toCompany(row: EmpresaRow): Promise<Company> {
-  const [email, sectorsCount, machinesCount] = await Promise.all([
-    deriveEmail(row.idEmpresa),
-    countRows("Sala", row.idEmpresa),
-    countRows("Maquinas", row.idEmpresa),
+async function loadCompanyStats(companyId: string | undefined): Promise<(id: string) => CompanyStats> {
+  const [users, sectors, machines] = await Promise.all([
+    fetchAllRows<StatsUserRow>((from, to) => {
+      let query = supabase.from("User").select("idEmpresa, email, tipo");
+      if (companyId) query = query.eq("idEmpresa", companyId);
+      return query.order("id").range(from, to);
+    }),
+    fetchAllRows<CompanyRefRow>((from, to) => {
+      let query = supabase.from("Sala").select("idRef");
+      if (companyId) query = query.eq("idRef", companyId);
+      return query.order("id").range(from, to);
+    }),
+    fetchAllRows<CompanyRefRow>((from, to) => {
+      let query = supabase.from("Maquinas").select("idRef");
+      if (companyId) query = query.eq("idRef", companyId);
+      return query.order("id").range(from, to);
+    }),
   ]);
+
+  const usersByCompany = new Map<string, StatsUserRow[]>();
+  for (const user of users) {
+    const key = user.idEmpresa ?? "";
+    usersByCompany.set(key, [...(usersByCompany.get(key) ?? []), user]);
+  }
+  const countBy = (rows: CompanyRefRow[]) => {
+    const counts = new Map<string, number>();
+    for (const row of rows) counts.set(row.idRef ?? "", (counts.get(row.idRef ?? "") ?? 0) + 1);
+    return counts;
+  };
+  const sectorsByCompany = countBy(sectors);
+  const machinesByCompany = countBy(machines);
+
+  return (id) => {
+    const companyUsers = usersByCompany.get(id) ?? [];
+    const pick =
+      companyUsers.find((u) => u.tipo === "Master") ?? companyUsers.find((u) => u.tipo === "Admin") ?? companyUsers[0];
+    return {
+      email: pick?.email ?? "",
+      sectorsCount: sectorsByCompany.get(id) ?? 0,
+      machinesCount: machinesByCompany.get(id) ?? 0,
+    };
+  };
+}
+
+function toCompany(row: EmpresaRow, stats: CompanyStats): Company {
   return {
     id: row.idEmpresa,
     name: row.nome ?? "",
-    email,
+    email: stats.email,
     logoUrl: row.logo_url ?? undefined,
     status: CompanyStatus.ACTIVE,
-    sectorsCount,
-    machinesCount,
+    sectorsCount: stats.sectorsCount,
+    machinesCount: stats.machinesCount,
     createdAt: row.created_at,
   };
 }
@@ -61,7 +101,8 @@ export class SupabaseCompanyRepository implements CompanyRepository {
       .select(EMPRESA_COLUMNS)
       .order("nome", { ascending: true });
     if (error) throw new Error(error.message);
-    const companies = await Promise.all(((data ?? []) as EmpresaRow[]).map(toCompany));
+    const statsFor = await loadCompanyStats(undefined);
+    const companies = ((data ?? []) as EmpresaRow[]).map((row) => toCompany(row, statsFor(row.idEmpresa)));
     if (!params?.search) return companies;
     const q = params.search.toLowerCase();
     return companies.filter((c) => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q));
@@ -75,7 +116,9 @@ export class SupabaseCompanyRepository implements CompanyRepository {
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!data) return null;
-    return toCompany(data as EmpresaRow);
+    const row = data as EmpresaRow;
+    const statsFor = await loadCompanyStats(row.idEmpresa);
+    return toCompany(row, statsFor(row.idEmpresa));
   }
 
   async create(data: Omit<Company, "id" | "createdAt" | "sectorsCount" | "machinesCount">): Promise<Company> {

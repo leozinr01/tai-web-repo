@@ -1,4 +1,4 @@
-import type { Machine, MachineCardSettings, MachineLossMetric } from "@/domain/entities/machine";
+import type { Machine, MachineCardSettings, MachineLossMetric, MachineOption } from "@/domain/entities/machine";
 
 export interface MachineFilters {
   sectorId?: string;
@@ -11,6 +11,8 @@ export interface MachineFilters {
 export interface MachineRepository {
   /** `companyId` undefined = sem filtro por empresa (visao "todas as empresas", usada pelo Master). */
   listByCompany(companyId: string | undefined, filters?: MachineFilters): Promise<Machine[]>;
+  /** Versao leve (id, nome, setor, empresa) para listas de selecao; `companyId` undefined = todas as empresas. */
+  listOptions(companyId: string | undefined): Promise<MachineOption[]>;
   getById(id: string): Promise<Machine | null>;
   create(data: { companyId: string; sectorId: string; name: string }): Promise<Machine>;
   update(

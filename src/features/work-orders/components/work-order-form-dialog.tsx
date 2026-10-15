@@ -15,7 +15,7 @@ import { workOrderSchema, type WorkOrderFormValues } from "@/domain/schemas/work
 import { WorkOrderPeriodicity } from "@/domain/types/enums";
 import { workOrderPeriodicityLabels } from "@/lib/labels";
 import type { Sector } from "@/domain/entities/sector";
-import type { Machine } from "@/domain/entities/machine";
+import type { MachineOption } from "@/domain/entities/machine";
 import type { User } from "@/domain/entities/user";
 
 interface WorkOrderFormDialogProps {
@@ -25,7 +25,7 @@ interface WorkOrderFormDialogProps {
   isSubmitting: boolean;
   companyId: string;
   sectors: Sector[];
-  machines: Machine[];
+  machines: MachineOption[];
   users: User[];
 }
 

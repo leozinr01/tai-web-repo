@@ -19,7 +19,7 @@ import { durationBetween } from "@/domain/appointment-time";
 import { AppointmentArea } from "@/domain/types/enums";
 import { appointmentAreaLabels, affectedSegmentsByArea } from "@/lib/labels";
 import type { Sector } from "@/domain/entities/sector";
-import type { Machine } from "@/domain/entities/machine";
+import type { MachineOption } from "@/domain/entities/machine";
 import type { User } from "@/domain/entities/user";
 import type { Appointment } from "@/domain/entities/appointment";
 
@@ -47,7 +47,7 @@ interface AppointmentFormDialogProps {
   isSubmitting: boolean;
   companyId: string;
   sectors: Sector[];
-  machines: Machine[];
+  machines: MachineOption[];
   users: User[];
   initial?: Appointment | null;
   prefill?: { sectorId: string; machineId: string; area?: AppointmentArea; affectedSegment?: string };

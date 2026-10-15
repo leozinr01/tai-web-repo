@@ -4,6 +4,21 @@
  * ponte entre o id de dominio (Machine.id / User.id) e o texto persistido.
  */
 import { supabase } from "@/lib/supabase-client";
+import { fetchAllRows } from "@/data/repositories/supabase/helpers";
+
+// Todas as buscas paginam: acima de 1000 linhas o Supabase corta sem avisar e os nomes deixariam de ser resolvidos.
+
+interface MachineNameRow {
+  id: number;
+  maquina: string | null;
+  idRef: string | null;
+}
+
+interface UserNameRow {
+  idRef: string;
+  nomeUser: string | null;
+  idEmpresa: string | null;
+}
 
 export interface MachineNameMaps {
   idToName: Map<string, string>;
@@ -11,13 +26,14 @@ export interface MachineNameMaps {
 }
 
 export async function getMachineNameMaps(companyId: string): Promise<MachineNameMaps> {
-  const { data, error } = await supabase.from("Maquinas").select("id, maquina").eq("idRef", companyId);
-  if (error) throw new Error(error.message);
+  const rows = await fetchAllRows<MachineNameRow>((from, to) =>
+    supabase.from("Maquinas").select("id, maquina").eq("idRef", companyId).order("id").range(from, to),
+  );
   const idToName = new Map<string, string>();
   const nameToId = new Map<string, string>();
-  for (const row of data ?? []) {
+  for (const row of rows) {
     const id = String(row.id);
-    const name = (row.maquina as string | null) ?? "";
+    const name = row.maquina ?? "";
     idToName.set(id, name);
     nameToId.set(name, id);
   }
@@ -36,15 +52,18 @@ export interface CompanyNameMaps {
 export async function getNameMapsByCompany(
   companyId: string | undefined,
 ): Promise<(rowCompanyId: string) => CompanyNameMaps> {
-  let machines = supabase.from("Maquinas").select("id, maquina, idRef");
-  let users = supabase.from("User").select("idRef, nomeUser, idEmpresa");
-  if (companyId) {
-    machines = machines.eq("idRef", companyId);
-    users = users.eq("idEmpresa", companyId);
-  }
-  const [machinesResult, usersResult] = await Promise.all([machines, users]);
-  if (machinesResult.error) throw new Error(machinesResult.error.message);
-  if (usersResult.error) throw new Error(usersResult.error.message);
+  const [machineRows, userRows] = await Promise.all([
+    fetchAllRows<MachineNameRow>((from, to) => {
+      let query = supabase.from("Maquinas").select("id, maquina, idRef");
+      if (companyId) query = query.eq("idRef", companyId);
+      return query.order("id").range(from, to);
+    }),
+    fetchAllRows<UserNameRow>((from, to) => {
+      let query = supabase.from("User").select("idRef, nomeUser, idEmpresa");
+      if (companyId) query = query.eq("idEmpresa", companyId);
+      return query.order("idRef").range(from, to);
+    }),
+  ]);
 
   const byCompany = new Map<string, CompanyNameMaps>();
   const mapsFor = (id: string) => {
@@ -55,21 +74,22 @@ export async function getNameMapsByCompany(
     }
     return maps;
   };
-  for (const row of machinesResult.data ?? []) {
-    mapsFor((row.idRef as string | null) ?? "").machineIdByName.set((row.maquina as string | null) ?? "", String(row.id));
+  for (const row of machineRows) {
+    mapsFor(row.idRef ?? "").machineIdByName.set(row.maquina ?? "", String(row.id));
   }
-  for (const row of usersResult.data ?? []) {
-    if (row.nomeUser) mapsFor((row.idEmpresa as string | null) ?? "").userIdByName.set(row.nomeUser as string, row.idRef as string);
+  for (const row of userRows) {
+    if (row.nomeUser) mapsFor(row.idEmpresa ?? "").userIdByName.set(row.nomeUser, row.idRef);
   }
   return mapsFor;
 }
 
 export async function getUserNameToId(companyId: string): Promise<Map<string, string>> {
-  const { data, error } = await supabase.from("User").select("idRef, nomeUser").eq("idEmpresa", companyId);
-  if (error) throw new Error(error.message);
+  const rows = await fetchAllRows<UserNameRow>((from, to) =>
+    supabase.from("User").select("idRef, nomeUser").eq("idEmpresa", companyId).order("idRef").range(from, to),
+  );
   const map = new Map<string, string>();
-  for (const row of data ?? []) {
-    if (row.nomeUser) map.set(row.nomeUser as string, row.idRef as string);
+  for (const row of rows) {
+    if (row.nomeUser) map.set(row.nomeUser, row.idRef);
   }
   return map;
 }

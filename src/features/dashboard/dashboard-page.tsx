@@ -17,6 +17,7 @@ import { canManageCompany } from "@/domain/permissions";
 import {
   DASHBOARD_REFRESH_MS,
   useDashboardIndicators,
+  useMachineOptions,
   useMachines,
   useSectors,
   useUpdateAllMachinesCardSettings,
@@ -52,7 +53,7 @@ export function DashboardPage() {
 
   const indicatorsQuery = useDashboardIndicators(companyId);
   const sectorsQuery = useSectors(scopeCompanyId);
-  const allMachinesQuery = useMachines(scopeCompanyId, {});
+  const allMachinesQuery = useMachineOptions(scopeCompanyId);
   const machinesQuery = useMachines(
     scopeCompanyId,
     {

@@ -5,6 +5,7 @@ import type {
   MachineCustomVariable,
   MachineLossBreakdown,
   MachineLossMetric,
+  MachineOption,
   MachineProductionConfig,
   MachineVariableType,
 } from "@/domain/entities/machine";
@@ -13,6 +14,7 @@ import { supabase } from "@/lib/supabase-client";
 import {
   dbVariableKeyToDomainKey,
   domainVariableKeyToDbKey,
+  fetchAllRows,
   findVariableValue,
   flagsFromMachineStatus,
   hhmmToMinutes,
@@ -502,6 +504,18 @@ export class SupabaseMachineRepository implements MachineRepository {
       machines = machines.filter((m) => m.variables.temperatureC >= HIGH_TEMPERATURE_THRESHOLD);
     }
     return machines.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async listOptions(companyId: string | undefined): Promise<MachineOption[]> {
+    // Sem variaveis, configs e historico de relatorios: so o que as listas de selecao usam.
+    const rows = await fetchAllRows<Pick<MaquinaRow, "id" | "maquina" | "IDsala" | "idRef">>((from, to) => {
+      let query = supabase.from("Maquinas").select('id, maquina, "IDsala", "idRef"');
+      if (companyId) query = query.eq("idRef", companyId);
+      return query.order("id").range(from, to);
+    });
+    return rows
+      .map((row) => ({ id: String(row.id), companyId: row.idRef, sectorId: row.IDsala, name: row.maquina ?? "" }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async getById(id: string): Promise<Machine | null> {
