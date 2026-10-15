@@ -15,6 +15,7 @@ import { SupabaseIndicatorRepository } from "@/data/repositories/supabase/indica
 import { SupabaseWorkOrderRepository } from "@/data/repositories/supabase/work-order.repository.supabase";
 import { SupabaseAppointmentRepository } from "@/data/repositories/supabase/appointment.repository.supabase";
 import { SupabaseReportRepository } from "@/data/repositories/supabase/report.repository.supabase";
+import { SupabaseAlertRepository } from "@/data/repositories/supabase/alert.repository.supabase";
 
 export const repositories = {
   auth: new SupabaseAuthRepository(),
@@ -26,4 +27,5 @@ export const repositories = {
   appointments: new SupabaseAppointmentRepository(),
   workOrders: new SupabaseWorkOrderRepository(),
   reports: new SupabaseReportRepository(),
+  alerts: new SupabaseAlertRepository(),
 };

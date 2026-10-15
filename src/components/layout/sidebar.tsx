@@ -4,6 +4,7 @@ import {
   ClipboardList,
   PenTool,
   BarChart3,
+  BellRing,
   Settings,
   Building2,
   ChevronLeft,
@@ -20,6 +21,7 @@ const navItems = [
   { to: "/apontamentos", label: "Apontamentos", icon: ClipboardList },
   { to: "/ordens-de-servico", label: "Ordem de Serviço", icon: PenTool },
   { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
+  { to: "/alertas", label: "Alertas", icon: BellRing },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 

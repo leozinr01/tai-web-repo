@@ -18,6 +18,7 @@ const pages = {
   reports: () => import("@/features/reports/reports-page").then((m) => ({ Component: m.ReportsPage })),
   settings: () => import("@/features/settings/settings-page").then((m) => ({ Component: m.SettingsPage })),
   companies: () => import("@/features/companies/companies-page").then((m) => ({ Component: m.CompaniesPage })),
+  alerts: () => import("@/features/alerts/alerts-page").then((m) => ({ Component: m.AlertsPage })),
 };
 
 export const router = createBrowserRouter([
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
                   { path: "/apontamentos", lazy: pages.appointments },
                   { path: "/ordens-de-servico", lazy: pages.workOrders },
                   { path: "/relatorios", lazy: pages.reports },
+                  { path: "/alertas", lazy: pages.alerts },
                   { path: "/configuracoes", lazy: pages.settings },
                   {
                     element: <RoleGuard allow={[UserRole.MASTER]} />,
