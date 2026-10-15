@@ -3,6 +3,7 @@ import type { WorkOrderFilters, WorkOrderRepository } from "@/data/contracts/wor
 import type { WorkOrder } from "@/domain/entities/work-order";
 import { WorkOrderPeriodicity, WorkOrderStatus } from "@/domain/types/enums";
 import { supabase } from "@/lib/supabase-client";
+import type { TablesUpdate } from "@/data/repositories/supabase/database.types";
 import { workOrderPeriodicityLabels, workOrderStatusLabels } from "@/lib/labels";
 import { getMachineNameMaps, getNameMapsByCompany, getUserNameToId } from "@/data/repositories/supabase/company-lookups";
 import { fetchAllRows } from "@/data/repositories/supabase/helpers";
@@ -153,7 +154,7 @@ export class SupabaseWorkOrderRepository implements WorkOrderRepository {
     const row = current as OsRow;
     const companyId = row.idRef;
 
-    const patch: Record<string, unknown> = {};
+    const patch: TablesUpdate<"Ordem de serviço"> = {};
     if (data.description !== undefined) patch.servico = data.description;
     if (data.date !== undefined) {
       patch.data = data.date;
@@ -164,7 +165,9 @@ export class SupabaseWorkOrderRepository implements WorkOrderRepository {
     if (data.sectorId !== undefined) patch.setor = data.sectorId;
     if (data.machineId !== undefined) {
       const { idToName } = await getMachineNameMaps(companyId);
-      patch.idMaquina = idToName.get(data.machineId) ?? row.idMaquina;
+      // Maquina nao encontrada mantem a atual (coluna NOT NULL no banco).
+      const machineName = idToName.get(data.machineId);
+      if (machineName) patch.idMaquina = machineName;
     }
     if (data.executorName !== undefined) {
       patch.Executor = data.executorName;

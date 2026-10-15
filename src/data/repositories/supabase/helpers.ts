@@ -2,7 +2,9 @@
  * Utilitarios de mapeamento entre o schema real do Supabase (tabelas em
  * portugues, legado) e o modelo de dominio deste painel.
  */
+import type { User } from "@/domain/entities/user";
 import { MachineStatus, UserRole, UserStatus } from "@/domain/types/enums";
+import { initials } from "@/lib/utils";
 
 /** Maximo de linhas que o Supabase devolve por requisicao (acima disso ele corta sem avisar). */
 export const SUPABASE_MAX_ROWS = 1000;
@@ -181,4 +183,31 @@ export function findVariableValue(
     }
   }
   return 0;
+}
+
+/** Linha de `User` com as colunas que o painel le (perfil do login e listas de acesso). */
+export interface UserRow {
+  idRef: string;
+  nomeUser: string | null;
+  email: string | null;
+  tipo: string | null;
+  Status: string | null;
+  idEmpresa: string | null;
+  created_at: string;
+}
+
+export const USER_COLUMNS = "idRef, nomeUser, email, tipo, Status, idEmpresa, created_at";
+
+export function toDomainUser(row: UserRow): User {
+  const name = row.nomeUser || row.email || "Usuário";
+  return {
+    id: row.idRef,
+    companyId: row.idEmpresa ?? "",
+    name,
+    email: row.email ?? "",
+    role: tipoToRole(row.tipo),
+    status: statusToDomain(row.Status),
+    avatarInitials: initials(name),
+    createdAt: row.created_at,
+  };
 }

@@ -1,34 +1,14 @@
 import type { UserRepository } from "@/data/contracts/user.repository";
 import type { User } from "@/domain/entities/user";
 import { supabase } from "@/lib/supabase-client";
-import { initials } from "@/lib/utils";
-import { roleToTipo, statusToDb, statusToDomain, tipoToRole } from "@/data/repositories/supabase/helpers";
-
-interface UserRow {
-  idRef: string;
-  nomeUser: string | null;
-  email: string | null;
-  tipo: string | null;
-  Status: string | null;
-  idEmpresa: string | null;
-  created_at: string;
-}
-
-const USER_COLUMNS = "idRef, nomeUser, email, tipo, Status, idEmpresa, created_at";
-
-function toUser(row: UserRow): User {
-  const name = row.nomeUser || row.email || "Usuário";
-  return {
-    id: row.idRef,
-    companyId: row.idEmpresa ?? "",
-    name,
-    email: row.email ?? "",
-    role: tipoToRole(row.tipo),
-    status: statusToDomain(row.Status),
-    avatarInitials: initials(name),
-    createdAt: row.created_at,
-  };
-}
+import type { TablesUpdate } from "@/data/repositories/supabase/database.types";
+import {
+  roleToTipo,
+  statusToDb,
+  toDomainUser,
+  USER_COLUMNS,
+  type UserRow,
+} from "@/data/repositories/supabase/helpers";
 
 export class SupabaseUserRepository implements UserRepository {
   async listByCompany(companyId: string | undefined): Promise<User[]> {
@@ -36,7 +16,7 @@ export class SupabaseUserRepository implements UserRepository {
     if (companyId) query = query.eq("idEmpresa", companyId);
     const { data, error } = await query;
     if (error) throw new Error(error.message);
-    return ((data ?? []) as UserRow[]).map(toUser).sort((a, b) => a.name.localeCompare(b.name));
+    return ((data ?? []) as UserRow[]).map(toDomainUser).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async create(data: Omit<User, "id" | "createdAt" | "avatarInitials"> & { password: string }): Promise<User> {
@@ -62,11 +42,11 @@ export class SupabaseUserRepository implements UserRepository {
       .select(USER_COLUMNS)
       .single();
     if (error) throw new Error(error.message);
-    return toUser(row as UserRow);
+    return toDomainUser(row as UserRow);
   }
 
   async update(id: string, data: Partial<User>): Promise<User> {
-    const patch: Record<string, unknown> = {};
+    const patch: TablesUpdate<"User"> = {};
     if (data.name !== undefined) patch.nomeUser = data.name;
     if (data.email !== undefined) patch.email = data.email;
     if (data.role !== undefined) patch.tipo = roleToTipo(data.role);
@@ -77,7 +57,7 @@ export class SupabaseUserRepository implements UserRepository {
     }
     const { data: row, error } = await supabase.from("User").select(USER_COLUMNS).eq("idRef", id).single();
     if (error) throw new Error("Usuário não encontrado.");
-    return toUser(row as UserRow);
+    return toDomainUser(row as UserRow);
   }
 
   async setStatus(id: string, status: User["status"]): Promise<User> {

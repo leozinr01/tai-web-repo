@@ -25,8 +25,7 @@ import type { WorkOrderFormValues, WorkOrderQuickEditValues } from "@/domain/sch
 import type { WorkOrder } from "@/domain/entities/work-order";
 import { UserRole, WorkOrderStatus } from "@/domain/types/enums";
 import { workOrderStatusLabels } from "@/lib/labels";
-import { repositories } from "@/data/repositories";
-import { useQuery } from "@tanstack/react-query";
+import { useCompanyUsers } from "@/features/settings/queries";
 import { usePageTitle } from "@/hooks/use-page-title";
 
 const statusOptions = Object.entries(workOrderStatusLabels).map(([value, label]) => ({ value, label }));
@@ -70,10 +69,7 @@ export function WorkOrdersPage() {
   const machinesQuery = useMachineOptions(scopeCompanyId);
   const ownSectorsQuery = useSectors(companyId);
   const ownMachinesQuery = useMachineOptions(companyId);
-  const ownUsersQuery = useQuery({
-    queryKey: ["users", companyId],
-    queryFn: () => repositories.users.listByCompany(companyId),
-  });
+  const ownUsersQuery = useCompanyUsers(companyId);
 
   const filters = {
     dateFrom: dateFrom || undefined,
