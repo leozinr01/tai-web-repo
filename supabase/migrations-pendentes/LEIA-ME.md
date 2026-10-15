@@ -168,8 +168,9 @@ pouco para concluir como ele se comporta com Admin, Operador, Vendedor e Cliente
 
 1. **Antes:** revisar logs de 7–14 dias (anon e `/rpc/`) e conversar com quem mantém o
    legado sobre Vendedor, exclusões e telas multiempresa.
-2. **Criar um branch** do projeto TAI com cópia dos dados (ou um seed com pelo menos 2
-   empresas, setores, máquinas, apontamentos, O.S. e relatórios em cada uma).
+2. **Criar um branch** do projeto TAI seguindo `supabase/README.md`: o branch nasce do
+   esquema inicial (`supabase/migrations/`), sem dados, então é preciso um seed com pelo
+   menos 2 empresas, setores, máquinas, apontamentos, O.S. e relatórios em cada uma.
 3. **Usuários de teste** no branch: `master@`, `admin-a@`, `operador-a@`, `vendedor-a@`
    e `cliente-a@` (empresa A, Status `''` para reproduzir produção), `admin-b@`
    (empresa B) e `inativo-a@` (Status `'inativo'`).
