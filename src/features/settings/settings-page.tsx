@@ -253,11 +253,11 @@ export function SettingsPage() {
                       <div className="min-w-0">
                         <p className="flex items-center gap-2 truncate text-sm font-semibold text-slate-100">
                           {u.name}
-                          <span className="rounded bg-white/10 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white/50">
+                          <span className="rounded-sm bg-white/10 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white/50">
                             {userRoleLabels[u.role]}
                           </span>
                           {u.status === UserStatus.INACTIVE && (
-                            <span className="rounded bg-white/10 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white/50">
+                            <span className="rounded-sm bg-white/10 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white/50">
                               Inativo
                             </span>
                           )}

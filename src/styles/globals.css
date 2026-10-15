@@ -1,6 +1,47 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-navy-950: #010b1a;
+  --color-navy-900: #010b1a;
+  --color-navy-850: #0c1524;
+  --color-navy-800: #0f1827;
+  --color-navy-700: #1a2436;
+  --color-navy-600: #243050;
+
+  --color-panel: rgba(255, 255, 255, 0.05);
+  --color-panel-border: rgba(255, 255, 255, 0.1);
+
+  --color-brand: #3b82f6;
+  --color-brand-hover: #2563eb;
+  --color-brand-light: #60a5fa;
+
+  --color-success: #10b981;
+  --color-success-light: #34d399;
+
+  --color-warning: #fb923c;
+  --color-warning-light: #fdba74;
+
+  --color-danger: #fb7185;
+  --color-danger-light: #fda4af;
+
+  --color-muted: #94a3b8;
+
+  --font-sans: Manrope, system-ui, sans-serif;
+  --font-display: "Space Grotesk", Manrope, system-ui, sans-serif;
+
+  --shadow-soft: 0 4px 24px -8px rgba(0, 0, 0, 0.4);
+}
+
+/* No v3 botoes tinham cursor pointer por padrao; o v4 usa o cursor padrao do navegador. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
 
 @layer base {
   * {
@@ -27,7 +68,7 @@
     @apply bg-navy-600 rounded-full;
   }
   :focus-visible {
-    @apply outline-none ring-2 ring-brand ring-offset-2 ring-offset-navy-950;
+    @apply outline-hidden ring-2 ring-brand ring-offset-2 ring-offset-navy-950;
   }
   input[type="date"]::-webkit-calendar-picker-indicator,
   input[type="time"]::-webkit-calendar-picker-indicator {

@@ -60,7 +60,7 @@ export function LoginPage() {
                   type="email"
                   placeholder="ex@empresa.com"
                   autoComplete="username"
-                  className="w-full bg-transparent text-sm text-white focus:outline-none"
+                  className="w-full bg-transparent text-sm text-white focus:outline-hidden"
                   {...register("email")}
                 />
               </div>
@@ -78,7 +78,7 @@ export function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   placeholder="********"
                   autoComplete="current-password"
-                  className="w-full bg-transparent text-sm text-white focus:outline-none"
+                  className="w-full bg-transparent text-sm text-white focus:outline-hidden"
                   {...register("password")}
                 />
                 <button

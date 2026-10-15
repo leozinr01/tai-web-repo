@@ -93,7 +93,7 @@ export function MachineCardSettingsDialog({
               type="checkbox"
               checked={settings.showOeeCircle}
               onChange={(e) => setSettings((s) => ({ ...s, showOeeCircle: e.target.checked }))}
-              className="h-4 w-4 rounded border-panel-border bg-white/5 accent-brand"
+              className="h-4 w-4 rounded-sm border-panel-border bg-white/5 accent-brand"
             />
             Mostrar circulo de OEE
           </label>

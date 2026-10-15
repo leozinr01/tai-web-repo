@@ -18,7 +18,7 @@ export function Switch({
       onCheckedChange={onCheckedChange}
       aria-label={ariaLabel}
       className={cn(
-        "relative h-6 w-11 shrink-0 rounded-full border border-white/10 bg-white/10 outline-none transition-colors data-[state=checked]:bg-brand data-[state=checked]:border-brand",
+        "relative h-6 w-11 shrink-0 rounded-full border border-white/10 bg-white/10 outline-hidden transition-colors data-[state=checked]:bg-brand data-[state=checked]:border-brand",
         className,
       )}
     >
