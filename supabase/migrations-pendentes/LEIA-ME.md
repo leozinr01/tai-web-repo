@@ -11,6 +11,39 @@ O parser não valida o SQL montado dentro dos blocos `DO`.
 
 ---
 
+## 0. Resultado do teste no branch (15/10/2026)
+
+Branch `teste-rls` criado do esquema inicial (`supabase/migrations/`) mais o `supabase/seed.sql`.
+Primeiro foi testado sem a migração, depois com ela. **Produção não foi tocada.**
+
+**Antes da migração** (estado igual ao de produção), confirmando as brechas:
+- A anon key, sem login, leu todas as tabelas (exceto `variables`) e **criou uma empresa**.
+- Admin A **virou Master** sozinho e **renomeou máquinas da Empresa B**.
+- Operador A lançou apontamento **na Empresa B**; Vendedor e Cliente gravaram apontamentos.
+- O token de um usuário **inativo** continuava lendo tudo.
+
+**Depois da migração: 30/30 checagens de API OK.**
+
+| Quem | Resultado |
+|---|---|
+| anon (sem login) | 0 linhas em todas as tabelas; insert negado |
+| master | vê as 2 empresas; edita setor da B; **exclui empresa pelo Painel Master** |
+| admin-a | vê só a A (máquinas, apontamentos, usuários); não vira Master; 0 linhas ao tentar alterar máquina da B; troca o logo da própria empresa |
+| operador-a | lança apontamento na A; insert na B negado; **registra perda (UPDATE em Maquinas) e o trigger recalcula o OEE geral das duas empresas** |
+| vendedor-a / cliente-a | leem a A; gravar é negado |
+| inativo-a | token válido lê 0 máquinas; o login mostra "Este usuário está desativado" |
+| admin-b | vê só usuários e relatórios da B |
+
+Telas conferidas no tai-web apontado para o branch: dashboard, Apontamentos (Admin A vê só os 7
+da A), Configurações (só os 6 usuários da A), login do inativo e Painel Master (lista, contagens
+e exclusão).
+
+Ajuste que saiu do teste: o Supabase avisou que `tai_private.rls_policies_backup` ficava sem RLS.
+A migração agora liga o RLS nela (sem policies: só o dono acessa).
+
+Observação: o conector do Supabase usado pelo Claude barra SQL com `DELETE`/`DROP`, mesmo dentro
+de corpo de função. Essas partes foram rodadas pelo SQL Editor do painel, no branch.
+
 ## 1. O que foi conferido no banco (15/10/2026, só leitura)
 
 | Item | Resultado | Efeito na migração |
