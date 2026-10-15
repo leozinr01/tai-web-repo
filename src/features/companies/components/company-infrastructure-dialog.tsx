@@ -61,7 +61,7 @@ export function CompanyInfrastructureDialog({
   const handleSectorSubmit = async (values: { name: string }) => {
     try {
       if (editingSector) {
-        await updateSector.mutateAsync({ id: editingSector.id, name: values.name });
+        await updateSector.mutateAsync({ id: editingSector.id, companyId, name: values.name });
         toast({ title: "Setor atualizado.", variant: "success" });
       } else {
         await createSector.mutateAsync({ companyId, name: values.name });

@@ -48,23 +48,12 @@ export function useDeleteCompany() {
   });
 }
 
-async function syncCompanyCounts(companyId: string) {
-  const [sectors, machines] = await Promise.all([
-    repositories.sectors.listByCompany(companyId),
-    repositories.machines.listByCompany(companyId),
-  ]);
-  await repositories.companies.update(companyId, {
-    sectorsCount: sectors.length,
-    machinesCount: machines.length,
-  });
-}
-
 export function useCreateSector() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: { companyId: string; name: string }) => repositories.sectors.create(data),
-    onSuccess: async (_result, variables) => {
-      await syncCompanyCounts(variables.companyId);
+    // A lista de empresas recalcula as contagens de setores e maquinas ao recarregar.
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sectors"] });
       qc.invalidateQueries({ queryKey: [KEY] });
     },
@@ -74,7 +63,8 @@ export function useCreateSector() {
 export function useUpdateSector() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, name }: { id: string; name: string }) => repositories.sectors.update(id, { name }),
+    mutationFn: ({ id, companyId, name }: { id: string; companyId: string; name: string }) =>
+      repositories.sectors.update(id, companyId, { name }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["sectors"] }),
   });
 }
@@ -82,9 +72,9 @@ export function useUpdateSector() {
 export function useDeleteSector() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id }: { id: string; companyId: string }) => repositories.sectors.remove(id),
-    onSuccess: async (_result, variables) => {
-      await syncCompanyCounts(variables.companyId);
+    mutationFn: ({ id, companyId }: { id: string; companyId: string }) => repositories.sectors.remove(id, companyId),
+    // A lista de empresas recalcula as contagens de setores e maquinas ao recarregar.
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sectors"] });
       qc.invalidateQueries({ queryKey: [KEY] });
     },
@@ -96,8 +86,8 @@ export function useCreateMachine() {
   return useMutation({
     mutationFn: (data: { companyId: string; sectorId: string; name: string }) =>
       repositories.machines.create(data),
-    onSuccess: async (_result, variables) => {
-      await syncCompanyCounts(variables.companyId);
+    // A lista de empresas recalcula as contagens de setores e maquinas ao recarregar.
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["machines"] });
       qc.invalidateQueries({ queryKey: [KEY] });
     },
@@ -108,8 +98,8 @@ export function useDeleteMachine() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id }: { id: string; companyId: string }) => repositories.machines.remove(id),
-    onSuccess: async (_result, variables) => {
-      await syncCompanyCounts(variables.companyId);
+    // A lista de empresas recalcula as contagens de setores e maquinas ao recarregar.
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["machines"] });
       qc.invalidateQueries({ queryKey: [KEY] });
     },

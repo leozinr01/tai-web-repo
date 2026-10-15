@@ -5,4 +5,6 @@ export interface AuthRepository {
   logout(): Promise<void>;
   getSession(): Promise<AuthSession | null>;
   changePassword(newPassword: string): Promise<void>;
+  /** Chama `onSignedOut` quando a sessao acaba fora do app (outra aba, refresh token expirado). Devolve a funcao para parar. */
+  onSignedOut(onSignedOut: () => void): () => void;
 }

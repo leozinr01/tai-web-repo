@@ -114,15 +114,19 @@ export class SupabaseAppointmentRepository implements AppointmentRepository {
       .eq("idRef", data.authorId)
       .maybeSingle();
     if (authorError) throw new Error(authorError.message);
-    const companyId = authorRow?.idEmpresa ?? "";
-    const authorName = authorRow?.nomeUser ?? "Desconhecido";
+    // Sem empresa ou maquina o registro ficaria orfao (idRef/idMaquina vazios) e sumiria de todas as telas.
+    if (!authorRow?.idEmpresa) throw new Error("Lançador não encontrado ou sem empresa vinculada.");
+    const companyId = authorRow.idEmpresa;
+    const authorName = authorRow.nomeUser ?? "Desconhecido";
 
     const { idToName } = await getMachineNameMaps(companyId);
+    const machineName = idToName.get(data.machineId);
+    if (!machineName) throw new Error("Máquina não encontrada na empresa do lançador.");
 
     const { data: row, error } = await supabase
       .from("Apontamentos")
       .insert({
-        idMaquina: idToName.get(data.machineId) ?? "",
+        idMaquina: machineName,
         data_lancamento: formatBrDate(data.date),
         hora_lancamento: data.time,
         lançador: authorName,
@@ -169,7 +173,12 @@ export class SupabaseAppointmentRepository implements AppointmentRepository {
       patch.idMaquina = idToName.get(data.machineId) ?? row.idMaquina;
     }
     if (data.authorId !== undefined) {
-      const { data: authorRow } = await supabase.from("User").select("nomeUser").eq("idRef", data.authorId).maybeSingle();
+      const { data: authorRow, error: authorError } = await supabase
+        .from("User")
+        .select("nomeUser")
+        .eq("idRef", data.authorId)
+        .maybeSingle();
+      if (authorError) throw new Error(authorError.message);
       patch.lançador = authorRow?.nomeUser ?? row.lançador;
     }
 

@@ -47,7 +47,14 @@ export class SupabaseAuthRepository implements AuthRepository {
       throw new Error("Credenciais inválidas. Verifique o e-mail e a senha.");
     }
 
-    const profile = await loadProfile(data.user.id);
+    let profile: User | null;
+    try {
+      profile = await loadProfile(data.user.id);
+    } catch (err) {
+      // Sem conseguir validar o perfil, a sessao recem-criada nao pode continuar viva.
+      await supabase.auth.signOut();
+      throw err;
+    }
     if (!profile) {
       await supabase.auth.signOut();
       throw new Error("Usuário autenticado, mas sem cadastro vinculado. Contate um administrador.");
@@ -73,13 +80,25 @@ export class SupabaseAuthRepository implements AuthRepository {
     if (error) throw new Error(error.message);
   }
 
+  onSignedOut(onSignedOut: () => void): () => void {
+    // O callback do supabase-js nao deve aguardar outras chamadas do cliente (trava o lock de auth), por isso so avisa.
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") onSignedOut();
+    });
+    return () => data.subscription.unsubscribe();
+  }
+
   async getSession(): Promise<AuthSession | null> {
     const { data } = await supabase.auth.getSession();
     const session = data.session;
     if (!session || !session.user) return null;
 
     const profile = await loadProfile(session.user.id);
-    if (!profile || profile.status === UserStatus.INACTIVE) return null;
+    if (!profile || profile.status === UserStatus.INACTIVE) {
+      // Usuario removido ou desativado depois do login: descarta o token salvo em vez de manter a sessao renovando.
+      await supabase.auth.signOut();
+      return null;
+    }
 
     return {
       user: profile,
