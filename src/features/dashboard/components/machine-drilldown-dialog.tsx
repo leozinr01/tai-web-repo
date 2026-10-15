@@ -19,7 +19,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/use-auth";
 import { canWriteRecords } from "@/domain/permissions";
-import { useSectors, useMachines, useRegisterMachineLoss } from "@/features/dashboard/queries";
+import { useSectors, useMachineOptions, useRegisterMachineLoss } from "@/features/dashboard/queries";
 import { useCreateAppointment } from "@/features/appointments/queries";
 import { AppointmentFormDialog } from "@/features/appointments/components/appointment-form-dialog";
 import { useDisclosure } from "@/hooks/use-disclosure";
@@ -133,7 +133,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
   const { user } = useAuth();
   const companyId = user?.companyId ?? "";
   const sectorsQuery = useSectors(companyId);
-  const machinesQuery = useMachines(companyId, {});
+  const machinesQuery = useMachineOptions(companyId);
   const usersQuery = useQuery({
     queryKey: ["users", companyId],
     queryFn: () => repositories.users.listByCompany(companyId),

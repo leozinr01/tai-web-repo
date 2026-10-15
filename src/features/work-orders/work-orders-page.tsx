@@ -14,7 +14,7 @@ import { useClientPagination } from "@/hooks/use-client-pagination";
 import { useUrlFilters } from "@/hooks/use-url-filters";
 import { useAuth } from "@/features/auth/use-auth";
 import { canWriteRecords } from "@/domain/permissions";
-import { useSectors, useMachines } from "@/features/dashboard/queries";
+import { useSectors, useMachineOptions } from "@/features/dashboard/queries";
 import { useWorkOrders, useCreateWorkOrder, useUpdateWorkOrder } from "@/features/work-orders/queries";
 import { WorkOrderFormDialog } from "@/features/work-orders/components/work-order-form-dialog";
 import { WorkOrderDetailsDialog, WorkOrderStatusBadge } from "@/features/work-orders/components/work-order-details-dialog";
@@ -67,9 +67,9 @@ export function WorkOrdersPage() {
   const [editing, setEditing] = useState<WorkOrder | null>(null);
 
   const sectorsQuery = useSectors(scopeCompanyId);
-  const machinesQuery = useMachines(scopeCompanyId, {});
+  const machinesQuery = useMachineOptions(scopeCompanyId);
   const ownSectorsQuery = useSectors(companyId);
-  const ownMachinesQuery = useMachines(companyId, {});
+  const ownMachinesQuery = useMachineOptions(companyId);
   const ownUsersQuery = useQuery({
     queryKey: ["users", companyId],
     queryFn: () => repositories.users.listByCompany(companyId),

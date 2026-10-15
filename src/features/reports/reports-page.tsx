@@ -14,7 +14,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Pagination } from "@/components/ui/pagination";
 import { useAuth } from "@/features/auth/use-auth";
-import { useSectors, useMachines } from "@/features/dashboard/queries";
+import { useSectors, useMachineOptions } from "@/features/dashboard/queries";
 import { repositories } from "@/data/repositories";
 import { toCsv, downloadCsv } from "@/lib/csv";
 import { toast } from "@/hooks/use-toast";
@@ -43,7 +43,7 @@ export function ReportsPage() {
   const toRef = useRef<HTMLInputElement>(null);
 
   const sectorsQuery = useSectors(scopeCompanyId);
-  const machinesQuery = useMachines(scopeCompanyId, {});
+  const machinesQuery = useMachineOptions(scopeCompanyId);
 
   const filters = { from: from || undefined, to: to || undefined, sectorId: sectorId || undefined, machineId: machineId || undefined };
   // A pagina volta para 1 sempre que algum filtro muda.

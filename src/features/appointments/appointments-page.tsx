@@ -17,7 +17,7 @@ import { useClientPagination } from "@/hooks/use-client-pagination";
 import { useUrlFilters } from "@/hooks/use-url-filters";
 import { useAuth } from "@/features/auth/use-auth";
 import { canWriteRecords } from "@/domain/permissions";
-import { useSectors, useMachines } from "@/features/dashboard/queries";
+import { useSectors, useMachineOptions } from "@/features/dashboard/queries";
 import { useAppointments, useCreateAppointment, useUpdateAppointment } from "@/features/appointments/queries";
 import { AppointmentFormDialog } from "@/features/appointments/components/appointment-form-dialog";
 import { AppointmentDetailsDialog } from "@/features/appointments/components/appointment-details-dialog";
@@ -60,13 +60,13 @@ export function AppointmentsPage() {
   const [editing, setEditing] = useState<Appointment | null>(null);
 
   const sectorsQuery = useSectors(scopeCompanyId);
-  const machinesQuery = useMachines(scopeCompanyId, {});
+  const machinesQuery = useMachineOptions(scopeCompanyId);
   const usersQuery = useQuery({
     queryKey: ["users", scopeCompanyId],
     queryFn: () => repositories.users.listByCompany(scopeCompanyId),
   });
   const ownSectorsQuery = useSectors(companyId);
-  const ownMachinesQuery = useMachines(companyId, {});
+  const ownMachinesQuery = useMachineOptions(companyId);
   const ownUsersQuery = useQuery({
     queryKey: ["users", companyId],
     queryFn: () => repositories.users.listByCompany(companyId),

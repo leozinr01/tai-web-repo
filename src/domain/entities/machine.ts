@@ -90,3 +90,6 @@ export interface Machine {
   lossBreakdown: MachineLossBreakdown;
   productionConfig: MachineProductionConfig;
 }
+
+/** So o necessario para listas de selecao e para resolver nome/setor de uma maquina pelo id. */
+export type MachineOption = Pick<Machine, "id" | "companyId" | "sectorId" | "name">;
