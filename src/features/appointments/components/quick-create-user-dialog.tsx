@@ -10,6 +10,7 @@ import { UserRole, UserStatus } from "@/domain/types/enums";
 import { userRoleLabels } from "@/lib/labels";
 import { assignableRoles } from "@/domain/permissions";
 import { useAuth } from "@/features/auth/use-auth";
+import { toast } from "@/hooks/use-toast";
 import type { User } from "@/domain/entities/user";
 
 const quickUserSchema = z.object({
@@ -56,14 +57,24 @@ export function QuickCreateUserDialog({
   }, [open, reset]);
 
   const handleFormSubmit = async (values: QuickUserValues) => {
-    const user = await onSubmit({
-      companyId,
-      name: values.name,
-      email: values.email,
-      password: values.password,
-      role: values.role,
-      status: UserStatus.ACTIVE,
-    });
+    let user: User;
+    try {
+      user = await onSubmit({
+        companyId,
+        name: values.name,
+        email: values.email,
+        password: values.password,
+        role: values.role,
+        status: UserStatus.ACTIVE,
+      });
+    } catch (err) {
+      toast({
+        title: "Não foi possível criar o usuário.",
+        description: err instanceof Error ? err.message : undefined,
+        variant: "error",
+      });
+      return;
+    }
     onCreated(user);
   };
 

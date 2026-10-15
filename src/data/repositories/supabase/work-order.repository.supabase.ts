@@ -108,16 +108,20 @@ export class SupabaseWorkOrderRepository implements WorkOrderRepository {
       .eq("idRef", data.executorId)
       .maybeSingle();
     if (execError) throw new Error(execError.message);
-    const companyId = executorRow?.idEmpresa ?? "";
-    const executorName = executorRow?.nomeUser ?? "Desconhecido";
+    // Sem empresa ou maquina o registro ficaria orfao (idRef/idMaquina vazios) e sumiria de todas as telas.
+    if (!executorRow?.idEmpresa) throw new Error("Executor não encontrado ou sem empresa vinculada.");
+    const companyId = executorRow.idEmpresa;
+    const executorName = executorRow.nomeUser ?? "Desconhecido";
     const { idToName } = await getMachineNameMaps(companyId);
+    const machineName = idToName.get(data.machineId);
+    if (!machineName) throw new Error("Máquina não encontrada na empresa do executor.");
     const numOrdem = Number(format(new Date(), "yyyyMMddHHmmss"));
 
     const { data: row, error } = await supabase
       .from(TABLE)
       .insert({
         idRef: companyId,
-        idMaquina: idToName.get(data.machineId) ?? "",
+        idMaquina: machineName,
         numOrdem,
         data: data.date,
         proxima_execucao: data.date,
@@ -165,7 +169,12 @@ export class SupabaseWorkOrderRepository implements WorkOrderRepository {
     if (data.executorName !== undefined) {
       patch.Executor = data.executorName;
     } else if (data.executorId !== undefined) {
-      const { data: executorRow } = await supabase.from("User").select("nomeUser").eq("idRef", data.executorId).maybeSingle();
+      const { data: executorRow, error: executorError } = await supabase
+        .from("User")
+        .select("nomeUser")
+        .eq("idRef", data.executorId)
+        .maybeSingle();
+      if (executorError) throw new Error(executorError.message);
       patch.Executor = executorRow?.nomeUser ?? row.Executor;
     }
 

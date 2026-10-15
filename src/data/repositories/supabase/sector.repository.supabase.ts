@@ -35,9 +35,15 @@ export class SupabaseSectorRepository implements SectorRepository {
     return toSector(row as SalaRow);
   }
 
-  async update(id: string, data: Partial<Pick<Sector, "name">>): Promise<Sector> {
+  // Setor e identificado pelo nome: sempre filtrar pela empresa tambem, para nunca alcancar o setor homonimo de outra.
+  async update(id: string, companyId: string, data: Partial<Pick<Sector, "name">>): Promise<Sector> {
     if (!data.name) {
-      const { data: row, error } = await supabase.from("Sala").select("sala, idRef").eq("sala", id).single();
+      const { data: row, error } = await supabase
+        .from("Sala")
+        .select("sala, idRef")
+        .eq("sala", id)
+        .eq("idRef", companyId)
+        .single();
       if (error) throw new Error("Setor não encontrado.");
       return toSector(row as SalaRow);
     }
@@ -45,24 +51,26 @@ export class SupabaseSectorRepository implements SectorRepository {
       .from("Sala")
       .update({ sala: data.name })
       .eq("sala", id)
+      .eq("idRef", companyId)
       .select("sala, idRef")
       .single();
     if (error) throw new Error("Não foi possível renomear o setor. O nome já pode estar em uso.");
     return toSector(row as SalaRow);
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, companyId: string): Promise<void> {
     const { data: machines, error: machinesError } = await supabase
       .from("Maquinas")
       .select("id")
-      .eq("IDsala", id);
+      .eq("IDsala", id)
+      .eq("idRef", companyId);
     if (machinesError) throw new Error(machinesError.message);
     const machineIds = (machines ?? []).map((m) => m.id as number);
     if (machineIds.length > 0) {
       const { error: variablesError } = await supabase.from("variables").delete().in("maquina_id", machineIds);
       if (variablesError) throw new Error(variablesError.message);
     }
-    const { error } = await supabase.from("Sala").delete().eq("sala", id);
+    const { error } = await supabase.from("Sala").delete().eq("sala", id).eq("idRef", companyId);
     if (error) throw new Error(error.message);
   }
 }

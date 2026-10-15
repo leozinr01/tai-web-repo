@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/use-auth";
+import { toast } from "@/hooks/use-toast";
 import { UserRole } from "@/domain/types/enums";
 import { userRoleLabels } from "@/lib/labels";
 
@@ -125,7 +126,15 @@ export function Sidebar({ collapsed, onToggleCollapsed, onNavigate }: SidebarPro
           )}
         </div>
         <button
-          onClick={() => logout()}
+          onClick={() =>
+            logout().catch((err: unknown) =>
+              toast({
+                title: "Não foi possível sair da conta.",
+                description: err instanceof Error ? err.message : undefined,
+                variant: "error",
+              }),
+            )
+          }
           className={cn(
             "mt-2 flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-danger-light hover:bg-danger/10",
           )}
