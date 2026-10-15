@@ -10,6 +10,7 @@ deve ser rodado em produção sem revisão.**
 |---|---|
 | `migrations/` | Histórico do schema. Serve para criar um banco **novo** igual à produção (branch de teste, ambiente local). |
 | `migrations-pendentes/` | Mudanças preparadas e **não aplicadas** (hoje: RLS por empresa). Cada uma tem seu LEIA-ME. |
+| `seed.sql` | Dados fictícios para um branch de teste vazio. Nunca para produção. |
 
 ### `migrations/`
 
@@ -45,7 +46,9 @@ chega em produção. Ele é cobrado por hora enquanto existe, então **apague de
    em produção**, que hoje tem só as 3 migrations antigas. Sem as tabelas, a primeira
    delas falha. Se isso acontecer, aplicar **no branch**, nesta ordem, os 4 arquivos
    de `migrations/`.
-3. Carregar dados de teste (2 empresas, setores, máquinas, usuários de cada papel).
+3. Carregar os dados de teste rodando `supabase/seed.sql` **no branch**: 2 empresas, setores,
+   máquinas, apontamentos, O.S., relatórios das últimas 72h e um usuário de cada papel
+   (senha `Teste@123`). O script aborta se o banco já tiver empresas, então não roda em produção.
 4. Apontar o tai-web local para o branch, num `.env.local` com a URL e a anon key do branch.
 5. Testar a migração de `migrations-pendentes/` seguindo o roteiro do LEIA-ME de lá.
 6. Apagar o branch.
