@@ -34,11 +34,3 @@ export function useUpdateWorkOrder() {
     onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
   });
 }
-
-export function useDeleteWorkOrder() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => repositories.workOrders.remove(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
-  });
-}

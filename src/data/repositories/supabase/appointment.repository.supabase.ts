@@ -6,6 +6,7 @@ import type {
 import type { Appointment } from "@/domain/entities/appointment";
 import { AppointmentArea } from "@/domain/types/enums";
 import { supabase } from "@/lib/supabase-client";
+import type { TablesUpdate } from "@/data/repositories/supabase/database.types";
 import { fetchAllRows, formatBrDate, hhmmToMinutes, minutesToHHMM, padTime, parseBrDate } from "@/data/repositories/supabase/helpers";
 import { getMachineNameMaps, getNameMapsByCompany, getUserNameToId } from "@/data/repositories/supabase/company-lookups";
 import { watchCompanyTable } from "@/data/repositories/supabase/realtime";
@@ -159,7 +160,7 @@ export class SupabaseAppointmentRepository implements AppointmentRepository {
     const row = current as ApontamentoRow;
     const companyId = row.idRef;
 
-    const patch: Record<string, unknown> = {};
+    const patch: TablesUpdate<"Apontamentos"> = {};
     if (data.date !== undefined) patch.data_lancamento = formatBrDate(data.date);
     if (data.time !== undefined) patch.hora_lancamento = data.time;
     if (data.description !== undefined) patch.apontamento = data.description;

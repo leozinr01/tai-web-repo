@@ -9,7 +9,6 @@ export const companyProfileSchema = z.object({
     .optional()
     .or(z.literal("")),
 });
-export type CompanyProfileFormValues = z.infer<typeof companyProfileSchema>;
 
 export const MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024;
 export const ACCEPTED_LOGO_TYPES = ["image/png", "image/jpeg", "image/svg+xml"];
@@ -26,4 +25,3 @@ export type UserAccessFormValues = z.infer<typeof userAccessSchema>;
 export const userAccessCreateSchema = userAccessSchema.extend({
   password: z.string().min(6, "A senha deve ter ao menos 6 caracteres."),
 });
-export type UserAccessCreateFormValues = z.infer<typeof userAccessCreateSchema>;

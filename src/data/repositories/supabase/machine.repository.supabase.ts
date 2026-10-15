@@ -11,6 +11,7 @@ import type {
 } from "@/domain/entities/machine";
 import { AffectedSegment, MachineStatus } from "@/domain/types/enums";
 import { supabase } from "@/lib/supabase-client";
+import type { TablesUpdate } from "@/data/repositories/supabase/database.types";
 import {
   dbVariableKeyToDomainKey,
   domainVariableKeyToDbKey,
@@ -104,7 +105,7 @@ interface VariableRow {
   name: string | null;
   type: string | null;
   grandeza: string | null;
-  number_value: string | null;
+  number_value: number | null;
   bool_value: boolean | null;
 }
 
@@ -335,6 +336,15 @@ function toMachine(row: MaquinaRow, extras: Extras): Machine {
   };
 }
 
+/** `number_value` e numerico no banco; o formulario guarda texto. Vazio vira NULL, texto nao numerico e recusado. */
+function numberValueToDb(variable: MachineCustomVariable): number | null {
+  const raw = variable.value.trim().replace(",", ".");
+  if (raw === "") return null;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) throw new Error(`Valor inválido para a variável "${variable.label}": use um número.`);
+  return parsed;
+}
+
 async function syncCustomVariables(machineId: number, customVariables: MachineCustomVariable[]): Promise<void> {
   const { data: existing, error } = await supabase.from("variables").select("id").eq("maquina_id", machineId);
   if (error) throw new Error(error.message);
@@ -349,7 +359,7 @@ async function syncCustomVariables(machineId: number, customVariables: MachineCu
       name: variable.label,
       type: variable.type,
       grandeza: variable.unit ?? null,
-      number_value: variable.type === "bool" ? null : variable.value,
+      number_value: variable.type === "bool" ? null : numberValueToDb(variable),
       bool_value: variable.type === "bool" ? variable.value === "true" : null,
     };
     if (isExisting) {
@@ -406,7 +416,18 @@ async function upsertCardSettings(companyId: string, machineId: number, cardSett
 const DEFAULT_DAILY_PRODUCTION_HOURS = 8;
 
 /** Coluna hhmm (texto) de cada categoria de perda, agrupadas pelo pilar de OEE que elas afetam. */
-const LOSS_COLUMN_BY_METRIC_CATEGORY: Record<MachineLossMetric, Record<string, keyof MaquinaRow>> = {
+type LossColumn =
+  | "OEE_disp_quebra_falhas"
+  | "OEE_disp_setup"
+  | "OEE_disp_ociosidade"
+  | "OEE_produt_peq_falhas"
+  | "OEE_produt_qued_veloc"
+  | "OEE_produt_def_mat_prima"
+  | "OEE_qualidad_prod_nao_conform"
+  | "OEE_qualidad_refugo"
+  | "OEE_qualidad_retrabalho";
+
+const LOSS_COLUMN_BY_METRIC_CATEGORY: Record<MachineLossMetric, Record<string, LossColumn>> = {
   availability: {
     breakdown: "OEE_disp_quebra_falhas",
     setup: "OEE_disp_setup",
@@ -471,13 +492,13 @@ async function registerMachineLoss(
   const qualityPercent = pillarPercentFromLossMinutes(qualityLoss, baselineMinutes);
   const oeePercent = Math.round((availabilityPercent * productivityPercent * qualityPercent) / 10000);
 
-  const payload: Record<string, unknown> = {
-    [column]: minutesToHHMM(updatedMinutes),
+  const payload: TablesUpdate<"Maquinas"> = {
     OEE_disponibilidade: availabilityPercent / 100,
     OEE_produtividade: productivityPercent / 100,
     OEE_qualidade: qualityPercent / 100,
     OEE: oeePercent / 100,
   };
+  payload[column] = minutesToHHMM(updatedMinutes);
 
   const { error: updateError } = await supabase.from("Maquinas").update(payload).eq("id", machineId);
   if (updateError) throw new Error(updateError.message);
@@ -581,7 +602,7 @@ export class SupabaseMachineRepository implements MachineRepository {
     if (fetchError) throw new Error(fetchError.message);
     if (!currentRow) throw new Error("Máquina não encontrada.");
 
-    const patch: Record<string, unknown> = {};
+    const patch: TablesUpdate<"Maquinas"> = {};
     if (data.name !== undefined) patch.maquina = data.name;
     if (data.sectorId !== undefined) patch.IDsala = data.sectorId;
     if (data.productionConfig !== undefined) {

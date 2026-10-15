@@ -10,7 +10,8 @@ export function useCompany(companyId: string) {
   });
 }
 
-export function useCompanyUsers(companyId: string) {
+/** `companyId` undefined = usuarios de todas as empresas (visao do Master). */
+export function useCompanyUsers(companyId: string | undefined) {
   return useQuery({
     queryKey: ["users", companyId],
     queryFn: () => repositories.users.listByCompany(companyId),

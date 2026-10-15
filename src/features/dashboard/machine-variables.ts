@@ -6,9 +6,6 @@ export interface VariableDisplay {
   value: string;
 }
 
-const HIGH_VIBRATION = 0.55;
-const HIGH_TEMPERATURE = 40;
-
 export function builtinVariableOptions(): { value: MachineVariableKey; label: string }[] {
   return [
     { value: "horimeter", label: "Horímetro" },
@@ -62,16 +59,4 @@ export function resolveVariableDisplay(machine: Machine, key: MachineVariableKey
         : null;
     }
   }
-}
-
-export function isVariableHigh(machine: Machine, key: MachineVariableKey): boolean {
-  if (key === "vibration") return machine.variables.vibrationMm >= HIGH_VIBRATION;
-  if (key === "temperature") return machine.variables.temperatureC >= HIGH_TEMPERATURE;
-  return false;
-}
-
-export function variableTone(machine: Machine, key: MachineVariableKey): "warning" | "danger" | null {
-  if (key === "vibration" && machine.variables.vibrationMm >= HIGH_VIBRATION) return "warning";
-  if (key === "temperature" && machine.variables.temperatureC >= HIGH_TEMPERATURE) return "danger";
-  return null;
 }

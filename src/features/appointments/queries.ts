@@ -34,11 +34,3 @@ export function useUpdateAppointment() {
     onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
   });
 }
-
-export function useDeleteAppointment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => repositories.appointments.remove(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
-  });
-}

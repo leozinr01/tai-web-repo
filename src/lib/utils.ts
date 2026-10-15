@@ -23,7 +23,3 @@ export function formatDate(value: string | null | undefined, pattern = "dd/MM/yy
   const date = parseISO(value);
   return isValid(date) ? format(date, pattern) : "-";
 }
-
-export function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}

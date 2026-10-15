@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import * as RadixDialog from "@radix-ui/react-dialog";
 import {
   ChevronRight,
@@ -24,7 +23,7 @@ import { useCreateAppointment } from "@/features/appointments/queries";
 import { AppointmentFormDialog } from "@/features/appointments/components/appointment-form-dialog";
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { toast } from "@/hooks/use-toast";
-import { repositories } from "@/data/repositories";
+import { useCompanyUsers } from "@/features/settings/queries";
 import type { AppointmentFormValues } from "@/domain/schemas/appointment.schema";
 import { AppointmentArea } from "@/domain/types/enums";
 import type { Machine, MachineLossCategory } from "@/domain/entities/machine";
@@ -134,10 +133,7 @@ export function MachineDrilldownDialog({ open, onOpenChange, machine }: MachineD
   const companyId = user?.companyId ?? "";
   const sectorsQuery = useSectors(companyId);
   const machinesQuery = useMachineOptions(companyId);
-  const usersQuery = useQuery({
-    queryKey: ["users", companyId],
-    queryFn: () => repositories.users.listByCompany(companyId),
-  });
+  const usersQuery = useCompanyUsers(companyId);
   const createAppointmentMutation = useCreateAppointment();
   const registerLossMutation = useRegisterMachineLoss();
 

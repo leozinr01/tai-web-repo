@@ -2,6 +2,7 @@ import type { CompanyRepository, ListCompaniesParams } from "@/data/contracts/co
 import type { Company } from "@/domain/entities/company";
 import { CompanyStatus } from "@/domain/types/enums";
 import { supabase } from "@/lib/supabase-client";
+import type { TablesUpdate } from "@/data/repositories/supabase/database.types";
 import { fetchAllRows } from "@/data/repositories/supabase/helpers";
 
 interface EmpresaRow {
@@ -128,6 +129,7 @@ export class SupabaseCompanyRepository implements CompanyRepository {
       .select(EMPRESA_COLUMNS)
       .single();
     if (error) throw new Error(error.message);
+    if (!row.idEmpresa) throw new Error("A empresa foi criada sem identificador (idEmpresa).");
     return {
       id: row.idEmpresa,
       name: row.nome ?? "",
@@ -141,7 +143,7 @@ export class SupabaseCompanyRepository implements CompanyRepository {
   }
 
   async update(id: string, data: Partial<Company>): Promise<Company> {
-    const patch: Record<string, unknown> = {};
+    const patch: TablesUpdate<"Empresas"> = {};
     if (data.name !== undefined) patch.nome = data.name;
     if (data.logoUrl !== undefined) patch.logo_url = data.logoUrl;
     if (Object.keys(patch).length > 0) {

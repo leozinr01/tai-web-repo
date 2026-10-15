@@ -28,8 +28,7 @@ import { formatDuration } from "@/domain/appointment-time";
 import type { AppointmentFormValues } from "@/domain/schemas/appointment.schema";
 import type { Appointment } from "@/domain/entities/appointment";
 import { UserRole } from "@/domain/types/enums";
-import { repositories } from "@/data/repositories";
-import { useQuery } from "@tanstack/react-query";
+import { useCompanyUsers } from "@/features/settings/queries";
 import { usePageTitle } from "@/hooks/use-page-title";
 
 // A consulta traz a lista filtrada inteira (a exportacao usa tudo); a tabela mostra uma pagina por vez.
@@ -61,16 +60,10 @@ export function AppointmentsPage() {
 
   const sectorsQuery = useSectors(scopeCompanyId);
   const machinesQuery = useMachineOptions(scopeCompanyId);
-  const usersQuery = useQuery({
-    queryKey: ["users", scopeCompanyId],
-    queryFn: () => repositories.users.listByCompany(scopeCompanyId),
-  });
+  const usersQuery = useCompanyUsers(scopeCompanyId);
   const ownSectorsQuery = useSectors(companyId);
   const ownMachinesQuery = useMachineOptions(companyId);
-  const ownUsersQuery = useQuery({
-    queryKey: ["users", companyId],
-    queryFn: () => repositories.users.listByCompany(companyId),
-  });
+  const ownUsersQuery = useCompanyUsers(companyId);
 
   const filters = {
     dateFrom: dateFrom || undefined,

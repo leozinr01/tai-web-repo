@@ -2,37 +2,12 @@ import type { AuthRepository } from "@/data/contracts/auth.repository";
 import type { AuthSession, User } from "@/domain/entities/user";
 import { UserStatus } from "@/domain/types/enums";
 import { supabase } from "@/lib/supabase-client";
-import { initials } from "@/lib/utils";
-import { statusToDomain, tipoToRole } from "@/data/repositories/supabase/helpers";
-
-interface UserRow {
-  idRef: string;
-  nomeUser: string | null;
-  email: string | null;
-  tipo: string | null;
-  Status: string | null;
-  idEmpresa: string | null;
-  created_at: string;
-}
-
-function toDomainUser(row: UserRow): User {
-  const name = row.nomeUser || row.email || "Usuário";
-  return {
-    id: row.idRef,
-    companyId: row.idEmpresa ?? "",
-    name,
-    email: row.email ?? "",
-    role: tipoToRole(row.tipo),
-    status: statusToDomain(row.Status),
-    avatarInitials: initials(name),
-    createdAt: row.created_at,
-  };
-}
+import { toDomainUser, USER_COLUMNS, type UserRow } from "@/data/repositories/supabase/helpers";
 
 async function loadProfile(authUserId: string): Promise<User | null> {
   const { data, error } = await supabase
     .from("User")
-    .select("idRef, nomeUser, email, tipo, Status, idEmpresa, created_at")
+    .select(USER_COLUMNS)
     .eq("idRef", authUserId)
     .maybeSingle();
   if (error) throw new Error(error.message);
