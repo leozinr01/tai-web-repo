@@ -2,6 +2,7 @@
 -- RLS: isolamento por empresa e escrita por papel nas tabelas usadas pelo tai-web
 -- =============================================================================
 -- STATUS: PENDENTE. NAO APLICAR EM PRODUCAO SEM PASSAR PELO ROTEIRO DO LEIA-ME.md.
+-- Testado num branch do Supabase em 2026-10-15: 30/30 checagens de API e telas OK (ver LEIA-ME, secao 0).
 --
 -- Conferido contra o banco em 2026-10-15 (so leitura): tipos das colunas, policies
 -- atuais, constraints, triggers, jobs do pg_cron, valores de "Status"/"tipo" e logs.
@@ -41,6 +42,8 @@ create table if not exists tai_private.rls_policies_backup (
   primary key (tablename, policyname)
 );
 revoke all on tai_private.rls_policies_backup from public, anon, authenticated;
+-- RLS ligado e nenhuma policy: ninguem alem do dono le ou grava (o Supabase avisa se ficar sem RLS).
+alter table tai_private.rls_policies_backup enable row level security;
 
 -- So grava na primeira execucao: rodar de novo nao sobrescreve o estado original.
 insert into tai_private.rls_policies_backup (tablename, policyname, permissive, roles, cmd, qual, with_check)
